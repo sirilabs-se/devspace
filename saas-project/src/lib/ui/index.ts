@@ -13,7 +13,7 @@ export { default as Logo } from './Logo.svelte';
 export { default as PageWrap } from './PageWrap.svelte';
 export { default as Stack } from './Stack.svelte';
 export { default as StatusIcon } from './StatusIcon.svelte';
-export { default as StrengthMeter } from './StrengthMeter.svelte';
+export { default as PasswordChecklist } from './PasswordChecklist.svelte';
 export { default as Text } from './Text.svelte';
 export { default as TextField } from './TextField.svelte';
 export { default as TextLink } from './TextLink.svelte';

@@ -5,7 +5,8 @@ import { users } from './schema';
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MAX_LENGTH = 30;
 
-const USERNAME_PATTERN = /^[a-z0-9_-]+$/;
+// Letters, numbers, dots, hyphens and underscores, starting and ending with a letter or number.
+const USERNAME_PATTERN = /^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/;
 
 // Names nobody may register, so no account can pose as the app or its staff.
 const RESERVED_USERNAMES = new Set([

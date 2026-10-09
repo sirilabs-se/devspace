@@ -6,11 +6,11 @@ import { actions } from './+page.server';
 vi.mock('$lib/server/email', () => ({ sendEmail: vi.fn() }));
 
 const valid = {
+	name: 'Anna Berg',
 	email: 'anna@example.com',
-	password: 'correct horse battery',
+	password: 'Correct-Horse-42',
 	username: 'anna',
-	acceptTerms: 'on',
-	confirmAge: 'on'
+	acceptTerms: 'on'
 };
 
 function submit(fields: Record<string, string>) {
@@ -34,8 +34,8 @@ beforeEach(async () => {
 });
 
 describe('the sign-up form action', () => {
-	it('answers "sent" and sends the verification email', async () => {
-		expect(await submit(valid)).toEqual({ sent: true });
+	it('answers "sent" with the typed email and sends the verification email', async () => {
+		expect(await submit(valid)).toEqual({ sent: true, email: 'anna@example.com' });
 		expect(sendEmail).toHaveBeenCalledOnce();
 	});
 
@@ -52,24 +52,35 @@ describe('the sign-up form action', () => {
 		expect(result).toMatchObject({
 			status: 400,
 			data: {
-				errors: { password: 'password_too_short', username: 'username_reserved' },
-				values: { email: 'anna@example.com', username: 'admin' }
+				errors: { password: 'password_too_weak', username: 'username_reserved' },
+				values: { name: 'Anna Berg', email: 'anna@example.com', username: 'admin' }
 			}
 		});
 		expect(JSON.stringify(result)).not.toContain('zx-81-pw');
 		expect(sendEmail).not.toHaveBeenCalled();
 	});
 
-	it('treats unticked boxes as not accepted', async () => {
+	it('treats an unticked box as not accepted', async () => {
 		const result = await submit({
+			name: valid.name,
 			email: valid.email,
-			password: valid.password,
-			username: valid.username
+			password: valid.password
 		});
 
 		expect(result).toMatchObject({
 			status: 400,
-			data: { errors: { acceptTerms: 'terms_required', confirmAge: 'age_required' } }
+			data: { errors: { acceptTerms: 'terms_required' } }
 		});
+	});
+
+	it('accepts a sign-up with no username', async () => {
+		const result = await submit({
+			name: valid.name,
+			email: valid.email,
+			password: valid.password,
+			acceptTerms: 'on'
+		});
+
+		expect(result).toEqual({ sent: true, email: 'anna@example.com' });
 	});
 });

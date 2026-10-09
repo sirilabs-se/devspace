@@ -37,7 +37,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 1 | Project setup | — | — | Done |
 | 2 | Sign up | Identity | 1 | Done |
 | 2a | Apply the design system | — | 2 | Done |
-| 2b | Align sign-up with the design | Identity | 2a | To do |
+| 2b | Align sign-up with the design | Identity | 2a | Done |
 | 3 | Verify email and start a session | Identity | 2b | To do |
 | 4 | Log in and log out | Identity | 3 | To do |
 | 5 | Rate limits and login lockout | Identity | 4 | To do |
@@ -215,25 +215,34 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 - One checkbox for the terms, the privacy policy and being 18 or older; still three consent records
 - The prototype's error summary ("Fix 2 things to continue") and field messages
 - After a successful sign-up, the prototype's "Check your inbox" screen, showing the email address
-- "Already have an account? Log in" link
 
 **Out of scope:**
 
 - Resending the verification email and the other verification states — task 3
 - Google and Facebook buttons — task 11
+- The "Already have an account? Log in" link — task 4, when the login page exists
 - The bot challenge and the invitation variant in the prototype: not being built
 
 **Done when:**
 
-- [ ] Sign-up without a full name shows a clear error
-- [ ] Sign-up without a username works, and the account has no username
-- [ ] `maya.okafor` is accepted as a username; `.maya` and `maya.` are not
-- [ ] A password missing any one of the five rules is refused, and the page shows which rule is unmet
-- [ ] Unticking the single checkbox blocks sign-up; ticking it saves the terms, privacy and 18+ consent records
-- [ ] An email that is already registered still gets the same "Check your inbox" screen
-- [ ] Tests cover the above
+- [x] Sign-up without a full name shows a clear error
+- [x] Sign-up without a username works, and the account has no username
+- [x] `maya.okafor` is accepted as a username; `.maya` and `maya.` are not
+- [x] A password missing any one of the five rules is refused, and the page shows which rule is unmet
+- [x] Unticking the single checkbox blocks sign-up; ticking it saves the terms, privacy and 18+ consent records
+- [x] An email that is already registered still gets the same "Check your inbox" screen
+- [x] Tests cover the above
 
-**Notes:** This changes rules built in task 2. The existing tests for the old rules are replaced by tests for the new ones; that is a change of requirement, not a weakened check. No database migration is expected: `username` is already optional in the table.
+**Notes:**
+
+- This changed rules built in task 2. The tests for the old rules were replaced by tests for the new ones; that is a change of requirement, not a weakened check. No database migration was needed.
+- The checkbox reads "I am 18 or older and agree to the Terms and Privacy Policy." It has no links yet, because the terms and privacy pages don't exist.
+- The password rule lives on the server in `identity/password.ts`. The page's checklist uses a separate copy in `src/lib/shared/password-checklist.ts`, and a test checks that the two always agree.
+- As in the prototype, the checklist shows four lines, with upper and lower case as one line, and four bars that fill as lines are met. A space does not count as a special character.
+- A password that breaks the rule gets one message naming the whole rule; the checklist shows which part is missing. After a failed attempt the typed password is kept on the page so the checklist stays useful. The server never sends a password back.
+- Names are limited to 100 characters.
+- "Check your inbox" is shown on the sign-up page itself for now. Task 3 moves it to `/verify-email` and adds the resend and "open email app" buttons.
+- The "Log in" link under the form was moved to task 4: links in this app can only point at pages that exist.
 
 ### 3. Verify email and start a session
 
@@ -272,6 +281,7 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 
 **In scope:**
 
+- The "Already have an account? Log in" link on sign-up, and a "Log in" link in the header
 - `/login` page as in the prototype: email first, then the password on a second step, with "remember me" in place of the prototype's "Trust this device"; `/logout`
 - The first step answers the same way for every email
 - The same generic error for a wrong email, a wrong password and an unverified email

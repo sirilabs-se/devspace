@@ -10,11 +10,11 @@ vi.mock('$lib/server/email', () => ({ sendEmail: vi.fn() }));
 
 const context = { ipAddress: '203.0.113.5', userAgent: 'Test Browser' };
 const valid = {
+	name: 'Anna Berg',
 	email: 'anna@example.com',
-	password: 'correct horse battery',
-	username: 'Anna-Berg',
-	acceptTerms: true,
-	confirmAge: true
+	password: 'Correct-Horse-42',
+	username: 'Anna.Berg',
+	acceptTerms: true
 };
 
 const sentEmails = () => vi.mocked(sendEmail).mock.calls.map(([email]) => email);
@@ -32,10 +32,11 @@ describe('signUp', () => {
 
 		const [user] = await db.select().from(users);
 		expect(user).toMatchObject({
+			name: 'Anna Berg',
 			email: 'anna@example.com',
 			emailVerified: false,
-			username: 'anna-berg',
-			displayUsername: 'Anna-Berg',
+			username: 'anna.berg',
+			displayUsername: 'Anna.Berg',
 			role: 'user'
 		});
 
@@ -102,10 +103,37 @@ describe('signUp', () => {
 		expect(events[0].actorUserId).toBeNull();
 	});
 
-	it('rejects a password under 10 characters', async () => {
-		const result = await signUp({ ...valid, password: 'short1234' }, context);
+	it('creates an account with no username when none is given', async () => {
+		for (const username of [undefined, '', '   ']) {
+			await resetDatabase();
+			const result = await signUp({ ...valid, username }, context);
 
-		expect(result).toEqual({ ok: false, errors: { password: 'password_too_short' } });
+			expect(result).toEqual({ ok: true });
+			const [user] = await db.select().from(users);
+			expect(user.username).toBeNull();
+			expect(user.name).toBe('Anna Berg');
+		}
+	});
+
+	it('requires a full name', async () => {
+		const result = await signUp({ ...valid, name: '   ' }, context);
+
+		expect(result).toEqual({ ok: false, errors: { name: 'name_required' } });
+		expect(await db.select().from(users)).toHaveLength(0);
+	});
+
+	it('rejects a name over 100 characters', async () => {
+		const result = await signUp({ ...valid, name: 'a'.repeat(101) }, context);
+
+		expect(result).toEqual({ ok: false, errors: { name: 'name_too_long' } });
+	});
+
+	it('rejects a password missing any one part of the rule', async () => {
+		for (const password of ['Abcde1!', 'abcdefg1!', 'ABCDEFG1!', 'Abcdefgh!', 'Abcdefgh1']) {
+			const result = await signUp({ ...valid, password }, context);
+
+			expect(result, password).toEqual({ ok: false, errors: { password: 'password_too_weak' } });
+		}
 		expect(await db.select().from(users)).toHaveLength(0);
 		expect(sentEmails()).toHaveLength(0);
 	});
@@ -114,6 +142,18 @@ describe('signUp', () => {
 		const result = await signUp({ ...valid, email: 'not-an-email' }, context);
 
 		expect(result).toEqual({ ok: false, errors: { email: 'email_invalid' } });
+	});
+
+	it('accepts a username with dots, but not one that starts or ends with a dot', async () => {
+		expect(await signUp({ ...valid, username: '.maya' }, context)).toEqual({
+			ok: false,
+			errors: { username: 'username_invalid' }
+		});
+		expect(await signUp({ ...valid, username: 'maya.' }, context)).toEqual({
+			ok: false,
+			errors: { username: 'username_invalid' }
+		});
+		expect(await signUp({ ...valid, username: 'maya.okafor' }, context)).toEqual({ ok: true });
 	});
 
 	it('rejects a badly formed username', async () => {
@@ -132,7 +172,7 @@ describe('signUp', () => {
 		await signUp(valid, context);
 
 		const result = await signUp(
-			{ ...valid, email: 'other@example.com', username: 'ANNA-BERG' },
+			{ ...valid, email: 'other@example.com', username: 'ANNA.BERG' },
 			context
 		);
 
@@ -140,30 +180,27 @@ describe('signUp', () => {
 		expect(await db.select().from(users)).toHaveLength(1);
 	});
 
-	it('requires the terms and the 18+ confirmation', async () => {
-		const result = await signUp({ ...valid, acceptTerms: false, confirmAge: false }, context);
+	it('requires the single checkbox for the terms, privacy policy and 18+', async () => {
+		const result = await signUp({ ...valid, acceptTerms: false }, context);
 
-		expect(result).toEqual({
-			ok: false,
-			errors: { acceptTerms: 'terms_required', confirmAge: 'age_required' }
-		});
+		expect(result).toEqual({ ok: false, errors: { acceptTerms: 'terms_required' } });
 		expect(await db.select().from(users)).toHaveLength(0);
 	});
 
 	it('reports every problem at once', async () => {
 		const result = await signUp(
-			{ email: '', password: '', username: '', acceptTerms: false, confirmAge: false },
+			{ name: '', email: '', password: '', username: 'a', acceptTerms: false },
 			context
 		);
 
 		expect(result).toEqual({
 			ok: false,
 			errors: {
+				name: 'name_required',
 				email: 'email_invalid',
-				password: 'password_too_short',
+				password: 'password_too_weak',
 				username: 'username_invalid',
-				acceptTerms: 'terms_required',
-				confirmAge: 'age_required'
+				acceptTerms: 'terms_required'
 			}
 		});
 	});
@@ -173,7 +210,7 @@ describe('signUp', () => {
 
 		expect(result).toMatchObject({
 			ok: false,
-			errors: { email: 'email_invalid', password: 'password_too_short' }
+			errors: { email: 'email_invalid', password: 'password_too_weak' }
 		});
 	});
 });

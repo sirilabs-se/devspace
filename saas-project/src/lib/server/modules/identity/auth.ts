@@ -4,11 +4,9 @@ import { username } from 'better-auth/plugins';
 import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
 import { sendVerificationEmail } from './emails';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from './password';
 import { accounts, sessions, users, verifications } from './schema';
 import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH, usernameFormatProblem } from './username';
-
-export const PASSWORD_MIN_LENGTH = 10;
-export const PASSWORD_MAX_LENGTH = 128;
 
 const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
 

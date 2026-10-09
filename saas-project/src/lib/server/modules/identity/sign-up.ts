@@ -3,8 +3,9 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '$lib/server/db';
 import { recordAuditEvent } from './audit';
-import { appOrigin, getAuth, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from './auth';
+import { appOrigin, getAuth } from './auth';
 import { sendExistingAccountEmail } from './emails';
+import { passwordProblem } from './password';
 import type { RequestContext } from './request-context';
 import { consents, users } from './schema';
 import { toUserId } from './user-id';
@@ -17,39 +18,52 @@ export const CONSENT_VERSIONS = {
 	age_confirmation: '1'
 } as const;
 
-export type SignUpField = 'email' | 'password' | 'username' | 'acceptTerms' | 'confirmAge';
+const NAME_MAX_LENGTH = 100;
+
+export type SignUpField = 'name' | 'email' | 'password' | 'username' | 'acceptTerms';
 
 export type SignUpErrorCode =
+	| 'name_required'
+	| 'name_too_long'
 	| 'email_invalid'
-	| 'password_too_short'
+	| 'password_too_weak'
 	| 'password_too_long'
 	| 'username_invalid'
 	| 'username_reserved'
 	| 'username_taken'
-	| 'terms_required'
-	| 'age_required';
+	| 'terms_required';
 
 export type SignUpErrors = Partial<Record<SignUpField, SignUpErrorCode>>;
 
 /**
- * "ok" means "check your email". It is returned whether or not the email
+ * "ok" means "check your inbox". It is returned whether or not the email
  * already has an account, so the response never reveals who is registered.
  */
 export type SignUpResult = { ok: true } | { ok: false; errors: SignUpErrors };
 
 const signUpSchema = z.object({
+	name: z
+		.string({ error: 'name_required' })
+		.trim()
+		.min(1, { error: 'name_required' })
+		.max(NAME_MAX_LENGTH, { error: 'name_too_long' }),
 	email: z
 		.string({ error: 'email_invalid' })
 		.trim()
 		.toLowerCase()
 		.pipe(z.email({ error: 'email_invalid' }).max(254, { error: 'email_invalid' })),
-	password: z
-		.string({ error: 'password_too_short' })
-		.min(PASSWORD_MIN_LENGTH, { error: 'password_too_short' })
-		.max(PASSWORD_MAX_LENGTH, { error: 'password_too_long' }),
-	username: z.string({ error: 'username_invalid' }).trim(),
-	acceptTerms: z.literal(true, { error: 'terms_required' }),
-	confirmAge: z.literal(true, { error: 'age_required' })
+	password: z.string({ error: 'password_too_weak' }).superRefine((password, context) => {
+		const problem = passwordProblem(password);
+		if (problem) context.addIssue({ code: 'custom', message: `password_${problem}` });
+	}),
+	// Optional: an empty or missing username means the person has none.
+	username: z
+		.string({ error: 'username_invalid' })
+		.trim()
+		.nullish()
+		.transform((value) => value || undefined),
+	// One checkbox covers the terms, the privacy policy and being 18 or older.
+	acceptTerms: z.literal(true, { error: 'terms_required' })
 });
 
 function validationErrors(error: z.ZodError): SignUpErrors {
@@ -61,21 +75,28 @@ function validationErrors(error: z.ZodError): SignUpErrors {
 	return errors;
 }
 
+/** Reads the username out of unchecked input, so it can be checked even when other fields fail. */
+function usernameFrom(input: unknown): string | undefined {
+	const parsed = signUpSchema.shape.username.safeParse(
+		typeof input === 'object' && input !== null && 'username' in input ? input.username : undefined
+	);
+	return parsed.success ? parsed.data : undefined;
+}
+
 /** Registers a new account and sends the verification email. */
 export async function signUp(input: unknown, context: RequestContext): Promise<SignUpResult> {
 	const parsed = signUpSchema.safeParse(input);
 	const errors = parsed.success ? {} : validationErrors(parsed.error);
 
-	const usernameInput =
-		typeof input === 'object' && input !== null && 'username' in input ? input.username : null;
-	if (typeof usernameInput === 'string') {
-		const availability = await checkUsernameAvailable(usernameInput);
+	const requestedUsername = usernameFrom(input);
+	if (requestedUsername && !errors.username) {
+		const availability = await checkUsernameAvailable(requestedUsername);
 		if (!availability.available) errors.username = `username_${availability.reason}`;
 	}
 
 	if (!parsed.success || Object.keys(errors).length > 0) return { ok: false, errors };
 
-	const { email, password, username } = parsed.data;
+	const { name, email, password, username } = parsed.data;
 
 	const [existing] = await db
 		.select({ id: users.id, email: users.email })
@@ -92,7 +113,7 @@ export async function signUp(input: unknown, context: RequestContext): Promise<S
 	let userId: string;
 	try {
 		const created = await getAuth().api.signUpEmail({
-			body: { email, password, name: username, username }
+			body: { email, password, name, ...(username ? { username } : {}) }
 		});
 		userId = created.user.id;
 	} catch (error) {

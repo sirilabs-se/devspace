@@ -10,23 +10,26 @@ export const actions: Actions = {
 
 		const result = await signUp(
 			{
+				name: form.get('name'),
+				username: form.get('username'),
 				email: form.get('email'),
 				password: form.get('password'),
-				username: form.get('username'),
-				acceptTerms: form.get('acceptTerms') === 'on',
-				confirmAge: form.get('confirmAge') === 'on'
+				acceptTerms: form.get('acceptTerms') === 'on'
 			},
 			{ ipAddress: getClientAddress(), userAgent: request.headers.get('user-agent') }
 		);
+
+		const email = text(form.get('email')).trim();
 
 		if (!result.ok) {
 			return fail(400, {
 				errors: result.errors,
 				// The password is never sent back.
-				values: { email: text(form.get('email')), username: text(form.get('username')) }
+				values: { name: text(form.get('name')), username: text(form.get('username')), email }
 			});
 		}
 
-		return { sent: true as const };
+		// The address is only what the person just typed; it says nothing about who is registered.
+		return { sent: true as const, email };
 	}
 };

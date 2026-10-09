@@ -66,7 +66,7 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 
 | Function | What it does | Used by |
 |---|---|---|
-| `signUp(input, context)` | Checks the input, registers the account and sends the verification email. Gives the same answer whether or not the email is already registered. | `/signup` |
+| `signUp(input, context)` | Checks the input (full name, email, password, optional username, the consent checkbox), registers the account and sends the verification email. Gives the same answer whether or not the email is already registered. | `/signup` |
 | `checkUsernameAvailable(username)` | Says whether a username can be registered, and why not if it can't | `/api/username-available` |
 
 ### Pages and endpoints

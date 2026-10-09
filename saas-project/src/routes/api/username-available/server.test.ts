@@ -25,11 +25,11 @@ describe('GET /api/username-available', () => {
 	it('says why a username is not available', async () => {
 		await signUp(
 			{
+				name: 'Anna Berg',
 				email: 'anna@example.com',
-				password: 'correct horse battery',
+				password: 'Correct-Horse-42',
 				username: 'anna',
-				acceptTerms: true,
-				confirmAge: true
+				acceptTerms: true
 			},
 			{ ipAddress: null, userAgent: null }
 		);

@@ -9,9 +9,10 @@ beforeEach(async () => {
 });
 
 describe('usernameFormatProblem', () => {
-	it('accepts letters, numbers, hyphens and underscores, 3 to 30 long', () => {
+	it('accepts letters, numbers, dots, hyphens and underscores, 3 to 30 long', () => {
 		expect(usernameFormatProblem('anna')).toBeNull();
 		expect(usernameFormatProblem('Anna_Berg-42')).toBeNull();
+		expect(usernameFormatProblem('maya.okafor')).toBeNull();
 		expect(usernameFormatProblem('abc')).toBeNull();
 		expect(usernameFormatProblem('a'.repeat(30))).toBeNull();
 	});
@@ -20,9 +21,15 @@ describe('usernameFormatProblem', () => {
 		expect(usernameFormatProblem('ab')).toBe('invalid');
 		expect(usernameFormatProblem('a'.repeat(31))).toBe('invalid');
 		expect(usernameFormatProblem('anna berg')).toBe('invalid');
-		expect(usernameFormatProblem('anna.berg')).toBe('invalid');
 		expect(usernameFormatProblem('ånna')).toBe('invalid');
 		expect(usernameFormatProblem('')).toBe('invalid');
+	});
+
+	it('rejects names that start or end with a dot, hyphen or underscore', () => {
+		expect(usernameFormatProblem('.maya')).toBe('invalid');
+		expect(usernameFormatProblem('maya.')).toBe('invalid');
+		expect(usernameFormatProblem('-maya')).toBe('invalid');
+		expect(usernameFormatProblem('maya_')).toBe('invalid');
 	});
 
 	it('rejects reserved names in any letter case', () => {
