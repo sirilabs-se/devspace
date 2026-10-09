@@ -8,6 +8,8 @@
 
 Each task is a thin slice that works end to end, small enough for one coding session. Don't rewrite tasks that are done; add a new task for follow-up work.
 
+Screens are built to match the UX prototype, `docs/design/event-platform-prototype_v05.html`: its look, layout, states and wording. The design docs decide scope and rules.
+
 Short links used below: [system doc](architecture/README.md), [Identity doc](architecture/modules/identity/README.md), [schema](architecture/database/schema.dbml), [ADRs](architecture/decisions/README.md).
 
 ## Decide before the first task starts
@@ -32,9 +34,11 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 
 | # | Task | Module | Depends on | Status |
 |---|---|---|---|---|
-| 1 | Project setup | — | — | In progress |
-| 2 | Sign up | Identity | 1 | To do |
-| 3 | Verify email and start a session | Identity | 2 | To do |
+| 1 | Project setup | — | — | Done |
+| 2 | Sign up | Identity | 1 | Done |
+| 2a | Apply the design system | — | 2 | To do |
+| 2b | Align sign-up with the design | Identity | 2a | To do |
+| 3 | Verify email and start a session | Identity | 2b | To do |
 | 4 | Log in and log out | Identity | 3 | To do |
 | 5 | Rate limits and login lockout | Identity | 4 | To do |
 | 6 | Forgot and reset password | Identity | 4 | To do |
@@ -62,7 +66,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 
 Statuses: **To do**, **In progress**, **Done**, **Blocked** (say why in the task's notes).
 
-Phase 1 is tasks 2 to 16, Phase 2 is tasks 17 to 21, Phase 3 is tasks 22 to 26. Task 27 can be done at any point after task 1, once the hosting provider is chosen.
+Tasks 2a and 2b were added after the UX prototype arrived; they come before task 3. Phase 1 is tasks 2 to 16, Phase 2 is tasks 17 to 21, Phase 3 is tasks 22 to 26. Task 27 can be done at any point after task 1, once the hosting provider is chosen.
 
 ## Task details
 
@@ -95,7 +99,7 @@ Phase 1 is tasks 2 to 16, Phase 2 is tasks 17 to 21, Phase 3 is tasks 22 to 26. 
 **Done when:**
 
 - [x] The app starts locally and shows a placeholder page built from `$lib/ui` components and theme tokens
-- [ ] `npm run verify` passes locally and in CI
+- [x] `npm run verify` passes locally and in CI
 - [x] `npm run verify` fails when a rule is broken on purpose, e.g. importing a module's internal file or hard-coding a colour (then undo the break)
 - [x] A commit message containing AI attribution is rejected by the hook
 - [x] `npm run db:migrate` runs against the local database
@@ -103,7 +107,7 @@ Phase 1 is tasks 2 to 16, Phase 2 is tasks 17 to 21, Phase 3 is tasks 22 to 26. 
 **Notes:**
 
 - `.claude/` is inside `saas-project/`; `.githooks/` is at the `devspace` level and applies to every project in the repository.
-- `npm run verify` passes locally. The CI half of that check is still open: the workflow has not run because nothing has been pushed. Tick the box and set the task to Done after the first green run.
+- CI fetches the PostgreSQL image from a mirror (`public.ecr.aws/docker/library/postgres`), because GitHub runners are often refused by Docker Hub's download limits.
 - The project was written by hand, not with the `sv create` tool, because that tool now sets up SvelteKit 3.
 - Logic tests use their own database, `saas_test`, created and migrated automatically, so they never touch development data.
 - `npm run verify` also runs the Playwright browser test, which builds the app first. The browser is installed once with `npx playwright install chromium`.
@@ -138,13 +142,88 @@ Phase 1 is tasks 2 to 16, Phase 2 is tasks 17 to 21, Phase 3 is tasks 22 to 26. 
 
 **Done when:**
 
-- [ ] A new person can fill in `/signup` and sees "check your email"; the email appears locally
-- [ ] Signing up with an email already in use shows the same message and emails the existing owner
-- [ ] A password under 10 characters, a taken or reserved username, or unticked terms or 18+ each show a clear error
-- [ ] Consent records and an audit entry are saved for the new user
-- [ ] Tests cover the above, and a test proves an `audit_events` row can't be updated
+- [x] A new person can fill in `/signup` and sees "check your email"; the email appears locally
+- [x] Signing up with an email already in use shows the same message and emails the existing owner
+- [x] A password under 10 characters, a taken or reserved username, or unticked terms or 18+ each show a clear error
+- [x] Consent records and an audit entry are saved for the new user
+- [x] Tests cover the above, and a test proves an `audit_events` row can't be updated
 
-**Notes:** —
+**Notes:**
+
+- The form has no name field, so a new person's name starts as their username. They can change it once the profile page exists (task 8).
+- Consent records are saved with version "1" for the terms, the privacy policy and the 18+ confirmation. The documents themselves don't exist yet, so the form's wording has no links.
+- The password strength meter is a small guide written in `src/lib/shared/password-strength.ts`, with no extra library. The server alone decides whether a password is accepted.
+- The email helper shows emails in the terminal. It refuses to run outside local development unless `EMAIL_TRANSPORT=console` is set, so a missing email service can't go unnoticed in production.
+- The whole `users` table is created now, including columns later tasks use (role, suspension, language, time zone), to avoid a string of small migrations.
+- The audit log guard is a database trigger added by hand to the end of the generated migration `0001_sign_up.sql`.
+- Two new settings are needed in `.env`: `ORIGIN` and `BETTER_AUTH_SECRET`. Both are in `.env.example`.
+- Identity's `index.ts` also exports `signUp` and `checkUsernameAvailable` for the pages. They are listed in the Identity doc under "Functions the pages call"; later tasks add their page functions there too.
+- Logic test files now run one after another, because they share one database.
+- Left for later: the verification link leads to `/verify-email`, which task 3 builds. The username check and sign-up are not rate limited until task 5. If the email already has an account, the answer comes back slightly faster than for a new one; task 5's rate limits reduce what that can reveal.
+
+### 2a. Apply the design system
+
+**Goal:** The app looks like the UX prototype: its tokens, components, sign-up and login layout, and app shell, on desktop and mobile.
+
+**Implements:** [system doc: UX Prototype](architecture/README.md#ux-prototype), [ADR 0002](architecture/decisions/0002-keep-the-design-replaceable.md)
+
+**In scope:**
+
+- `theme.css` rebuilt from the prototype's tokens: colours, type, spacing, corner radii, shadows
+- The prototype's fonts, bundled with the app, not loaded from Google's servers
+- `$lib/ui` components restyled or replaced to match the prototype: buttons, text fields with a show-password control, checkbox, alerts, cards, headings, text, links, dividers, the large status icon
+- The split-screen layout for sign-up and login, and the centred-card layout, with their mobile versions
+- The app shell: the prototype's header for signed-out visitors
+- The sign-up page and the placeholder page moved onto the new components, with no change to what they do
+
+**Out of scope:**
+
+- Any change to server code, load functions, form actions or logic tests
+- Changing sign-up's fields or rules — task 2b
+- Screens for features not built yet
+
+**Done when:**
+
+- [ ] The sign-up page matches the prototype's "Sign up" screen in layout, type and spacing, on a desktop and a phone-sized window
+- [ ] Every colour, font, size, radius and shadow comes from `theme.css`; `npm run verify` passes
+- [ ] No request goes to Google's font servers when a page loads
+- [ ] No file under `src/lib/server/`, no `+page.server.ts`, `+server.ts` or `*.test.ts` under `src/` was changed
+
+**Notes:** The prototype's colours are neutral placeholders; the brand palette is still to come. Bundling the fonts may need a font package, which counts as a new dependency: ask first. The social sign-in buttons on the prototype's sign-up screen arrive with task 11.
+
+### 2b. Align sign-up with the design
+
+**Goal:** Sign-up asks for what the prototype shows and follows the rules agreed on 9 October 2026.
+
+**Implements:** [Identity doc: Signing up](architecture/modules/identity/README.md#signing-up), [Security and Access](architecture/modules/identity/README.md#security-and-access)
+
+**In scope:**
+
+- A required full name field; the name is no longer copied from the username
+- Username becomes optional, and may contain dots; it must start and end with a letter or number
+- Password rule: at least 8 characters with an upper case letter, a lower case letter, a number and a special character; the page lists each rule and marks it as it is met, replacing the strength bar
+- One checkbox for the terms, the privacy policy and being 18 or older; still three consent records
+- The prototype's error summary ("Fix 2 things to continue") and field messages
+- After a successful sign-up, the prototype's "Check your inbox" screen, showing the email address
+- "Already have an account? Log in" link
+
+**Out of scope:**
+
+- Resending the verification email and the other verification states — task 3
+- Google and Facebook buttons — task 11
+- The bot challenge and the invitation variant in the prototype: not being built
+
+**Done when:**
+
+- [ ] Sign-up without a full name shows a clear error
+- [ ] Sign-up without a username works, and the account has no username
+- [ ] `maya.okafor` is accepted as a username; `.maya` and `maya.` are not
+- [ ] A password missing any one of the five rules is refused, and the page shows which rule is unmet
+- [ ] Unticking the single checkbox blocks sign-up; ticking it saves the terms, privacy and 18+ consent records
+- [ ] An email that is already registered still gets the same "Check your inbox" screen
+- [ ] Tests cover the above
+
+**Notes:** This changes rules built in task 2. The existing tests for the old rules are replaced by tests for the new ones; that is a change of requirement, not a weakened check. No database migration is expected: `username` is already optional in the table.
 
 ### 3. Verify email and start a session
 
@@ -154,7 +233,9 @@ Phase 1 is tasks 2 to 16, Phase 2 is tasks 17 to 21, Phase 3 is tasks 22 to 26. 
 
 **In scope:**
 
-- `/verify-email`: confirms the link, handles expired and invalid links, resends the link
+- `/verify-email` in the prototype's five states: check your inbox, please wait, verified, link expired, link invalid
+- Resending the verification email, at most 3 times per hour, with the prototype's countdown
+- "Change email" from the check-your-inbox screen, leading back to sign-up
 - `hooks.server.ts`: reads the session, sets `event.locals`, and requires a login for every page outside the public list
 - `requireUser`
 - A signed-in home page showing the person's name
@@ -167,6 +248,7 @@ Phase 1 is tasks 2 to 16, Phase 2 is tasks 17 to 21, Phase 3 is tasks 22 to 26. 
 
 - [ ] Opening a valid link marks the email verified and lands the person signed in on the home page
 - [ ] An expired or invalid link shows a clear message and a way to resend; links last 24 hours
+- [ ] A fourth resend within an hour is refused with the "please wait" screen
 - [ ] Visiting a protected page while signed out redirects to `/login`
 - [ ] Tests cover the above, and a test proves one signed-in user can't read another user's account details
 
@@ -180,7 +262,8 @@ Phase 1 is tasks 2 to 16, Phase 2 is tasks 17 to 21, Phase 3 is tasks 22 to 26. 
 
 **In scope:**
 
-- `/login` page with "remember me"; `/logout`
+- `/login` page as in the prototype: email first, then the password on a second step, with "remember me" in place of the prototype's "Trust this device"; `/logout`
+- The first step answers the same way for every email
 - The same generic error for a wrong email, a wrong password and an unverified email
 - Session expiry after inactivity and after a maximum age
 - Audit entries for successful and failed logins
@@ -189,10 +272,12 @@ Phase 1 is tasks 2 to 16, Phase 2 is tasks 17 to 21, Phase 3 is tasks 22 to 26. 
 
 - Lockout and rate limits — task 5
 - The second step — tasks 18 and 19
+- The passkey button on the first step — task 17
+- Google and Facebook buttons — task 11
 
 **Done when:**
 
-- [ ] A verified person can sign in and sign out
+- [ ] A verified person enters their email, then their password, and is signed in; they can sign out
 - [ ] Without "remember me" the session ends with the shorter lifetime; with it, the longer one
 - [ ] A wrong email and a wrong password give exactly the same response
 - [ ] Tests cover the above
@@ -232,7 +317,7 @@ Phase 1 is tasks 2 to 16, Phase 2 is tasks 17 to 21, Phase 3 is tasks 22 to 26. 
 **In scope:**
 
 - `/forgot-password`: always shows the same success message; rate limited
-- `/reset-password`: single-use link valid for 1 hour; sets a new password and ends all sessions
+- `/reset-password`: single-use link valid for 1 hour (not the prototype's 30 minutes); new password and confirmation fields; sets the password and ends all sessions
 - Audit entries for the request and the reset
 
 **Out of scope:**
@@ -314,6 +399,7 @@ Phase 1 is tasks 2 to 16, Phase 2 is tasks 17 to 21, Phase 3 is tasks 22 to 26. 
 
 **Done when:**
 
+- [ ] A person with no username can set one
 - [ ] A person changes their username and the old one can't be taken by anyone else
 - [ ] A second change within 30 days is refused with a clear message
 - [ ] Tests cover the above
@@ -353,7 +439,7 @@ Phase 1 is tasks 2 to 16, Phase 2 is tasks 17 to 21, Phase 3 is tasks 22 to 26. 
 **In scope:**
 
 - Google and Facebook buttons on `/signup` and `/login`, through `/api/auth/*`
-- `/welcome`: pick a username, accept the terms and confirm 18+, before using the app
+- `/welcome`: accept the terms and confirm 18+ with one checkbox, and optionally pick a username, before using the app
 - An email that already has an account is not merged; the person is told to sign in and link the provider from settings
 
 **Out of scope:**

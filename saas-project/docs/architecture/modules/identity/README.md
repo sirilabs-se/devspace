@@ -46,7 +46,7 @@ Identity knows who each person is. It handles accounts, signing in, profiles and
 
 ## Public Interface
 
-Other code MUST import this module only through its `index.ts` (see the system doc).
+Other code MUST import this module only through its `index.ts` (see the system doc). Everything `index.ts` exports is listed in the two function tables below.
 
 ### Functions other modules can call
 
@@ -60,6 +60,15 @@ Other code MUST import this module only through its `index.ts` (see the system d
 | `recordAuditEvent(actor, action, target)` | Appends an entry to the audit log | Later modules |
 | `onUserDeleted(handler)` | Registers a clean-up to run when a user is permanently deleted | Later modules |
 
+### Functions the pages call
+
+These are exported for this app's own pages and endpoints. Other modules don't call them.
+
+| Function | What it does | Used by |
+|---|---|---|
+| `signUp(input, context)` | Checks the input, registers the account and sends the verification email. Gives the same answer whether or not the email is already registered. | `/signup` |
+| `checkUsernameAvailable(username)` | Says whether a username can be registered, and why not if it can't | `/api/username-available` |
+
 ### Pages and endpoints
 
 Pages use form actions, following the shared conventions in the system doc.
@@ -67,13 +76,13 @@ Pages use form actions, following the shared conventions in the system doc.
 | Path | What it does | Who can call it |
 |---|---|---|
 | `/signup` | Registers a new account | Anyone |
-| `/verify-email` | Confirms the email from the link; resends the link | Anyone |
-| `/login` | Signs in with email and password, Google, Facebook or a passkey | Anyone |
+| `/verify-email` | Shows "check your inbox" after sign-up; confirms the email from the link; resends the link; handles expired and invalid links | Anyone |
+| `/login` | Signs in: email first, then the password on a second step; or Google, Facebook or a passkey | Anyone |
 | `/login/two-step` | Takes the second-step code or a backup code | Anyone part-way through login |
 | `/logout` | Signs out of this session | Signed-in users |
 | `/forgot-password` | Requests a reset link | Anyone |
 | `/reset-password` | Sets a new password from the link | Anyone |
-| `/welcome` | Completes the profile after the first Google or Facebook sign-in | Signed-in users |
+| `/welcome` | After the first Google or Facebook sign-in: accepts the terms and confirms 18+, and optionally picks a username | Signed-in users |
 | `/settings/profile` | Name, username, avatar, language, time zone | Signed-in users |
 | `/settings/account` | Change email, change password, delete account | Signed-in users |
 | `/settings/security` | Passkeys, second step, backup codes, active sessions, activity log, sign out everywhere | Signed-in users |
@@ -167,7 +176,7 @@ sequenceDiagram
     participant ID as "Identity module"
     participant DB as "Database"
     participant Mail as "Email service"
-    User->>Page: Fills in email, password, username, ticks terms and 18+
+    User->>Page: Fills in name, email, password, optional username, ticks the terms and 18+ box
     Page->>ID: Form action sends the details
     ID->>ID: Validates input and checks rate limits
     ID->>DB: Saves user, password hash, consent records, audit entry
@@ -189,8 +198,8 @@ sequenceDiagram
     participant Page as "Login page"
     participant ID as "Identity module"
     participant DB as "Database"
-    User->>Page: Enters email and password
-    Page->>ID: Form action sends the details
+    User->>Page: Enters email, then password on the next step
+    Page->>ID: Form action sends both
     ID->>DB: Checks lockout, looks up the user, checks the password
     alt Wrong details or locked out
         ID->>DB: Counts the failed attempt, saves audit entry
@@ -231,17 +240,20 @@ sequenceDiagram
 
 ## Security and Access
 
-- Passwords are at least 10 characters, with no other composition rules. The strength meter is guidance only.
+- Passwords are at least 8 characters and contain an upper case letter, a lower case letter, a number and a special character. The page shows each rule as it is met.
+- Login asks for the email first and the password on a second step. The first step gives the same response for every email, so it never reveals whether an account exists.
 - After 5 failed logins for an email, each further attempt must wait; the wait doubles from 1 minute up to 15 minutes.
 - Sign-up, login, forgot password and the username check are rate limited per IP address and per email.
 - Email verification links last 24 hours. Password reset links last 1 hour and work once.
+- The verification email can be resent at most 3 times per hour.
 - Forgot password always shows the same success message.
 - Changing a password requires the current one and ends the user's other sessions.
 - An email change takes effect only after the new address is verified; the old address is notified.
 - Signing in with Google or Facebook using an email that already has an account does not merge them automatically. The person signs in to the existing account first and links the provider from settings.
 - A passkey signs a person in on its own, with no password and no second step.
 - Trusted devices skip the second step for 30 days.
-- Usernames: 3 to 30 characters (letters, numbers, hyphens, underscores), compared without regard to case, checked against a reserved list kept in code. One change every 30 days; the old name is held for 30 days. A deleted account's name is held permanently.
+- A username is optional. When set: 3 to 30 characters (letters, numbers, dots, hyphens, underscores), starting and ending with a letter or number, compared without regard to case, checked against a reserved list kept in code. One change every 30 days; the old name is held for 30 days. A deleted account's name is held permanently.
+- Sign-up has one checkbox covering the terms, the privacy policy and being 18 or older. Each is still saved as its own consent record.
 - A suspended user can't sign in and their sessions are ended.
 - Audit log entries are kept for 12 months.
 

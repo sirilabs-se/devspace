@@ -1,5 +1,11 @@
 export { default as AppShell } from './AppShell.svelte';
+export { default as Button } from './Button.svelte';
 export { default as Card } from './Card.svelte';
+export { default as CheckboxField } from './CheckboxField.svelte';
+export { default as FormLayout } from './FormLayout.svelte';
 export { default as Heading } from './Heading.svelte';
+export { default as Notice } from './Notice.svelte';
 export { default as Stack } from './Stack.svelte';
+export { default as StrengthMeter } from './StrengthMeter.svelte';
 export { default as Text } from './Text.svelte';
+export { default as TextField } from './TextField.svelte';

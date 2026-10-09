@@ -13,6 +13,7 @@ The design docs are the source of truth. Read the ones that apply before changin
 | `docs/architecture/database/schema.dbml` | Changing the database |
 | `docs/architecture/decisions/README.md` | Before changing anything a decision covers |
 | `docs/build-plan.md` | Picking up or finishing a task |
+| `docs/design/event-platform-prototype_v05.html` | Building or changing a screen: the source for look, layout, states and wording. It is large; read only the part for your screen. The design docs win on scope and rules. |
 
 ## Tech stack
 

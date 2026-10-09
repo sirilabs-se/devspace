@@ -1,3 +1,16 @@
 // Public interface of the Identity module: the only file other code may import.
-// Functions are added by the build plan tasks that need them.
-export {};
+export { recordAuditEvent, type AuditContext } from './audit';
+export type { RequestContext } from './request-context';
+export {
+	signUp,
+	type SignUpErrorCode,
+	type SignUpErrors,
+	type SignUpField,
+	type SignUpResult
+} from './sign-up';
+export type { UserId } from './user-id';
+export {
+	checkUsernameAvailable,
+	type UsernameAvailability,
+	type UsernameProblem
+} from './username';
