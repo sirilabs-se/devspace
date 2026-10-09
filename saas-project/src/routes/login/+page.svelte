@@ -53,7 +53,10 @@
 				For your security we’ve paused this action. You can try again in
 				<Countdown seconds={form?.retryAfterSeconds ?? 0} />. Nothing was changed.
 			</Alert>
-			<Button href="/login" variant="outline" fullWidth>Back to log in</Button>
+			<Stack gap="medium">
+				<Button href="/forgot-password" variant="outline" fullWidth>Reset password instead</Button>
+				<Button href="/login" variant="ghost" fullWidth>Back to log in</Button>
+			</Stack>
 		</Stack>
 	{:else if step === 'unverified'}
 		<StatusIcon icon="mail" variant="pending" />
@@ -101,6 +104,7 @@
 						bind:value={password}
 					/>
 					<CheckboxField name="rememberMe">Remember me</CheckboxField>
+					<Text variant="muted"><TextLink href="/forgot-password">Forgot password?</TextLink></Text>
 				</Stack>
 
 				<Button type="submit" size="large" fullWidth loading={submitting}>

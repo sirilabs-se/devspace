@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { passwordChecklist } from '$lib/shared/password-checklist';
+	import { describePassword, PASSWORD_RULE_MESSAGE } from '$lib/shared/password-checklist';
 	import {
 		Alert,
 		AuthSplit,
@@ -24,8 +24,7 @@
 		name_required: 'Enter your full name.',
 		name_too_long: 'Use at most 100 characters.',
 		email_invalid: 'Enter a valid email address, like name@example.com.',
-		password_too_weak:
-			'Use 8+ characters with upper and lowercase letters, a number and a special character.',
+		password_too_weak: PASSWORD_RULE_MESSAGE,
 		password_too_long: 'Use at most 128 characters.',
 		username_invalid: usernameRule,
 		username_reserved: "That username isn't available.",
@@ -38,14 +37,6 @@
 		reserved: errorMessages.username_reserved,
 		taken: errorMessages.username_taken
 	};
-	const passwordRuleLabels = {
-		length: '8+ characters',
-		case: 'Upper & lowercase',
-		number: 'A number',
-		special: 'A special character'
-	};
-	const passwordSummaries = ['Enter a password', 'Weak', 'Fair', 'Good', 'Strong'];
-
 	const message = (code: string | undefined) => (code ? errorMessages[code] : undefined);
 
 	// svelte-ignore state_referenced_locally
@@ -60,17 +51,7 @@
 	let usernameStatus = $state<'available' | 'invalid' | 'reserved' | 'taken' | undefined>();
 	let checkedUsername = $state('');
 
-	const passwordRules = $derived(
-		passwordChecklist(password).map((check) => ({
-			label: passwordRuleLabels[check.id],
-			met: check.met
-		}))
-	);
-	const passwordSummary = $derived(
-		passwordSummaries[
-			password === '' ? 0 : Math.max(1, passwordRules.filter((rule) => rule.met).length)
-		]
-	);
+	const passwordGuide = $derived(describePassword(password));
 
 	const errorCount = $derived(Object.keys(form?.errors ?? {}).length);
 
@@ -206,7 +187,7 @@
 					error={message(form?.errors?.password)}
 				>
 					{#snippet below()}
-						<PasswordChecklist summary={passwordSummary} rules={passwordRules} />
+						<PasswordChecklist summary={passwordGuide.summary} rules={passwordGuide.rules} />
 					{/snippet}
 				</TextField>
 			</Stack>

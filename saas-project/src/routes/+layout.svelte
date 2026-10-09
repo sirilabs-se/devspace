@@ -7,7 +7,9 @@
 
 	// Sign-up, login and email verification show only the logo in their header, as in the UX prototype.
 	const plainHeader = $derived(
-		page.route.id === '/signup' || page.route.id === '/login' || page.route.id === '/verify-email'
+		['/signup', '/login', '/verify-email', '/forgot-password', '/reset-password'].includes(
+			page.route.id ?? ''
+		)
 	);
 </script>
 

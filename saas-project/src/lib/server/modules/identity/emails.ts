@@ -32,3 +32,31 @@ export async function sendExistingAccountEmail(to: string, origin: string): Prom
 		].join('\n')
 	});
 }
+
+export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
+	await sendEmail({
+		to,
+		subject: `Reset your ${APP_NAME} password`,
+		text: [
+			`Someone asked to reset the password for your ${APP_NAME} account.`,
+			'',
+			'Open this link to choose a new password. It works once, for 1 hour.',
+			resetUrl,
+			'',
+			"If it wasn't you, you can ignore this email. Your password is unchanged."
+		].join('\n')
+	});
+}
+
+export async function sendPasswordChangedEmail(to: string, origin: string): Promise<void> {
+	await sendEmail({
+		to,
+		subject: `Your ${APP_NAME} password was changed`,
+		text: [
+			`The password for your ${APP_NAME} account was just changed, and every device was signed out.`,
+			'',
+			`If that was you, there is nothing more to do. Log in here: ${origin}/login`,
+			`If it wasn't you, reset your password straight away: ${origin}/forgot-password`
+		].join('\n')
+	});
+}

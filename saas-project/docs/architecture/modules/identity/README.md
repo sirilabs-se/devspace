@@ -72,6 +72,9 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `limitRequests(name, subject)` | Counts one request against a named limit and says whether it is allowed | `/api/username-available` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
+| `requestPasswordReset(email, context)` | Emails a reset link if the address has an account; same answer either way | `/forgot-password` |
+| `resetPasswordLinkState(token)` | Says whether a reset link is usable, expired or not valid | `/reset-password` |
+| `resetPassword(input, context)` | Sets a new password from a reset link and ends every session | `/reset-password` |
 | `verifyEmail(token, cookies, context)` | Confirms an email from its link and signs the person in; says if the link is expired or can't be used | `/verify-email` |
 | `resendVerificationEmail(email, context)` | Sends the verification email again, at most 3 times per hour; same answer whether or not the address is registered | `/verify-email` |
 
@@ -254,7 +257,8 @@ sequenceDiagram
 - Requests are limited per network address (IP): 10 sign-ups an hour, 30 login attempts per 15 minutes, 60 username checks a minute. Sign-up is also limited to 5 an hour per email. Forgot password is limited in its own task.
 - Email verification links last 24 hours. Password reset links last 1 hour and work once.
 - The verification email can be resent at most 3 times per hour.
-- Forgot password always shows the same success message.
+- Forgot password always shows the same success message. It is limited to 3 requests an hour per email and 10 per network address.
+- A password reset ends every session of the account, clears any login lockout and sends a confirmation email.
 - Changing a password requires the current one and ends the user's other sessions.
 - An email change takes effect only after the new address is verified; the old address is notified.
 - Signing in with Google or Facebook using an email that already has an account does not merge them automatically. The person signs in to the existing account first and links the provider from settings.

@@ -73,6 +73,17 @@ function signedVerificationToken(email: string, secondsUntilExpiry: number): str
 	return `${body}.${signature}`;
 }
 
+/** The token from the most recent password reset email sent to this address. */
+export function resetTokenFor(email: string): string {
+	const sent = vi
+		.mocked(sendEmail)
+		.mock.calls.map(([message]) => message)
+		.filter((message) => message.to === email && message.text.includes('/reset-password?token='));
+	const match = sent.at(-1)?.text.match(/reset-password\?token=(\S+)/);
+	if (!match) throw new Error(`No password reset email was sent to ${email}`);
+	return decodeURIComponent(match[1]);
+}
+
 /** A valid verification link token for this address, signed the way the app signs them. */
 export function validVerificationTokenFor(email: string): string {
 	return signedVerificationToken(email, 3600);

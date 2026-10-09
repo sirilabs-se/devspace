@@ -5,7 +5,9 @@ const LIMITS = {
 	'signup-by-ip': { limit: 10, windowSeconds: 60 * 60 },
 	'signup-by-email': { limit: 5, windowSeconds: 60 * 60 },
 	'login-by-ip': { limit: 30, windowSeconds: 15 * 60 },
-	'username-check-by-ip': { limit: 60, windowSeconds: 60 }
+	'username-check-by-ip': { limit: 60, windowSeconds: 60 },
+	'password-reset-by-ip': { limit: 10, windowSeconds: 60 * 60 },
+	'password-reset-by-email': { limit: 3, windowSeconds: 60 * 60 }
 } as const;
 
 export type RequestLimit = keyof typeof LIMITS;

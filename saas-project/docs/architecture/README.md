@@ -106,7 +106,7 @@ In the prototype but not being built: organizations, members and invitations, en
 | A deleted account's username is never released for reuse | Confirmed |
 | Sessions last 1 day without "remember me" and 30 days with it, and never more than 90 days in all. Built with these values in task 4; not yet confirmed by the owner | Open |
 | After an email change, the old address can undo it for 7 days | Open |
-| A successful password reset also clears a login lockout | Open |
+| A successful password reset also clears a login lockout. Built this way in task 6; not yet confirmed by the owner | Open |
 
 ## System Context
 

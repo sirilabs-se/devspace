@@ -42,7 +42,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 3 | Verify email and start a session | Identity | 2b | Done |
 | 4 | Log in and log out | Identity | 3 | Done |
 | 5 | Rate limits and login lockout | Identity | 4 | Done |
-| 6 | Forgot and reset password | Identity | 4 | To do |
+| 6 | Forgot and reset password | Identity | 4 | Done |
 | 7 | Change password and sign out everywhere | Identity | 4 | To do |
 | 8 | Profile basics | Identity | 3 | To do |
 | 9 | Change username | Identity | 8 | To do |
@@ -395,12 +395,21 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 
 **Done when:**
 
-- [ ] A registered person receives a link, sets a new password and can sign in with it
-- [ ] An unregistered email gets the same on-screen message and no email
-- [ ] A used or expired link shows a clear error
-- [ ] Tests cover the above
+- [x] A registered person receives a link, sets a new password and can sign in with it
+- [x] An unregistered email gets the same on-screen message and no email
+- [x] A used or expired link shows a clear error
+- [x] Tests cover the above
 
-**Notes:** Whether a reset clears a lockout is an open question; settle it before starting.
+**Notes:**
+
+- A reset clears a login lockout, using the suggested default. The owner has not confirmed it.
+- Reset links last 1 hour, as agreed, not the prototype's 30 minutes. The page asks for the new password twice, as in the prototype.
+- The prototype has three "dead link" screens: not valid, expired and already used. The app can tell an expired link from the rest, but not a used link from a mistyped one, because a used link is deleted. So there are two screens: "expired", and "can't be used" for both other cases.
+- Forgot password is limited to 3 requests an hour per email and 10 per network address. The numbers are mine.
+- After a reset, a "your password was changed" email is sent, as the prototype's success screen promises.
+- The password checklist wording moved into `src/lib/shared/password-checklist.ts`, so sign-up and reset show the same thing.
+- Not built from the prototype: the breached-password warning (out of scope), the "This wasn't me" button on the used-link screen (the recovery hub is out of scope), and the countdown on the link's remaining time.
+- The browser tests cover the request screen and the dead-link screen. Using a real link is covered by the logic tests, because browser tests can't read the app's email.
 
 ### 7. Change password and sign out everywhere
 

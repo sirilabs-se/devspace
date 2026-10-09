@@ -3,12 +3,15 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { username } from 'better-auth/plugins';
 import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
-import { sendVerificationEmail } from './emails';
+import { sendPasswordResetEmail, sendVerificationEmail } from './emails';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from './password';
 import { accounts, sessions, users, verifications } from './schema';
 import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH, usernameFormatProblem } from './username';
 
 const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+
+/** Password reset links work for one hour. */
+export const RESET_LINK_SECONDS = 60 * 60;
 
 /** With "remember me", a session lasts this long after it was last used. */
 export const REMEMBERED_SESSION_SECONDS = 30 * ONE_DAY_IN_SECONDS;
@@ -37,7 +40,13 @@ function createAuth() {
 			minPasswordLength: PASSWORD_MIN_LENGTH,
 			maxPasswordLength: PASSWORD_MAX_LENGTH,
 			requireEmailVerification: true,
-			autoSignIn: false
+			autoSignIn: false,
+			resetPasswordTokenExpiresIn: RESET_LINK_SECONDS,
+			revokeSessionsOnPasswordReset: true,
+			sendResetPassword: async ({ user, token }) => {
+				const url = `${appOrigin()}/reset-password?token=${encodeURIComponent(token)}`;
+				await sendPasswordResetEmail(user.email, url);
+			}
 		},
 		// Without "remember me" the library ends the session after one day, and the
 		// cookie goes when the browser closes.

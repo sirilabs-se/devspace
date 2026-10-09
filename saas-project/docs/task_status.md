@@ -121,3 +121,40 @@ One section per build-plan task, added when the task is finished. Each says what
 
 - If you would prefer the prototype's "Sign-in paused" screen for a locked-out email too, it is safe to show, because it would appear for every email, registered or not. It is a small change; say the word.
 - In production, the app must be told which header carries the visitor's real address (task 27).
+
+## Task 6: Forgot and reset password
+
+**Status:** Done. `npm run verify` passes (147 logic tests, 12 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/password-reset.ts`: request a link, check a link, set the new password.
+- `identity/emails.ts`: the reset email and the "password was changed" email.
+- `identity/auth.ts` and `request-limits.ts`: 1-hour links, sessions ended on reset, and the request limits.
+- `src/routes/forgot-password/` and `src/routes/reset-password/`: the two pages.
+- `src/routes/login/+page.svelte`: "Forgot password?" on the password step and "Reset password instead" on the paused screen.
+- `src/lib/shared/password-checklist.ts`: the checklist wording, now shared with sign-up.
+- Tests beside each, plus `tests/e2e/password-reset.test.ts`.
+
+**Try it**
+
+1. On the login page, enter your email, then press "Forgot password?".
+2. Enter your email and press "Send reset link". You see "Check your email".
+3. Open http://localhost:8025, open the email and click the link.
+4. Type a new password twice and press "Update password". You see "Password updated".
+5. Log in with the new password. The old one no longer works, and any other browser you were signed in on is signed out.
+6. Click the link in the email again: "This reset link can't be used".
+7. Try step 2 with an address that has no account: the same screen, and no email arrives.
+
+**Decisions**
+
+- A reset clears a login lockout (the suggested default). Please confirm.
+- Two dead-link screens, not the prototype's three, because a used link can't be told apart from a mistyped one.
+- Limits of 3 requests an hour per email and 10 per network address.
+- A confirmation email is sent after a reset.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- Nothing in this task. The breached-password warning and the "This wasn't me" recovery path in the prototype are out of scope.
