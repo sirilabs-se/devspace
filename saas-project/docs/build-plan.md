@@ -44,7 +44,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 5 | Rate limits and login lockout | Identity | 4 | Done |
 | 6 | Forgot and reset password | Identity | 4 | Done |
 | 7 | Change password and sign out everywhere | Identity | 4 | Done |
-| 8 | Profile basics | Identity | 3 | To do |
+| 8 | Profile basics | Identity | 3 | Done |
 | 9 | Change username | Identity | 8 | To do |
 | 10 | Avatar upload | Identity | 8 | To do |
 | 11 | Google and Facebook sign-in | Identity | 4 | To do |
@@ -463,11 +463,18 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 
 **Done when:**
 
-- [ ] A person changes their name, language and time zone, and sees them after reloading
-- [ ] `getPublicProfiles` returns only name, username and avatar
-- [ ] Tests cover the above, and a test proves one user can't change another user's profile
+- [x] A person changes their name, language and time zone, and sees them after reloading
+- [x] `getPublicProfiles` returns only name, username and avatar
+- [x] Tests cover the above, and a test proves one user can't change another user's profile
 
-**Notes:** Only English exists; the language setting is stored but changes nothing yet.
+**Notes:**
+
+- The language list offers English and Swedish. Only English exists, so Swedish is labelled "not available yet"; choosing it is remembered but changes nothing.
+- Time zones come from the server's own list of standard zone names, with UTC first. New accounts start on UTC.
+- The prototype's profile screen also has City, Bio and a public preview card. They are not in the requirements, so they were not built.
+- The prototype puts language and time zone on the account page. They are on the profile page here, as the design doc's page list says.
+- `getContactDetails` also returns the name and time zone, which a notification needs to greet someone and state a time. The Identity doc was updated.
+- Profile is now the first item in the settings navigation, and `/settings` leads to it.
 
 ### 9. Change username
 

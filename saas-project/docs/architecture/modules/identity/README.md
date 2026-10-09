@@ -55,7 +55,7 @@ Other code MUST import this module only through its `index.ts` (see the system d
 | `requireUser(locals)` | Returns the signed-in user or stops the request | All pages and modules |
 | `requireRole(user, role)` | Stops the request if the user lacks the role | Admin pages, later modules |
 | `getPublicProfiles(userIds)` | Returns name, username and avatar only; safe to show to anyone | Later modules |
-| `getContactDetails(userId)` | Returns email and language, for sending notifications | Later modules |
+| `getContactDetails(userId)` | Returns email, name, language and time zone, for sending notifications | Later modules |
 | `getNotificationPreferences(userId)` | Returns what the user has opted into | Later modules |
 | `recordAuditEvent(actor, action, target)` | Appends an entry to the audit log | Later modules |
 | `onUserDeleted(handler)` | Registers a clean-up to run when a user is permanently deleted | Later modules |
@@ -72,6 +72,8 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `limitRequests(name, subject)` | Counts one request against a named limit and says whether it is allowed | `/api/username-available` |
 | `changePassword(user, headers, cookies, input, context)` | Changes the acting user's password after checking the current one; ends their other sessions | `/settings/account` |
 | `signOutEverywhere(user, headers, cookies, context)` | Ends every session of the acting user | `/settings/security` |
+| `getProfile(userId)` | Reads the acting user's own profile | `/settings/profile` |
+| `updateProfile(userId, input)` | Changes the acting user's own name, language and time zone | `/settings/profile` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
 | `requestPasswordReset(email, context)` | Emails a reset link if the address has an account; same answer either way | `/forgot-password` |

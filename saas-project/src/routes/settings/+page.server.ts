@@ -2,5 +2,5 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
-	redirect(303, '/settings/account');
+	redirect(303, '/settings/profile');
 };

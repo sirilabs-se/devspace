@@ -10,6 +10,19 @@ export {
 	type ResetLinkState,
 	type ResetPasswordResult
 } from './password-reset';
+export {
+	getContactDetails,
+	getProfile,
+	getPublicProfiles,
+	LOCALES,
+	timeZones,
+	updateProfile,
+	type ContactDetails,
+	type Locale,
+	type Profile,
+	type PublicProfile,
+	type UpdateProfileResult
+} from './profile';
 export type { RateLimitResult } from './rate-limit';
 export type { RequestContext } from './request-context';
 export { limitRequests, type RequestLimit } from './request-limits';

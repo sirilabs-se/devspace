@@ -192,3 +192,34 @@ One section per build-plan task, added when the task is finished. Each says what
 **Left for later**
 
 - A way to set a first password for people who only ever signed in with Google or Facebook (noted for tasks 11 and 12).
+
+## Task 8: Profile basics
+
+**Status:** Done. `npm run verify` passes (174 logic tests, 15 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/profile.ts`: `getProfile`, `updateProfile`, `getPublicProfiles`, `getContactDetails`.
+- `src/routes/settings/profile/`: the profile page and its save action.
+- `src/lib/ui/SelectField.svelte`: a drop-down field.
+- `src/routes/settings/+layout.svelte`: "Profile" added to the navigation.
+- Tests beside each, and a browser test in `tests/e2e/settings.test.ts`.
+
+**Try it**
+
+1. Log in and click your name in the header. You land on "Profile".
+2. Change your name, pick "Svenska" and "Europe/Stockholm", and save: "Profile saved".
+3. Reload the page: the values are still there, and the header shows the new name.
+
+**Decisions**
+
+- English and Swedish are offered; Swedish is marked as not available yet.
+- City, Bio and the public preview from the prototype were not built, because they are not in the requirements.
+- Language and time zone are on the profile page, following the design doc, not the prototype.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- Username (task 9) and photo (task 10) join this page next.
+- If you want City and Bio, they need adding to the requirements and the database first.
