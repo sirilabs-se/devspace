@@ -2,6 +2,7 @@ import { fail } from '@sveltejs/kit';
 import {
 	changePassword,
 	listConnections,
+	requestEmailChange,
 	requireUser,
 	setFirstPassword
 } from '$lib/server/modules/identity';
@@ -13,6 +14,31 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
+	changeEmail: async ({ request, locals, getClientAddress }) => {
+		const user = requireUser(locals);
+		const form = await request.formData();
+		const typed = form.get('newEmail');
+		const newEmail = typeof typed === 'string' ? typed.trim() : '';
+
+		const result = await requestEmailChange(
+			user,
+			request.headers,
+			{ newEmail, currentPassword: form.get('emailPassword') ?? undefined },
+			{ ipAddress: getClientAddress(), userAgent: request.headers.get('user-agent') }
+		);
+
+		// The same answer whether or not the new address already has an account.
+		if (result.status === 'sent') return { emailSent: true as const, newEmail };
+		if (result.status === 'rate_limited') {
+			return fail(429, {
+				emailError: 'rate_limited' as const,
+				retryAfterSeconds: result.retryAfterSeconds,
+				newEmail
+			});
+		}
+		return fail(400, { emailError: result.status, newEmail });
+	},
+
 	// For people who have only ever signed in with Google or Facebook.
 	setPassword: async ({ request, locals, getClientAddress }) => {
 		const user = requireUser(locals);

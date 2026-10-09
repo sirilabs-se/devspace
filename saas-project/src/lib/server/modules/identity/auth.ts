@@ -5,7 +5,12 @@ import { username } from 'better-auth/plugins';
 import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
 import { recordAuditEvent } from './audit';
-import { sendPasswordResetEmail, sendVerificationEmail } from './emails';
+import {
+	sendEmailChangeVerificationEmail,
+	sendPasswordResetEmail,
+	sendVerificationEmail
+} from './emails';
+import { linkTokenPayload } from './link-token';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from './password';
 import { accounts, sessions, users, verifications } from './schema';
 import { toUserId } from './user-id';
@@ -77,6 +82,7 @@ function createAuth() {
 			expiresIn: REMEMBERED_SESSION_SECONDS,
 			updateAge: ONE_DAY_IN_SECONDS
 		},
+		user: { changeEmail: { enabled: true } },
 		socialProviders: configuredSocialProviders(),
 		account: {
 			// A provider sign-in is never merged into an existing account just because the
@@ -117,7 +123,12 @@ function createAuth() {
 			expiresIn: ONE_DAY_IN_SECONDS,
 			sendVerificationEmail: async ({ user, token }) => {
 				const url = `${appOrigin()}/verify-email?token=${encodeURIComponent(token)}`;
-				await sendVerificationEmail(user.email, url);
+				// The same kind of link confirms a new sign-up and a change of email.
+				if (linkTokenPayload(token)?.updateTo) {
+					await sendEmailChangeVerificationEmail(user.email, url);
+				} else {
+					await sendVerificationEmail(user.email, url);
+				}
 			}
 		},
 		plugins: [

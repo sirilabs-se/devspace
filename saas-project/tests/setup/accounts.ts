@@ -73,6 +73,19 @@ function signedVerificationToken(email: string, secondsUntilExpiry: number): str
 	return `${body}.${signature}`;
 }
 
+/** The token from the most recent "your email was changed" notice sent to this address. */
+export function undoTokenFor(email: string): string {
+	const sent = vi
+		.mocked(sendEmail)
+		.mock.calls.map(([message]) => message)
+		.filter(
+			(message) => message.to === email && message.text.includes('/undo-email-change?token=')
+		);
+	const match = sent.at(-1)?.text.match(/undo-email-change\?token=(\S+)/);
+	if (!match) throw new Error(`No change-of-email notice was sent to ${email}`);
+	return match[1];
+}
+
 /** The token from the most recent password reset email sent to this address. */
 export function resetTokenFor(email: string): string {
 	const sent = vi

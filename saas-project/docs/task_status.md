@@ -369,3 +369,39 @@ Without credentials, nothing new is visible: the buttons only appear for a provi
 
 - Trying it with real credentials, then ticking the first check and setting the task to Done.
 - Counting passkeys as a way to sign in (task 17).
+
+## Task 13: Change email
+
+**Status:** Done. `npm run verify` passes (254 logic tests, 19 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/change-email.ts`: request a change, tell the old address, undo.
+- `identity/verify-email.ts`: recognises a link that confirms a change of email.
+- `identity/emails.ts`: three new emails (confirm new address, notice to old address, change undone).
+- `identity/link-token.ts`: reads what a link token says.
+- `src/routes/settings/account/`: an Email card.
+- `src/routes/undo-email-change/`: the undo page.
+- `src/lib/server/public-paths.ts`: the undo page works without a login.
+- Tests beside each.
+
+**Try it**
+
+1. Open "Account settings". In the Email card, enter a new address and your password, and press "Change email".
+2. Your email has not changed yet. Open http://localhost:8025 and click the link in the email sent to the new address.
+3. You see "Email verified" with the new address. Log out and log in with the new address; the old one no longer works.
+4. In the inbox, open the notice sent to the old address and click its undo link.
+5. Press "Undo the change": the old address works again and every device is signed out.
+
+**Decisions**
+
+- **A new public page, `/undo-email-change`, which the design did not list.** The undo can't work without it. Please confirm it.
+- The undo period is 7 days (the suggested default). Please confirm.
+- Starting a change needs the current password.
+- Undoing signs every device out.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- Nothing in this task.

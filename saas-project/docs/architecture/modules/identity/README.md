@@ -86,6 +86,8 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `startLinkingProvider(user, provider, headers, cookies)` | Starts connecting Google or Facebook to the acting user's account | `/settings/connections` |
 | `unlinkProvider(user, provider, headers, context)` | Disconnects a provider, unless it is the last way to sign in | `/settings/connections` |
 | `setFirstPassword(user, headers, input, context)` | Gives a password to someone who has only signed in with a provider | `/settings/account` |
+| `requestEmailChange(user, headers, input, context)` | Starts a change of email; nothing changes until the link sent to the new address is opened | `/settings/account` |
+| `canUndoEmailChange(token)` / `undoEmailChange(token, context)` | Checks and uses the undo link sent to the old address | `/undo-email-change` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
 | `requestPasswordReset(email, context)` | Emails a reset link if the address has an account; same answer either way | `/forgot-password` |
@@ -277,7 +279,8 @@ sequenceDiagram
 - Forgot password always shows the same success message. It is limited to 3 requests an hour per email and 10 per network address.
 - A password reset ends every session of the account, clears any login lockout and sends a confirmation email.
 - Changing a password requires the current one and ends the user's other sessions.
-- An email change takes effect only after the new address is verified; the old address is notified.
+- An email change takes effect only after the link sent to the new address is opened. Someone with a password must give it to start a change. Asking for an address another account has gets the same answer and sends nothing.
+- Once a change takes effect, the old address is told and gets a link that undoes it for 7 days. Undoing restores the old address and ends every session. The link works once, and only a scrambled form of it is stored.
 - Signing in with Google or Facebook using an email that already has an account does not merge them automatically. The person signs in to the existing account first and links the provider from settings.
 - A provider is offered only when its credentials are set. A first provider sign-in creates the account without consents, so the person is held at `/welcome` until they accept the terms and confirm their age.
 - Connecting a provider is always done on purpose by someone already signed in, so the provider account may have a different email from the app account. A provider account that is already connected to another person is refused.

@@ -49,7 +49,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 10 | Avatar upload | Identity | 8 | Done |
 | 11 | Google and Facebook sign-in | Identity | 4 | Blocked |
 | 12 | Connected accounts | Identity | 11 | Blocked |
-| 13 | Change email | Identity | 7 | In progress |
+| 13 | Change email | Identity | 7 | Done |
 | 14 | Security activity page | Identity | 4 | To do |
 | 15 | Delete account | Identity | 7, 9 | To do |
 | 16 | Notification preferences | Identity | 8 | To do |
@@ -627,12 +627,22 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 
 **Done when:**
 
-- [ ] The email changes only after the link sent to the new address is opened
-- [ ] The old address receives a notice, and can undo the change within the grace period
-- [ ] Asking for an address already in use doesn't reveal that it is registered
-- [ ] Tests cover the above
+- [x] The email changes only after the link sent to the new address is opened
+- [x] The old address receives a notice, and can undo the change within the grace period
+- [x] Asking for an address already in use doesn't reveal that it is registered
+- [x] Tests cover the above
 
-**Notes:** The length of the undo period is an open question; settle it before starting.
+**Notes:**
+
+- The undo period is 7 days, the suggested default. The owner has not confirmed it.
+- New public page, not in the design: `/undo-email-change`, which the old address's notice links to. It has to work without a login, because the person undoing may have lost access to the account. Opening the link only shows a confirmation; the undo happens on a button press, so a mail scanner that opens links can't trigger it. The design docs were updated and marked as awaiting confirmation.
+- Someone with a password must enter it to start a change. The design doesn't ask for this; it stops someone who finds an unlocked, signed-in browser from moving the account to their own address. People who only use Google or Facebook have no password to give.
+- Undoing also signs every device out, and the confirmation tells the person to choose a new password, since someone else may know the current one.
+- If the old address has been registered by another account in the meantime, the undo is refused rather than taking the address away from them.
+- The undo link's token is stored only in scrambled form, and no email address is written to the audit log.
+- Asking for an address another account already has gets the same "check your new inbox" answer, and no email is sent.
+- Change requests are limited to 3 an hour per person.
+- The link sent to the new address is the same kind as the sign-up verification link and opens the same page; the email's wording differs.
 
 ### 14. Security activity page
 

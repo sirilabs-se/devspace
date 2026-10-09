@@ -9,6 +9,7 @@ const PUBLIC_PATHS = new Set([
 	'/login/two-step',
 	'/forgot-password',
 	'/reset-password',
+	'/undo-email-change',
 	'/api/username-available',
 	'/api/jobs/daily'
 ]);

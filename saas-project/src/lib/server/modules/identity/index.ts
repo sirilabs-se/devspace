@@ -7,6 +7,14 @@ export {
 	setAvatar,
 	type SetAvatarResult
 } from './avatar';
+export {
+	canUndoEmailChange,
+	EMAIL_CHANGE_UNDO_DAYS,
+	requestEmailChange,
+	undoEmailChange,
+	type RequestEmailChangeResult,
+	type UndoEmailChangeResult
+} from './change-email';
 export { changePassword, signOutEverywhere, type ChangePasswordResult } from './change-password';
 export {
 	listConnections,

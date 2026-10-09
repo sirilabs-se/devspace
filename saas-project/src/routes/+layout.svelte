@@ -6,16 +6,16 @@
 	let { data, children } = $props();
 
 	// Sign-up, login and email verification show only the logo in their header, as in the UX prototype.
-	const plainHeader = $derived(
-		[
-			'/signup',
-			'/login',
-			'/verify-email',
-			'/forgot-password',
-			'/reset-password',
-			'/welcome'
-		].includes(page.route.id ?? '')
-	);
+	const plainRoutes = [
+		'/signup',
+		'/login',
+		'/verify-email',
+		'/forgot-password',
+		'/reset-password',
+		'/welcome',
+		'/undo-email-change'
+	];
+	const plainHeader = $derived(plainRoutes.includes(page.route.id ?? ''));
 </script>
 
 <AppShell appName="SaaS">

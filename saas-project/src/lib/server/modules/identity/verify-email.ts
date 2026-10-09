@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { db } from '$lib/server/db';
 import { recordAuditEvent } from './audit';
 import { getAuth } from './auth';
+import { emailChanged } from './change-email';
+import { linkTokenPayload } from './link-token';
 import { consumeRateLimit, rateLimitKey } from './rate-limit';
 import type { RequestContext } from './request-context';
 import { users } from './schema';
@@ -20,16 +22,6 @@ const ONE_HOUR_IN_SECONDS = 60 * 60;
  */
 export type VerifyEmailResult =
 	{ status: 'verified' } | { status: 'expired' } | { status: 'invalid' };
-
-/** Reads the email out of a link token. Only called after the library has checked the token. */
-function emailFromToken(token: string): string | null {
-	try {
-		const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'));
-		return typeof payload.email === 'string' ? payload.email : null;
-	} catch {
-		return null;
-	}
-}
 
 /** Confirms an email address from the link in the verification email, and signs the person in. */
 export async function verifyEmail(
@@ -54,10 +46,18 @@ export async function verifyEmail(
 	// A link for an address that is already verified signs nobody in: links work once.
 	if (!applySessionCookies(responseHeaders, cookies)) return { status: 'invalid' };
 
-	const email = emailFromToken(token);
-	if (email) {
-		const [user] = await db.select({ id: users.id }).from(users).where(eq(users.email, email));
-		if (user) {
+	// The library has checked the token by now, so what it says can be relied on.
+	const payload = linkTokenPayload(token);
+	const currentEmail = payload?.updateTo ?? payload?.email;
+	if (currentEmail) {
+		const [user] = await db
+			.select({ id: users.id })
+			.from(users)
+			.where(eq(users.email, currentEmail));
+		if (user && payload?.updateTo && payload.email) {
+			// This link confirmed a change of email, which has now taken effect.
+			await emailChanged(toUserId(user.id), payload.email, context);
+		} else if (user) {
 			await recordAuditEvent(toUserId(user.id), 'email_verified', toUserId(user.id), context);
 		}
 	}

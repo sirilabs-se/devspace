@@ -60,3 +60,52 @@ export async function sendPasswordChangedEmail(to: string, origin: string): Prom
 		].join('\n')
 	});
 }
+
+export async function sendEmailChangeVerificationEmail(
+	to: string,
+	verifyUrl: string
+): Promise<void> {
+	await sendEmail({
+		to,
+		subject: `Confirm your new email for ${APP_NAME}`,
+		text: [
+			`Someone asked to use this address for their ${APP_NAME} account.`,
+			'',
+			'Open this link to confirm. It works for 24 hours. Until then, nothing changes.',
+			verifyUrl,
+			'',
+			"If it wasn't you, you can ignore this email."
+		].join('\n')
+	});
+}
+
+/** Sent to the old address once a change of email has taken effect. */
+export async function sendEmailChangedNotice(
+	to: string,
+	undoUrl: string,
+	days: number
+): Promise<void> {
+	await sendEmail({
+		to,
+		subject: `Your ${APP_NAME} email address was changed`,
+		text: [
+			`The email address for your ${APP_NAME} account was just changed, so this address no longer signs in.`,
+			'',
+			'If that was you, there is nothing more to do.',
+			`If it wasn't you, open this link within ${days} days to undo the change and sign every device out:`,
+			undoUrl
+		].join('\n')
+	});
+}
+
+export async function sendEmailChangeUndoneEmail(to: string, origin: string): Promise<void> {
+	await sendEmail({
+		to,
+		subject: `Your ${APP_NAME} email address was restored`,
+		text: [
+			`The change of email on your ${APP_NAME} account was undone. This address signs in again, and every device was signed out.`,
+			'',
+			`Someone else may know your password. Choose a new one now: ${origin}/forgot-password`
+		].join('\n')
+	});
+}
