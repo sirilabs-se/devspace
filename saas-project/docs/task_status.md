@@ -158,3 +158,37 @@ One section per build-plan task, added when the task is finished. Each says what
 **Left for later**
 
 - Nothing in this task. The breached-password warning and the "This wasn't me" recovery path in the prototype are out of scope.
+
+## Task 7: Change password and sign out everywhere
+
+**Status:** Done. `npm run verify` passes (161 logic tests, 14 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/change-password.ts`: `changePassword` and `signOutEverywhere`.
+- `identity/session.ts`: a check that a session belongs to the acting user.
+- `src/routes/settings/`: the settings layout with side navigation, `/settings/account` (change password) and `/settings/security` (sign out everywhere). `/settings` leads to the account page.
+- `src/lib/ui/SettingsLayout.svelte` and `PageHeader.svelte`: new components.
+- `src/routes/+layout.svelte`: the name in the header links to settings.
+- Tests beside each, plus `tests/e2e/settings.test.ts`.
+
+**Try it**
+
+1. Log in, then click your name in the header.
+2. On "Account settings", enter a wrong current password: "That's not your current password."
+3. Enter the right one and a new password twice, and save: "Password updated".
+4. If you were also logged in in another browser, reload it: it has been signed out. This browser is still signed in.
+5. Open "Security" and press "Sign out everywhere": you land on the login page, and every browser is signed out.
+
+**Decisions**
+
+- No opt-out switch for signing out other devices on a password change.
+- Change password stays on the account page for now.
+- Five wrong guesses at the current password pause the form for up to 15 minutes.
+- Functions that act through the session refuse if the session and the acting user differ.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- A way to set a first password for people who only ever signed in with Google or Facebook (noted for tasks 11 and 12).

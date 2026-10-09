@@ -70,6 +70,8 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `checkUsernameAvailable(username)` | Says whether a username can be registered, and why not if it can't | `/api/username-available` |
 | `getSessionUser(headers, cookies)` | Finds who is signed in from the session cookie; the only source of the acting user | `hooks.server.ts` |
 | `limitRequests(name, subject)` | Counts one request against a named limit and says whether it is allowed | `/api/username-available` |
+| `changePassword(user, headers, cookies, input, context)` | Changes the acting user's password after checking the current one; ends their other sessions | `/settings/account` |
+| `signOutEverywhere(user, headers, cookies, context)` | Ends every session of the acting user | `/settings/security` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
 | `requestPasswordReset(email, context)` | Emails a reset link if the address has an account; same answer either way | `/forgot-password` |

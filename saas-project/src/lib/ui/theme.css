@@ -116,6 +116,12 @@
 	/* Sizes */
 	--width-page: 72.5rem;
 	--width-page-narrow: 47.5rem;
+	--width-settings: 77.5rem;
+	--width-settings-nav: 15.5rem;
+	--width-settings-form: 35rem;
+	--font-size-nav: 0.90625rem;
+	--font-size-nav-heading: 0.75rem;
+	--tracking-nav-heading: 0.02em;
 	--width-auth-form: 27.5rem;
 	--width-centered-card: 31.25rem;
 	--width-centered-card-wide: 40rem;

@@ -43,7 +43,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 4 | Log in and log out | Identity | 3 | Done |
 | 5 | Rate limits and login lockout | Identity | 4 | Done |
 | 6 | Forgot and reset password | Identity | 4 | Done |
-| 7 | Change password and sign out everywhere | Identity | 4 | To do |
+| 7 | Change password and sign out everywhere | Identity | 4 | Done |
 | 8 | Profile basics | Identity | 3 | To do |
 | 9 | Change username | Identity | 8 | To do |
 | 10 | Avatar upload | Identity | 8 | To do |
@@ -429,12 +429,22 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 
 **Done when:**
 
-- [ ] Changing the password with the correct current password works and signs out other browsers
-- [ ] A wrong current password shows a clear error
-- [ ] "Sign out everywhere" ends every session, including this one
-- [ ] Tests cover the above
+- [x] Changing the password with the correct current password works and signs out other browsers
+- [x] A wrong current password shows a clear error
+- [x] "Sign out everywhere" ends every session, including this one
+- [x] Tests cover the above
 
-**Notes:** —
+**Notes:**
+
+- Changing a password always signs out the person's other devices and keeps this one signed in. The prototype has a switch to opt out; this task says other sessions end, so there is no switch.
+- Change password sits on `/settings/account`, as this plan says. The prototype puts it on its own page under Security; it can move when the Security Center is built out.
+- After five wrong guesses at the current password within 15 minutes, the form is paused. The number is mine.
+- A confirmation email is sent after a change.
+- Functions that act through the session now check that the session belongs to the user they were told is acting, and refuse otherwise. This backs up the rule that the acting user comes only from `event.locals`.
+- The settings area has the prototype's side navigation, which becomes a row of pills on a phone. It lists only pages that exist: Account settings and Security. Later tasks add theirs.
+- The person's name in the header is now a link to their settings.
+- The prototype asks for the password again ("step-up") before sensitive changes. That is out of scope; here the form itself asks for the current password.
+- People who sign up with Google or Facebook only (task 11) have no current password, so they can't use this form. Task 11 or 12 needs to cover setting a first password.
 
 ### 8. Profile basics
 

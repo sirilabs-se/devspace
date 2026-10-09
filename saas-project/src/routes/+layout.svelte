@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '$lib/ui/theme.css';
 	import { page } from '$app/state';
-	import { AppShell, Button, Text } from '$lib/ui';
+	import { AppShell, Button } from '$lib/ui';
 
 	let { data, children } = $props();
 
@@ -16,7 +16,7 @@
 <AppShell appName="SaaS">
 	{#snippet actions()}
 		{#if data.user}
-			<Text variant="muted">{data.user.name}</Text>
+			<Button href="/settings/account" variant="ghost" size="small">{data.user.name}</Button>
 			<form method="POST" action="/logout">
 				<Button type="submit" variant="ghost" size="small">Log out</Button>
 			</form>

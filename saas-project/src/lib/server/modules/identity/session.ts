@@ -82,6 +82,18 @@ export async function getSessionUser(
 	};
 }
 
+/**
+ * Stops with an error unless the request's session belongs to this user.
+ * Functions that act through the session call it first, so the user they are
+ * told is acting and the session they act on can never be two different people.
+ */
+export async function assertSessionBelongsTo(user: SessionUser, headers: Headers): Promise<void> {
+	const current = await getAuth().api.getSession({ headers });
+	if (current?.user.id !== user.id) {
+		throw new Error('The session does not belong to the acting user');
+	}
+}
+
 /** Returns the signed-in user, or stops the request if nobody is signed in. */
 export function requireUser(locals: { user: SessionUser | null }): SessionUser {
 	if (!locals.user) error(401, { message: 'Sign in to continue' });

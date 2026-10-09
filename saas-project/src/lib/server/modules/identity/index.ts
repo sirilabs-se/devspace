@@ -1,5 +1,6 @@
 // Public interface of the Identity module: the only file other code may import.
 export { recordAuditEvent, type AuditContext } from './audit';
+export { changePassword, signOutEverywhere, type ChangePasswordResult } from './change-password';
 export { logIn, logOut, type LogInResult } from './log-in';
 export {
 	requestPasswordReset,
