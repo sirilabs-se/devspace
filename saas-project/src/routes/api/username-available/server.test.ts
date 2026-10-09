@@ -5,8 +5,11 @@ import { GET } from './+server';
 
 vi.mock('$lib/server/email', () => ({ sendEmail: vi.fn() }));
 
-function check(query: string) {
-	const event = { url: new URL(`http://localhost:5173/api/username-available${query}`) };
+function check(query: string, ipAddress = '203.0.113.5') {
+	const event = {
+		url: new URL(`http://localhost:5173/api/username-available${query}`),
+		getClientAddress: () => ipAddress
+	};
 	return GET(event as unknown as Parameters<typeof GET>[0]);
 }
 
@@ -46,6 +49,19 @@ describe('GET /api/username-available', () => {
 			available: false,
 			reason: 'invalid'
 		});
+	});
+
+	it('refuses the 61st check in a minute from one address, but not from another', async () => {
+		for (let attempt = 0; attempt < 60; attempt++) {
+			expect((await check('?username=anna')).status).toBe(200);
+		}
+
+		const refused = await check('?username=anna');
+		expect(refused.status).toBe(429);
+		expect(Number(refused.headers.get('retry-after'))).toBeGreaterThan(0);
+		expect(await refused.json()).toEqual({ message: 'Too many checks. Try again shortly.' });
+
+		expect((await check('?username=anna', '198.51.100.7')).status).toBe(200);
 	});
 
 	it('answers 400 when no username is given', async () => {

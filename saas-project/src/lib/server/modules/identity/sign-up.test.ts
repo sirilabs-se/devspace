@@ -205,6 +205,44 @@ describe('signUp', () => {
 		});
 	});
 
+	it('refuses the 11th sign-up in an hour from one network address', async () => {
+		for (let attempt = 0; attempt < 10; attempt++) {
+			const result = await signUp(
+				{ ...valid, email: `person${attempt}@example.com`, username: '' },
+				context
+			);
+			expect(result).toEqual({ ok: true });
+		}
+
+		const refused = await signUp(
+			{ ...valid, email: 'one-more@example.com', username: '' },
+			context
+		);
+
+		expect(refused).toMatchObject({ ok: false, rateLimited: true });
+		expect('retryAfterSeconds' in refused && refused.retryAfterSeconds).toBeGreaterThan(0);
+		expect(await db.select().from(users)).toHaveLength(10);
+
+		const elsewhere = await signUp(
+			{ ...valid, email: 'elsewhere@example.com', username: '' },
+			{ ...context, ipAddress: '198.51.100.7' }
+		);
+		expect(elsewhere).toEqual({ ok: true });
+	});
+
+	it('refuses the 6th sign-up in an hour for one email, registered or not', async () => {
+		const sameEmail = { ...valid, username: '' };
+		const from = (n: number) => ({ ...context, ipAddress: `198.51.100.${n}` });
+
+		for (let attempt = 0; attempt < 5; attempt++) {
+			expect(await signUp(sameEmail, from(attempt))).toEqual({ ok: true });
+		}
+		vi.mocked(sendEmail).mockClear();
+
+		expect(await signUp(sameEmail, from(99))).toMatchObject({ ok: false, rateLimited: true });
+		expect(sendEmail).not.toHaveBeenCalled();
+	});
+
 	it('copes with input that is not text', async () => {
 		const result = await signUp({ ...valid, email: null, password: 12345 }, context);
 

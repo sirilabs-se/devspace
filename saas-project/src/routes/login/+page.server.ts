@@ -44,6 +44,13 @@ export const actions: Actions = {
 
 		if (result.status === 'signed_in') redirect(303, safeNextPath(url.searchParams.get('next')));
 		if (result.status === 'unverified') return { step: 'unverified' as const, email };
+		if (result.status === 'rate_limited') {
+			return fail(429, {
+				step: 'paused' as const,
+				email,
+				retryAfterSeconds: result.retryAfterSeconds
+			});
+		}
 		return fail(400, { step: 'password' as const, email, invalid: true });
 	},
 

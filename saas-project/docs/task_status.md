@@ -84,3 +84,40 @@ One section per build-plan task, added when the task is finished. Each says what
 
 - The passkey, Google, Facebook and "Forgot password?" parts of the prototype's login screen arrive with tasks 17, 11 and 6.
 - Repeated wrong passwords are not slowed down yet; that is task 5.
+
+## Task 5: Rate limits and login lockout
+
+**Status:** Done. `npm run verify` passes (127 logic tests, 10 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/lockout.ts`: counts failed logins per email and works out the wait.
+- `src/lib/server/modules/identity/request-limits.ts`: the named limits and their numbers.
+- `log-in.ts` and `sign-up.ts`: apply the lockout and the limits.
+- `src/routes/api/username-available/+server.ts`: refuses with "too many checks" past the limit.
+- `src/routes/login/` and `signup/`: the "Sign-in paused" and "Too many attempts" messages with a countdown.
+- `src/lib/ui/Countdown.svelte`: a minutes-and-seconds countdown.
+- `tests/setup/e2e-global-setup.ts`: empties the test database before browser tests.
+- New and extended tests beside each.
+
+**Try it**
+
+1. Log in with a wrong password five times. The sixth attempt fails even with the right password.
+2. Wait one minute and log in with the right password: it works.
+3. To see "Sign-in paused", make 30 login attempts within 15 minutes.
+4. To see the sign-up limit, submit the sign-up form 11 times within an hour with different emails.
+5. To start again, clear the counters: `docker exec saas-project-db-1 psql -U saas -d saas -c "truncate rate_limits"`.
+
+**Decisions**
+
+- I chose the limit numbers, since the design gives none: 10 sign-ups an hour and 30 logins per 15 minutes per network address, 60 username checks a minute, 5 sign-ups an hour per email.
+- A lockout answers exactly like a wrong password, as the task says. The prototype's "Sign-in paused" screen is used only for the per-network limit.
+- Attempts during a lockout aren't counted.
+- Failures are forgotten after a quiet day.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- If you would prefer the prototype's "Sign-in paused" screen for a locked-out email too, it is safe to show, because it would appear for every email, registered or not. It is a small change; say the word.
+- In production, the app must be told which header carries the visitor's real address (task 27).

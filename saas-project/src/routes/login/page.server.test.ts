@@ -130,6 +130,34 @@ describe('step 2: password', () => {
 	});
 });
 
+describe('too many attempts', () => {
+	it('refuses the right password after five wrong ones, with the same response as a wrong one', async () => {
+		let wrong: Outcome = {};
+		for (let failure = 0; failure < 5; failure++) {
+			wrong = await post('password', { email, password: 'Wrong-Horse-42' });
+		}
+		const jar = new TestCookieJar();
+
+		const locked = await post('password', { email, password }, jar);
+
+		expect(locked.result).toEqual(wrong.result);
+		expect(await getSessionUser(jar.headers())).toBeNull();
+	});
+
+	it('shows "sign-in paused" after 30 attempts from one network address', async () => {
+		for (let attempt = 0; attempt < 30; attempt++) {
+			await post('password', { email: `guess${attempt}@example.com`, password: 'Wrong-Horse-42' });
+		}
+
+		const { result } = await post('password', { email, password });
+
+		expect(result).toMatchObject({ status: 429, data: { step: 'paused' } });
+		expect(
+			(result as { data: { retryAfterSeconds: number } }).data.retryAfterSeconds
+		).toBeGreaterThan(0);
+	});
+});
+
 describe('resend from the "verify your email" screen', () => {
 	it('sends the email again and moves on to "check your inbox"', async () => {
 		await createUnverifiedUser('bo@example.com', 'Bo Lind');

@@ -7,6 +7,7 @@
 		BenefitList,
 		Button,
 		CheckboxField,
+		Countdown,
 		Heading,
 		PasswordChecklist,
 		Stack,
@@ -73,6 +74,9 @@
 
 	const errorCount = $derived(Object.keys(form?.errors ?? {}).length);
 
+	// While sign-up is paused for too many attempts, the button stays off.
+	let paused = $derived(!!form?.rateLimited);
+
 	// Asks the server whether the username is free, shortly after typing stops.
 	$effect(() => {
 		const candidate = username.trim();
@@ -137,6 +141,14 @@
 					Discover events, host your own, and keep every ticket in one place.
 				</Text>
 			</Stack>
+
+			{#if form?.rateLimited && paused}
+				<Alert variant="danger" title="Too many attempts">
+					For your security we’ve paused this action. You can try again in
+					<Countdown seconds={form.retryAfterSeconds} onfinish={() => (paused = false)} />. Nothing
+					was changed.
+				</Alert>
+			{/if}
 
 			{#if errorCount > 0}
 				<Alert
@@ -203,7 +215,7 @@
 				I am 18 or older and agree to the Terms and Privacy Policy.
 			</CheckboxField>
 
-			<Button type="submit" size="large" fullWidth loading={submitting}>
+			<Button type="submit" size="large" fullWidth loading={submitting} disabled={paused}>
 				{submitting ? 'Creating account…' : 'Create account'}
 			</Button>
 

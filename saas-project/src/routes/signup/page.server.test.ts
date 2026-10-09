@@ -87,6 +87,20 @@ describe('the sign-up form action', () => {
 		});
 	});
 
+	it('answers "too many attempts" after ten sign-ups in an hour from one address', async () => {
+		for (let attempt = 0; attempt < 10; attempt++) {
+			await submit({ ...valid, email: `person${attempt}@example.com`, username: '' });
+		}
+
+		const { result } = await submit({ ...valid, email: 'one-more@example.com', username: '' });
+
+		expect(result).toMatchObject({
+			status: 429,
+			data: { rateLimited: true, values: { email: 'one-more@example.com' } }
+		});
+		expect(JSON.stringify(result)).not.toContain(valid.password);
+	});
+
 	it('accepts a sign-up with no username', async () => {
 		const outcome = await submit({
 			name: valid.name,

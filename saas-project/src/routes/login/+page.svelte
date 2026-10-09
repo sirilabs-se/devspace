@@ -6,6 +6,7 @@
 		AuthSplit,
 		Button,
 		CheckboxField,
+		Countdown,
 		Heading,
 		Stack,
 		StatusIcon,
@@ -42,7 +43,19 @@
 	headline="Welcome back. Your next event is waiting."
 	text="Log in to pick up where you left off."
 >
-	{#if step === 'unverified'}
+	{#if step === 'paused'}
+		<Stack gap="large">
+			<Stack gap="small">
+				<Heading>Sign-in paused</Heading>
+				<Text variant="lead">Too many attempts from this network.</Text>
+			</Stack>
+			<Alert variant="danger" title="Too many attempts">
+				For your security we’ve paused this action. You can try again in
+				<Countdown seconds={form?.retryAfterSeconds ?? 0} />. Nothing was changed.
+			</Alert>
+			<Button href="/login" variant="outline" fullWidth>Back to log in</Button>
+		</Stack>
+	{:else if step === 'unverified'}
 		<StatusIcon icon="mail" variant="pending" />
 		<form method="POST" action="?/resend" use:enhance={submit}>
 			<input type="hidden" name="email" value={form?.email} />
@@ -72,7 +85,8 @@
 
 				{#if form?.invalid}
 					<Alert variant="danger" title="That email and password didn’t work">
-						Check both and try again.
+						Check both and try again. After several failed attempts, sign-in for an email is paused
+						for a few minutes to protect the account.
 					</Alert>
 				{/if}
 

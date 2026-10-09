@@ -22,6 +22,14 @@ export const actions: Actions = {
 
 		const email = text(form.get('email')).trim();
 
+		if (!result.ok && 'rateLimited' in result) {
+			return fail(429, {
+				rateLimited: true as const,
+				retryAfterSeconds: result.retryAfterSeconds,
+				values: { name: text(form.get('name')), username: text(form.get('username')), email }
+			});
+		}
+
 		if (!result.ok) {
 			return fail(400, {
 				errors: result.errors,

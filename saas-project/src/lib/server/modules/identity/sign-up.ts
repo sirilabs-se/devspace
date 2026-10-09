@@ -7,6 +7,7 @@ import { appOrigin, getAuth } from './auth';
 import { sendExistingAccountEmail } from './emails';
 import { passwordProblem } from './password';
 import type { RequestContext } from './request-context';
+import { limitRequests } from './request-limits';
 import { consents, users } from './schema';
 import { toUserId } from './user-id';
 import { checkUsernameAvailable } from './username';
@@ -39,7 +40,10 @@ export type SignUpErrors = Partial<Record<SignUpField, SignUpErrorCode>>;
  * "ok" means "check your inbox". It is returned whether or not the email
  * already has an account, so the response never reveals who is registered.
  */
-export type SignUpResult = { ok: true } | { ok: false; errors: SignUpErrors };
+export type SignUpResult =
+	| { ok: true }
+	| { ok: false; errors: SignUpErrors }
+	| { ok: false; rateLimited: true; retryAfterSeconds: number };
 
 const signUpSchema = z.object({
 	name: z
@@ -85,6 +89,11 @@ function usernameFrom(input: unknown): string | undefined {
 
 /** Registers a new account and sends the verification email. */
 export async function signUp(input: unknown, context: RequestContext): Promise<SignUpResult> {
+	const network = await limitRequests('signup-by-ip', context.ipAddress);
+	if (!network.allowed) {
+		return { ok: false, rateLimited: true, retryAfterSeconds: network.retryAfterSeconds };
+	}
+
 	const parsed = signUpSchema.safeParse(input);
 	const errors = parsed.success ? {} : validationErrors(parsed.error);
 
@@ -97,6 +106,12 @@ export async function signUp(input: unknown, context: RequestContext): Promise<S
 	if (!parsed.success || Object.keys(errors).length > 0) return { ok: false, errors };
 
 	const { name, email, password, username } = parsed.data;
+
+	// Counted for every address, registered or not, so the limit reveals nothing.
+	const perEmail = await limitRequests('signup-by-email', email);
+	if (!perEmail.allowed) {
+		return { ok: false, rateLimited: true, retryAfterSeconds: perEmail.retryAfterSeconds };
+	}
 
 	const [existing] = await db
 		.select({ id: users.id, email: users.email })

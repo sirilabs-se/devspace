@@ -133,6 +133,115 @@ describe('logIn', () => {
 	});
 });
 
+describe('login lockout', () => {
+	const start = Date.UTC(2026, 9, 10, 12, 0, 0);
+	const MINUTE = 60 * 1000;
+	const wrong = 'Wrong-Horse-42';
+	const from = (n: number) => ({ ...testContext, ipAddress: `198.51.100.${n % 250}` });
+	let attempts = 0;
+	const tryAt = (time: number, pass: string, address = email) =>
+		logIn({ email: address, password: pass }, new TestCookieJar(), from(attempts++), time);
+
+	it('refuses the sixth attempt after five failures, even with the right password', async () => {
+		for (let failure = 0; failure < 5; failure++) {
+			expect(await tryAt(start, wrong)).toEqual({ status: 'invalid' });
+		}
+
+		expect(await tryAt(start + 1000, password)).toEqual({ status: 'invalid' });
+		expect(await db.select().from(sessions)).toHaveLength(0);
+		expect((await actions()).at(-1)).toBe('login_locked_out');
+	});
+
+	it('lets the right password in again once the one-minute wait is over', async () => {
+		for (let failure = 0; failure < 5; failure++) await tryAt(start, wrong);
+
+		expect(await tryAt(start + MINUTE - 1000, password)).toEqual({ status: 'invalid' });
+		expect(await tryAt(start + MINUTE + 1000, password)).toEqual({ status: 'signed_in' });
+	});
+
+	it('doubles the wait with each further failure, up to 15 minutes', async () => {
+		let time = start;
+		for (let failure = 0; failure < 5; failure++) await tryAt(time, wrong);
+
+		for (const waitMinutes of [1, 2, 4, 8, 15, 15]) {
+			// Still locked just before the wait ends...
+			expect(
+				await tryAt(time + waitMinutes * MINUTE - 1000, password),
+				`${waitMinutes} min`
+			).toEqual({
+				status: 'invalid'
+			});
+			// ...and a wrong password just after it starts the next, longer wait.
+			time += waitMinutes * MINUTE + 1000;
+			expect(await tryAt(time, wrong)).toEqual({ status: 'invalid' });
+		}
+	});
+
+	it('does not count attempts made during the wait', async () => {
+		for (let failure = 0; failure < 5; failure++) await tryAt(start, wrong);
+		for (let attempt = 0; attempt < 20; attempt++) await tryAt(start + 1000, wrong);
+
+		expect(await tryAt(start + MINUTE + 1000, password)).toEqual({ status: 'signed_in' });
+	});
+
+	it('forgets earlier failures after a successful login', async () => {
+		for (let failure = 0; failure < 4; failure++) await tryAt(start, wrong);
+		expect(await tryAt(start, password)).toEqual({ status: 'signed_in' });
+
+		for (let failure = 0; failure < 4; failure++) await tryAt(start + 1000, wrong);
+		expect(await tryAt(start + 2000, password)).toEqual({ status: 'signed_in' });
+	});
+
+	it('forgets failures after a quiet day', async () => {
+		for (let failure = 0; failure < 4; failure++) await tryAt(start, wrong);
+
+		const nextDay = start + 25 * 60 * MINUTE;
+		expect(await tryAt(nextDay, wrong)).toEqual({ status: 'invalid' });
+		expect(await tryAt(nextDay + 1000, password)).toEqual({ status: 'signed_in' });
+	});
+
+	it('behaves the same for an email with no account, and keeps emails apart', async () => {
+		for (let failure = 0; failure < 5; failure++) await tryAt(start, wrong, 'nobody@example.com');
+
+		expect(await tryAt(start + 1000, wrong, 'nobody@example.com')).toEqual({ status: 'invalid' });
+		expect((await actions()).at(-1)).toBe('login_locked_out');
+		expect(await tryAt(start + 1000, password)).toEqual({ status: 'signed_in' });
+	});
+});
+
+describe('login attempts from one network address', () => {
+	it('are refused after 30 in 15 minutes, whatever the email', async () => {
+		const start = Date.UTC(2026, 9, 10, 12, 0, 0);
+		for (let attempt = 0; attempt < 30; attempt++) {
+			const result = await logIn(
+				{ email: `guess${attempt}@example.com`, password: 'Wrong-Horse-42' },
+				new TestCookieJar(),
+				testContext,
+				start
+			);
+			expect(result).toEqual({ status: 'invalid' });
+		}
+
+		const refused = await logIn(
+			{ email, password },
+			new TestCookieJar(),
+			testContext,
+			start + 1000
+		);
+		expect(refused).toMatchObject({ status: 'rate_limited' });
+
+		const elsewhere = { ...testContext, ipAddress: '198.51.100.7' };
+		expect(await logIn({ email, password }, new TestCookieJar(), elsewhere, start + 1000)).toEqual({
+			status: 'signed_in'
+		});
+
+		const later = start + 15 * 60 * 1000 + 1000;
+		expect(await logIn({ email, password }, new TestCookieJar(), testContext, later)).toEqual({
+			status: 'signed_in'
+		});
+	});
+});
+
 describe('sessions', () => {
 	it('end once they pass their expiry', async () => {
 		const jar = new TestCookieJar();

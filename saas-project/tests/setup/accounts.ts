@@ -83,7 +83,7 @@ export async function createUnverifiedUser(email: string, name = 'Test Person'):
 		{ name, email, password: 'Correct-Horse-42', acceptTerms: true },
 		testContext
 	);
-	if (!result.ok) throw new Error(`Sign-up failed: ${JSON.stringify(result.errors)}`);
+	if (!result.ok) throw new Error(`Sign-up failed: ${JSON.stringify(result)}`);
 }
 
 /** Signs up, opens the verification link, and returns the signed-in person's cookies. */

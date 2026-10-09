@@ -41,7 +41,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 2c | Local email inbox | — | 2b | Done |
 | 3 | Verify email and start a session | Identity | 2b | Done |
 | 4 | Log in and log out | Identity | 3 | Done |
-| 5 | Rate limits and login lockout | Identity | 4 | To do |
+| 5 | Rate limits and login lockout | Identity | 4 | Done |
 | 6 | Forgot and reset password | Identity | 4 | To do |
 | 7 | Change password and sign out everywhere | Identity | 4 | To do |
 | 8 | Profile basics | Identity | 3 | To do |
@@ -363,11 +363,19 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 
 **Done when:**
 
-- [ ] The sixth failed login in a row is refused with the generic error, even with the right password, until the wait is over
-- [ ] Too many sign-up or username-check requests from one address are refused with a clear message
-- [ ] Tests cover the lockout timings and the rate limits
+- [x] The sixth failed login in a row is refused with the generic error, even with the right password, until the wait is over
+- [x] Too many sign-up or username-check requests from one address are refused with a clear message
+- [x] Tests cover the lockout timings and the rate limits
 
-**Notes:** —
+**Notes:**
+
+- The numbers for the request limits are not in the design, so I chose them: 10 sign-ups an hour and 30 login attempts per 15 minutes from one network address, 60 username checks a minute, and 5 sign-ups an hour for one email. They are in `identity/request-limits.ts` and easy to change.
+- A locked-out login gets the same "didn't work" answer as a wrong password, as this task requires. The message now warns that repeated failures pause sign-in for a few minutes. The prototype instead has a "Sign-in paused" screen with a countdown; that screen is used only for the per-network limit, where it reveals nothing about any one email.
+- Attempts made during a lockout are not counted, so nobody can keep another person locked out by hammering their email.
+- Lockouts and limits apply to registered and unregistered emails alike, and are stored under a scrambled form of the email or address.
+- A run of failures is forgotten after a day without one. The design does not say when; a day seemed a safe default.
+- The browser tests now empty the test database before they start, because counters left from an earlier run would trip the limits.
+- For later (task 27): behind a proxy or load balancer the app must be told which header carries the visitor's real address, or every visitor will share one limit.
 
 ### 6. Forgot and reset password
 

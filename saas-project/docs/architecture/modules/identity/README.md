@@ -69,6 +69,7 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `signUp(input, context)` | Checks the input (full name, email, password, optional username, the consent checkbox), registers the account and sends the verification email. Gives the same answer whether or not the email is already registered. | `/signup` |
 | `checkUsernameAvailable(username)` | Says whether a username can be registered, and why not if it can't | `/api/username-available` |
 | `getSessionUser(headers, cookies)` | Finds who is signed in from the session cookie; the only source of the acting user | `hooks.server.ts` |
+| `limitRequests(name, subject)` | Counts one request against a named limit and says whether it is allowed | `/api/username-available` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
 | `verifyEmail(token, cookies, context)` | Confirms an email from its link and signs the person in; says if the link is expired or can't be used | `/verify-email` |
@@ -249,8 +250,8 @@ sequenceDiagram
 - Login asks for the email first and the password on a second step. The first step gives the same response for every email, so it never reveals whether an account exists.
 - A wrong password and an unknown email get exactly the same answer. When the password is right but the email isn't verified yet, the person sees "Verify your email to continue" with a resend button; this appears only after a correct password, so it reveals nothing to someone guessing.
 - Sessions: without "remember me" a session lasts 1 day and its cookie ends with the browser; with it, 30 days from the last use. No session lasts more than 90 days from when it started.
-- After 5 failed logins for an email, each further attempt must wait; the wait doubles from 1 minute up to 15 minutes.
-- Sign-up, login, forgot password and the username check are rate limited per IP address and per email.
+- After 5 failed logins in a row for an email, further attempts must wait: 1 minute, then 2, 4, 8 and at most 15 as failures continue. During the wait every attempt gets the usual "didn't work" answer, even with the right password, and is not counted. A successful login, or a day without failures, clears the count. This applies to every email, registered or not.
+- Requests are limited per network address (IP): 10 sign-ups an hour, 30 login attempts per 15 minutes, 60 username checks a minute. Sign-up is also limited to 5 an hour per email. Forgot password is limited in its own task.
 - Email verification links last 24 hours. Password reset links last 1 hour and work once.
 - The verification email can be resent at most 3 times per hour.
 - Forgot password always shows the same success message.

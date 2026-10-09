@@ -7,6 +7,7 @@ export { default as Button } from './Button.svelte';
 export { default as Card } from './Card.svelte';
 export { default as CenteredCard } from './CenteredCard.svelte';
 export { default as CheckboxField } from './CheckboxField.svelte';
+export { default as Countdown } from './Countdown.svelte';
 export { default as Divider } from './Divider.svelte';
 export { default as Heading } from './Heading.svelte';
 export { default as Icon, type IconName } from './Icon.svelte';
