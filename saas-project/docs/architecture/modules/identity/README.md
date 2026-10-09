@@ -88,6 +88,7 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `setFirstPassword(user, headers, input, context)` | Gives a password to someone who has only signed in with a provider | `/settings/account` |
 | `requestEmailChange(user, headers, input, context)` | Starts a change of email; nothing changes until the link sent to the new address is opened | `/settings/account` |
 | `canUndoEmailChange(token)` / `undoEmailChange(token, context)` | Checks and uses the undo link sent to the old address | `/undo-email-change` |
+| `listSecurityActivity(userId)` | Lists the acting user's own recent security events, newest first | `/settings/security` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
 | `requestPasswordReset(email, context)` | Emails a reset link if the address has an account; same answer either way | `/forgot-password` |
@@ -109,6 +110,7 @@ Pages use form actions, following the shared conventions in the system doc.
 | `/logout` | Signs out of this session; a submitted form only | Signed-in users |
 | `/forgot-password` | Requests a reset link | Anyone |
 | `/reset-password` | Sets a new password from the link | Anyone |
+| `/undo-email-change` | Reached from the notice sent to the old address: undoes a change of email within 7 days. Added in task 13; not yet confirmed by the owner | Anyone with the link |
 | `/welcome` | After the first Google or Facebook sign-in: accepts the terms and confirms 18+, and optionally picks a username | Signed-in users |
 | `/settings/profile` | Name, username, avatar, language, time zone | Signed-in users |
 | `/settings/account` | Change email, change password, delete account | Signed-in users |

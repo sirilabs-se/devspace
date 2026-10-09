@@ -50,7 +50,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 11 | Google and Facebook sign-in | Identity | 4 | Blocked |
 | 12 | Connected accounts | Identity | 11 | Blocked |
 | 13 | Change email | Identity | 7 | Done |
-| 14 | Security activity page | Identity | 4 | To do |
+| 14 | Security activity page | Identity | 4 | Done |
 | 15 | Delete account | Identity | 7, 9 | To do |
 | 16 | Notification preferences | Identity | 8 | To do |
 | 17 | Passkeys | Identity | 4 | To do |
@@ -661,10 +661,17 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 
 **Done when:**
 
-- [ ] A person sees their recent security events, newest first
-- [ ] Tests cover the list, and a test proves one user can't see another user's events
+- [x] A person sees their recent security events, newest first
+- [x] Tests cover the list, and a test proves one user can't see another user's events
 
-**Notes:** —
+**Notes:**
+
+- The list shows every recorded event about the person's own account, newest first, up to 50: sign-ins, failed sign-ins, password and email changes, connected providers and so on. Each line gives the time, the device in plain words ("Chrome on Windows") and the network address.
+- Times are shown in the person's own time zone from their profile, in the prototype's format (day, month, year, 24-hour time).
+- The device description is worked out from what the browser says about itself, with a small piece of code of my own and no extra package. It is a rough guide; unusual browsers show as "Unknown device".
+- Events recorded when a person returns from Google or Facebook have no network address, so those lines show the device only.
+- The wording for each kind of event lives on the page. A kind the page doesn't know yet shows as "Security event", so a new event type can never break the list.
+- No paging yet: the newest 50 are shown. The admin view (task 25) is where paging matters.
 
 ### 15. Delete account
 

@@ -42,6 +42,14 @@ test('a person can change their password and then sign out everywhere', async ({
 	await expect(page.getByText('Password updated')).toBeVisible();
 
 	await page.getByRole('link', { name: 'Security' }).click();
+	await expect(page.getByRole('heading', { name: 'Recent security activity' })).toBeVisible();
+	const events = page.locator('b', {
+		hasText: /Password changed|Failed attempt to change the password|Email verified|Account created/
+	});
+	await expect(events.first()).toHaveText('Password changed');
+	await expect(events.nth(1)).toHaveText('Failed attempt to change the password');
+	await expect(page.getByText(/Chrome on (Linux|Windows|macOS)/).first()).toBeVisible();
+
 	await page.getByRole('button', { name: 'Sign out everywhere' }).click();
 	await expect(page).toHaveURL('/login');
 

@@ -101,6 +101,20 @@ describe('account settings', () => {
 });
 
 describe('security settings', () => {
+	it('lists the signed-in person’s own security activity, and nobody else’s', async () => {
+		await createSignedInUser('bo@example.com', 'Bo Lind');
+
+		const data = (await securityLoad(event('/settings/security'))) as {
+			timeZone: string;
+			activity: { action: string; at: string; device: string }[];
+		};
+
+		expect(data.timeZone).toBe('UTC');
+		expect(data.activity.map((entry) => entry.action)).toEqual(['email_verified', 'signup']);
+		expect(data.activity[0].at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+		expect(data.activity[0].device).toBe('Unknown device');
+	});
+
 	it('signs out everywhere and sends the person to log in', async () => {
 		const before = jar.headers();
 

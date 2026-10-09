@@ -405,3 +405,31 @@ Without credentials, nothing new is visible: the buttons only appear for a provi
 **Left for later**
 
 - Nothing in this task.
+
+## Task 14: Security activity page
+
+**Status:** Done. `npm run verify` passes (260 logic tests, 19 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/activity.ts`: `listSecurityActivity`.
+- `src/lib/server/modules/identity/device.ts`: turns a browser's self-description into plain words.
+- `src/routes/settings/security/`: a "Recent security activity" card.
+- Tests beside each, and a check added to the settings browser test.
+
+**Try it**
+
+1. Log in, fail a login on purpose from another browser window, and change your password.
+2. Open Settings, then "Security". Under "Recent security activity" you see those events, newest first, each with its time, device and network address.
+3. Change your time zone on the profile page and come back: the times follow it.
+
+**Decisions**
+
+- Shows the newest 50 events, with no paging.
+- Shows the network address as well as the device, since it is the person's own data and helps spot a stranger.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- Also included in this commit: one line missing from the Identity doc for task 13's undo page.

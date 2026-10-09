@@ -1,4 +1,5 @@
 // Public interface of the Identity module: the only file other code may import.
+export { listSecurityActivity, type SecurityActivity } from './activity';
 export { recordAuditEvent, type AuditContext } from './audit';
 export {
 	AVATAR_MAX_BYTES,

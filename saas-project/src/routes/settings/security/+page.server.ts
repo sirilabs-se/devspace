@@ -1,10 +1,20 @@
 import { redirect } from '@sveltejs/kit';
-import { requireUser, signOutEverywhere } from '$lib/server/modules/identity';
+import {
+	getProfile,
+	listSecurityActivity,
+	requireUser,
+	signOutEverywhere
+} from '$lib/server/modules/identity';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = ({ locals }) => {
-	requireUser(locals);
-	return {};
+export const load: PageServerLoad = async ({ locals }) => {
+	const user = requireUser(locals);
+	const activity = await listSecurityActivity(user.id);
+
+	return {
+		timeZone: (await getProfile(user.id)).timeZone,
+		activity: activity.map((event) => ({ ...event, at: event.at.toISOString() }))
+	};
 };
 
 export const actions: Actions = {
