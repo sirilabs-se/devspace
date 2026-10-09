@@ -36,7 +36,10 @@ describe('the login check in hooks', () => {
 			const result = await visit(path);
 
 			expect(result.reached, path).toBe(false);
-			expect(result.redirect).toMatchObject({ status: 303, location: '/login' });
+			expect(result.redirect).toMatchObject({
+				status: 303,
+				location: `/login?next=${encodeURIComponent(path)}`
+			});
 		}
 	});
 

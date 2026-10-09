@@ -122,7 +122,10 @@
 					in.
 				</Text>
 			</Stack>
-			<Button href="/verify-email" variant="outline" fullWidth>Request a new link</Button>
+			<Stack gap="medium">
+				<Button href="/login" size="large" fullWidth>Log in</Button>
+				<Button href="/verify-email" variant="outline" fullWidth>Request a new link</Button>
+			</Stack>
 		</Stack>
 	{:else}
 		<StatusIcon icon="mail" variant="strong" />

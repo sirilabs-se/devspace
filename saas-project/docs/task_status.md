@@ -45,3 +45,42 @@ One section per build-plan task, added when the task is finished. Each says what
 - "Open email app" and "Add a passkey" buttons from the prototype are not there. The first can't be done reliably from a web page; the second belongs to task 17.
 - The "Log in" button on the invalid-link screen, and the page that signed-out visitors are sent to, arrive with task 4.
 - There is no way to sign out or sign back in yet; that is task 4. To get back to a signed-out state now, clear the site's cookies.
+
+## Task 4: Log in and log out
+
+**Status:** Done. `npm run verify` passes (111 logic tests, 10 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/log-in.ts`: `logIn` and `logOut`.
+- `src/lib/server/modules/identity/auth.ts` and `session.ts`: session lengths, and the 90-day maximum.
+- `src/lib/server/next-path.ts`: decides where to go after login.
+- `src/hooks.server.ts`: remembers the page a signed-out visitor was heading for.
+- `src/routes/login/`: the two-step login page and its actions.
+- `src/routes/logout/`: the sign-out action.
+- `src/routes/+layout.svelte`: "Log in" and "Sign up" in the header when signed out; the name and "Log out" when signed in.
+- `src/routes/signup/` and `verify-email/`: the "Log in" links that were waiting for this page.
+- `src/lib/ui/AccountChip.svelte`: the row showing which email is signing in.
+- Tests beside each, plus `tests/e2e/login.test.ts`, which runs the whole journey from sign-up to logging back in.
+
+**Try it**
+
+1. Sign up and verify as in task 3, then press "Log out" in the header.
+2. Press "Log in", enter your email, then your password on the next step.
+3. Try a wrong password: "That email and password didn't work". Try an email that has no account: the same step and the same message.
+4. Sign up with a second address but don't verify it, then log in with it: "Verify your email to continue".
+5. Tick "Remember me" when logging in, close the browser and reopen it: you are still signed in. Without it, you are signed out.
+
+**Decisions**
+
+- You chose the prototype's "Verify your email" screen for an unverified email with a correct password.
+- Session lengths: 1 day, or 30 days with "remember me", and never more than 90 days. The first two were the suggested defaults; the 90 days is mine. Please confirm or change them.
+- After login, people return to the page they were heading for, limited to pages inside the app.
+- Logging out needs a submitted form.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- The passkey, Google, Facebook and "Forgot password?" parts of the prototype's login screen arrive with tasks 17, 11 and 6.
+- Repeated wrong passwords are not slowed down yet; that is task 5.

@@ -40,7 +40,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 2b | Align sign-up with the design | Identity | 2a | Done |
 | 2c | Local email inbox | — | 2b | Done |
 | 3 | Verify email and start a session | Identity | 2b | Done |
-| 4 | Log in and log out | Identity | 3 | To do |
+| 4 | Log in and log out | Identity | 3 | Done |
 | 5 | Rate limits and login lockout | Identity | 4 | To do |
 | 6 | Forgot and reset password | Identity | 4 | To do |
 | 7 | Change password and sign out everywhere | Identity | 4 | To do |
@@ -331,12 +331,19 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 
 **Done when:**
 
-- [ ] A verified person enters their email, then their password, and is signed in; they can sign out
-- [ ] Without "remember me" the session ends with the shorter lifetime; with it, the longer one
-- [ ] A wrong email and a wrong password give exactly the same response
-- [ ] Tests cover the above
+- [x] A verified person enters their email, then their password, and is signed in; they can sign out
+- [x] Without "remember me" the session ends with the shorter lifetime; with it, the longer one
+- [x] A wrong email and a wrong password give exactly the same response
+- [x] Tests cover the above
 
-**Notes:** Session lengths are an open question in the system doc; settle it before starting.
+**Notes:**
+
+- Unverified email: the owner chose the prototype's "Verify your email to continue" screen over the generic error this task's scope first listed. It appears only after a correct password. The Identity doc was updated.
+- Session lengths use the suggested defaults: 1 day without "remember me" (and the cookie ends with the browser), 30 days from last use with it. A maximum age of 90 days was added, since the design asks for one but gives no number. The owner has not confirmed these values.
+- After login a person returns to the page they were heading for. Only plain paths inside the app are accepted, so a crafted link can't send someone to another site.
+- Logging out happens only on a submitted form, so a link or image can't sign someone out.
+- The first step validates only the email's format. Nothing is looked up, so it answers the same for every address.
+- Left out of the prototype's login screens until their tasks: the passkey button (17), Google and Facebook (11), "Forgot password?" (6), the "sign-in paused" state (5), and the suspended-account screen (23). The "suspicious sign-in" check and organization sign-in are not being built.
 
 ### 5. Rate limits and login lockout
 

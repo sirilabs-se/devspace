@@ -69,6 +69,8 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `signUp(input, context)` | Checks the input (full name, email, password, optional username, the consent checkbox), registers the account and sends the verification email. Gives the same answer whether or not the email is already registered. | `/signup` |
 | `checkUsernameAvailable(username)` | Says whether a username can be registered, and why not if it can't | `/api/username-available` |
 | `getSessionUser(headers, cookies)` | Finds who is signed in from the session cookie; the only source of the acting user | `hooks.server.ts` |
+| `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
+| `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
 | `verifyEmail(token, cookies, context)` | Confirms an email from its link and signs the person in; says if the link is expired or can't be used | `/verify-email` |
 | `resendVerificationEmail(email, context)` | Sends the verification email again, at most 3 times per hour; same answer whether or not the address is registered | `/verify-email` |
 
@@ -82,7 +84,7 @@ Pages use form actions, following the shared conventions in the system doc.
 | `/verify-email` | Shows "check your inbox" after sign-up; confirms the email from the link; resends the link; handles expired and invalid links | Anyone |
 | `/login` | Signs in: email first, then the password on a second step; or Google, Facebook or a passkey | Anyone |
 | `/login/two-step` | Takes the second-step code or a backup code | Anyone part-way through login |
-| `/logout` | Signs out of this session | Signed-in users |
+| `/logout` | Signs out of this session; a submitted form only | Signed-in users |
 | `/forgot-password` | Requests a reset link | Anyone |
 | `/reset-password` | Sets a new password from the link | Anyone |
 | `/welcome` | After the first Google or Facebook sign-in: accepts the terms and confirms 18+, and optionally picks a username | Signed-in users |
@@ -245,6 +247,8 @@ sequenceDiagram
 
 - Passwords are at least 8 characters and contain an upper case letter, a lower case letter, a number and a special character. The page shows each rule as it is met.
 - Login asks for the email first and the password on a second step. The first step gives the same response for every email, so it never reveals whether an account exists.
+- A wrong password and an unknown email get exactly the same answer. When the password is right but the email isn't verified yet, the person sees "Verify your email to continue" with a resend button; this appears only after a correct password, so it reveals nothing to someone guessing.
+- Sessions: without "remember me" a session lasts 1 day and its cookie ends with the browser; with it, 30 days from the last use. No session lasts more than 90 days from when it started.
 - After 5 failed logins for an email, each further attempt must wait; the wait doubles from 1 minute up to 15 minutes.
 - Sign-up, login, forgot password and the username check are rate limited per IP address and per email.
 - Email verification links last 24 hours. Password reset links last 1 hour and work once.

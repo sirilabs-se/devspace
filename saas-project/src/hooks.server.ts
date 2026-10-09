@@ -8,7 +8,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	// Unknown addresses fall through to the normal "not found" page.
 	if (!event.locals.user && event.route.id !== null && !isPublicPath(event.url.pathname)) {
-		redirect(303, '/login');
+		// Remember where they were going, so login can send them back.
+		const next = event.url.pathname + event.url.search;
+		redirect(303, `/login?next=${encodeURIComponent(next)}`);
 	}
 
 	return resolve(event);

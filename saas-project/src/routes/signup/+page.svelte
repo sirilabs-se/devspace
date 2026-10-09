@@ -11,7 +11,8 @@
 		PasswordChecklist,
 		Stack,
 		Text,
-		TextField
+		TextField,
+		TextLink
 	} from '$lib/ui';
 
 	let { form } = $props();
@@ -205,6 +206,10 @@
 			<Button type="submit" size="large" fullWidth loading={submitting}>
 				{submitting ? 'Creating account…' : 'Create account'}
 			</Button>
+
+			<Text variant="footnote">
+				Already have an account? <TextLink href="/login">Log in</TextLink>
+			</Text>
 		</Stack>
 	</form>
 </AuthSplit>

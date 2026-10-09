@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { parseSetCookieHeader, toCookieOptions } from 'better-auth/cookies';
-import { getAuth } from './auth';
+import { getAuth, SESSION_MAX_AGE_SECONDS } from './auth';
 import { toUserId, type UserId } from './user-id';
 
 /** The signed-in person, as the rest of the app sees them. */
@@ -65,7 +65,14 @@ export async function getSessionUser(
 	if (cookies) applySessionCookies(responseHeaders, cookies);
 	if (!response) return null;
 
-	const { user } = response;
+	const { user, session } = response;
+	// Renewal keeps a session alive while it is used, but never past its maximum age.
+	if (Date.now() - new Date(session.createdAt).getTime() > SESSION_MAX_AGE_SECONDS * 1000) {
+		const ended = await getAuth().api.signOut({ headers, returnHeaders: true });
+		if (cookies) applySessionCookies(ended.headers, cookies);
+		return null;
+	}
+
 	return {
 		id: toUserId(user.id),
 		name: user.name,

@@ -10,6 +10,11 @@ import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH, usernameFormatProblem } from 
 
 const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
 
+/** With "remember me", a session lasts this long after it was last used. */
+export const REMEMBERED_SESSION_SECONDS = 30 * ONE_DAY_IN_SECONDS;
+/** However often it is used, a session ends this long after it started. */
+export const SESSION_MAX_AGE_SECONDS = 90 * ONE_DAY_IN_SECONDS;
+
 /** The address the app is reached at, used to build links in emails. */
 export function appOrigin(): string {
 	if (!env.ORIGIN) throw new Error('ORIGIN is not set');
@@ -33,6 +38,12 @@ function createAuth() {
 			maxPasswordLength: PASSWORD_MAX_LENGTH,
 			requireEmailVerification: true,
 			autoSignIn: false
+		},
+		// Without "remember me" the library ends the session after one day, and the
+		// cookie goes when the browser closes.
+		session: {
+			expiresIn: REMEMBERED_SESSION_SECONDS,
+			updateAge: ONE_DAY_IN_SECONDS
 		},
 		emailVerification: {
 			sendOnSignUp: true,

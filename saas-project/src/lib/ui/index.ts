@@ -1,3 +1,4 @@
+export { default as AccountChip } from './AccountChip.svelte';
 export { default as Alert } from './Alert.svelte';
 export { default as AppShell } from './AppShell.svelte';
 export { default as AuthSplit } from './AuthSplit.svelte';

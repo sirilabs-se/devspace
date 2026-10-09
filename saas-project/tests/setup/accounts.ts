@@ -10,9 +10,24 @@ export const testContext = { ipAddress: '203.0.113.5', userAgent: 'Test Browser'
 /** Collects cookies the way SvelteKit's `event.cookies` does, and plays them back as a header. */
 export class TestCookieJar implements CookieJar {
 	private values = new Map<string, string>();
+	/** The options each cookie was last set with, e.g. how long it lasts. */
+	readonly options = new Map<string, { maxAge?: number; httpOnly?: boolean }>();
 
-	set(name: string, value: string): void {
-		this.values.set(name, encodeURIComponent(value));
+	set(name: string, value: string, options: { maxAge?: number; httpOnly?: boolean } = {}): void {
+		this.options.set(name, options);
+		// An empty value with no lifetime is how a cookie is removed.
+		if (value === '' || options.maxAge === 0) this.values.delete(name);
+		else this.values.set(name, encodeURIComponent(value));
+	}
+
+	/** SvelteKit's own cookies object has these too; the pages use them. */
+	get(name: string): string | undefined {
+		const value = this.values.get(name);
+		return value === undefined ? undefined : decodeURIComponent(value);
+	}
+
+	delete(name: string): void {
+		this.values.delete(name);
 	}
 
 	get size(): number {
@@ -44,13 +59,23 @@ export function verificationTokenFor(email: string): string {
  * signs them. Built by hand so tests outside Identity don't need the login library.
  */
 export function expiredVerificationTokenFor(email: string): string {
+	return signedVerificationToken(email, -60);
+}
+
+function signedVerificationToken(email: string, secondsUntilExpiry: number): string {
 	const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
 	const now = Math.floor(Date.now() / 1000);
-	const body = `${encode({ alg: 'HS256' })}.${encode({ email, iat: now - 120, exp: now - 60 })}`;
+	const payload = { email, iat: now - 120, exp: now + secondsUntilExpiry };
+	const body = `${encode({ alg: 'HS256' })}.${encode(payload)}`;
 	const signature = createHmac('sha256', process.env.BETTER_AUTH_SECRET ?? '')
 		.update(body)
 		.digest('base64url');
 	return `${body}.${signature}`;
+}
+
+/** A valid verification link token for this address, signed the way the app signs them. */
+export function validVerificationTokenFor(email: string): string {
+	return signedVerificationToken(email, 3600);
 }
 
 export async function createUnverifiedUser(email: string, name = 'Test Person'): Promise<void> {
