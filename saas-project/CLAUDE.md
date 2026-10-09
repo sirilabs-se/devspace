@@ -25,6 +25,7 @@ The design docs are the source of truth. Read the ones that apply before changin
 | Runtime | Node.js | 24 |
 | Database | PostgreSQL, via Drizzle and `pg`; local copy in Docker Compose | 18 |
 | Login | Better Auth | 1.7 |
+| Email | `nodemailer` over SMTP; locally a Mailpit inbox in Docker Compose, at http://localhost:8025 | 10.x |
 | Validation | Zod | 4.x |
 | Tests | Vitest 5 (logic), Playwright (a few browser flows) | |
 | Checks | ESLint 10, Prettier, `svelte-check`, `dependency-cruiser`, Stylelint | |
@@ -37,7 +38,7 @@ The git repository is the parent folder, `devspace`, which holds several project
 
 ```bash
 npm install             # install dependencies (also turns on the repo's git hooks)
-npm run db:up           # start the local PostgreSQL in Docker
+npm run db:up           # start the local PostgreSQL and email inbox (Mailpit) in Docker
 npm run dev             # run the app locally
 npm test                # run the Vitest tests
 npm run test:e2e        # run the Playwright browser tests

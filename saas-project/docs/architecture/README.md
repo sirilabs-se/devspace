@@ -148,7 +148,7 @@ flowchart LR
 | Backend app | SvelteKit 2 server: load functions, form actions, a few API routes | Runs all modules and serves the pages | Keeps rules and data access off the browser |
 | Login library | Better Auth, running inside the app | Sign-up, login, sessions, social login, passkeys, second step | Far less security code to write and maintain — see [ADR 0005](decisions/0005-use-better-auth-for-login.md) |
 | Database | PostgreSQL, accessed with Drizzle | Stores all app data; Drizzle generates migration files | Data must persist |
-| Email service (third-party) | EU-hosted provider, TBD | Sends verification, reset and alert emails | Email verification and password reset |
+| Email service (third-party) | EU-hosted provider, TBD, reached over SMTP. Locally a Mailpit inbox in Docker catches every email and nothing is really sent | Sends verification, reset and alert emails | Email verification and password reset |
 | File storage (third-party) | EU-hosted object storage, TBD | Stores avatar images | Avatar uploads |
 | Daily job | The host's scheduler calling one protected endpoint | Permanent deletion after the grace period, releasing held usernames, clearing expired links, audit log retention | Time-based clean-up |
 | Google and Facebook (third-party) | OAuth sign-in | Confirm who a person is | Social login |

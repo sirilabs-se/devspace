@@ -38,6 +38,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 2 | Sign up | Identity | 1 | Done |
 | 2a | Apply the design system | — | 2 | Done |
 | 2b | Align sign-up with the design | Identity | 2a | Done |
+| 2c | Local email inbox | — | 2b | Done |
 | 3 | Verify email and start a session | Identity | 2b | To do |
 | 4 | Log in and log out | Identity | 3 | To do |
 | 5 | Rate limits and login lockout | Identity | 4 | To do |
@@ -243,6 +244,30 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 - Names are limited to 100 characters.
 - "Check your inbox" is shown on the sign-up page itself for now. Task 3 moves it to `/verify-email` and adds the resend and "open email app" buttons.
 - The "Log in" link under the form was moved to task 4: links in this app can only point at pages that exist.
+
+### 2c. Local email inbox
+
+**Goal:** While developing, every email the app sends lands in a local inbox that can be read in the browser.
+
+**Implements:** [system doc: Architecture Overview](architecture/README.md#architecture-overview)
+
+**In scope:**
+
+- Mailpit in Docker Compose beside PostgreSQL, started by `npm run db:up`, with its inbox at http://localhost:8025
+- The email helper sends over SMTP with `nodemailer`; showing emails in the terminal stays available
+- Settings in `.env.example`: `EMAIL_TRANSPORT`, `SMTP_URL`, `EMAIL_FROM`
+
+**Out of scope:**
+
+- Choosing the real email provider — task 27
+
+**Done when:**
+
+- [x] Signing up locally puts the verification email in the Mailpit inbox
+- [x] Tests cover sending over SMTP, the terminal mode, an unreachable server and an unknown mode
+- [x] `npm run verify` passes
+
+**Notes:** Added at the owner's request on 10 October 2026, with `nodemailer` approved as a new package (plus its type definitions). The automated tests don't need Mailpit: logic tests replace the sender, and browser tests use the terminal mode, so CI is unchanged. If Mailpit isn't running, sending fails with a message saying to run `npm run db:up`. The same SMTP code should work with the real provider by changing `SMTP_URL`.
 
 ### 3. Verify email and start a session
 

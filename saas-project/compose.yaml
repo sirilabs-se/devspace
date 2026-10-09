@@ -1,4 +1,4 @@
-# Local PostgreSQL for development and tests. Not used in production.
+# Local services for development and tests. Not used in production.
 name: saas-project
 
 services:
@@ -17,6 +17,14 @@ services:
       interval: 2s
       timeout: 5s
       retries: 30
+
+  # Mailpit: a local inbox. The app sends email to it over SMTP and every
+  # message appears at http://localhost:8025. Nothing leaves this machine.
+  mail:
+    image: axllent/mailpit:v1.29
+    ports:
+      - '127.0.0.1:${MAIL_SMTP_PORT:-1025}:1025'
+      - '127.0.0.1:${MAIL_UI_PORT:-8025}:8025'
 
 volumes:
   db-data:
