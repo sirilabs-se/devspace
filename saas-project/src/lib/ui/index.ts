@@ -13,6 +13,7 @@ export { default as Divider } from './Divider.svelte';
 export { default as FileField } from './FileField.svelte';
 export { default as Heading } from './Heading.svelte';
 export { default as Icon, type IconName } from './Icon.svelte';
+export { default as ListRow } from './ListRow.svelte';
 export { default as Logo } from './Logo.svelte';
 export { default as PageHeader } from './PageHeader.svelte';
 export { default as PageWrap } from './PageWrap.svelte';

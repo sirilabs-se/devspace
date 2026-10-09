@@ -335,3 +335,37 @@ Without credentials, nothing new is visible: the buttons only appear for a provi
 
 - Trying it with real Google and Facebook credentials, then ticking the two checks and setting the task to Done.
 - Setting a first password for people who only use a provider (noted for task 12).
+
+## Task 12: Connected accounts
+
+**Status:** Blocked on your credentials, like task 11. The code is complete and `npm run verify` passes (237 logic tests, 19 browser tests), tested against a stand-in for Google.
+
+**What changed**
+
+- `src/lib/server/modules/identity/connections.ts`: list, connect and disconnect providers, and set a first password.
+- `identity/auth.ts`: connecting may use a different email; connections are recorded in the audit log.
+- `src/routes/settings/connections/`: the Connected accounts page.
+- `src/routes/settings/account/`: shows "Set a password" for people who have none.
+- `src/lib/ui/ListRow.svelte`: new component.
+- Tests beside each.
+
+**Try it** (needs the credentials from task 11)
+
+1. Log in with your email and password and open Settings, then "Connected accounts".
+2. Press "Connect" beside Google and sign in there. You return to "Google connected".
+3. Log out and press "Continue with Google": you land in the same account.
+4. Back on "Connected accounts", press "Disconnect": it works, because your password remains.
+5. Sign up as a new person using only Google, then try to disconnect Google: it is refused, with a link to set a password first.
+6. Set a password on "Account settings", then disconnect Google: now it works.
+
+**Decisions**
+
+- Connecting allows a provider account with a different email.
+- A first-password form was added for provider-only people, so the last-method rule can't trap them.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- Trying it with real credentials, then ticking the first check and setting the task to Done.
+- Counting passkeys as a way to sign in (task 17).

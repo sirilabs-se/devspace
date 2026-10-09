@@ -41,7 +41,7 @@ beforeEach(async () => {
 
 describe('account settings', () => {
 	it('shows the signed-in person’s email', async () => {
-		expect(await accountLoad(event('/settings/account'))).toEqual({ email });
+		expect(await accountLoad(event('/settings/account'))).toEqual({ email, hasPassword: true });
 	});
 
 	it('changes the password', async () => {
@@ -74,6 +74,19 @@ describe('account settings', () => {
 			data: { passwordError: 'current_password_wrong' }
 		});
 		expect(JSON.stringify(result)).not.toMatch(/Horse/);
+	});
+
+	it('does not let someone with a password set a new one without the current one', async () => {
+		const { result } = await outcome(() =>
+			accountActions.setPassword(
+				event('/settings/account', {
+					password: 'Brand-New-Horse-7',
+					confirmPassword: 'Brand-New-Horse-7'
+				})
+			)
+		);
+
+		expect(result).toMatchObject({ status: 400, data: { passwordError: 'already_has_password' } });
 	});
 
 	it('refuses someone who is not signed in', async () => {

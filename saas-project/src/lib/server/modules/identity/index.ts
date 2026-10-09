@@ -8,6 +8,15 @@ export {
 	type SetAvatarResult
 } from './avatar';
 export { changePassword, signOutEverywhere, type ChangePasswordResult } from './change-password';
+export {
+	listConnections,
+	setFirstPassword,
+	startLinkingProvider,
+	unlinkProvider,
+	type Connections,
+	type SetFirstPasswordResult,
+	type UnlinkProviderResult
+} from './connections';
 export { logIn, logOut, type LogInResult } from './log-in';
 export {
 	requestPasswordReset,

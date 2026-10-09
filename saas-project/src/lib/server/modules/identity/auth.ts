@@ -81,7 +81,23 @@ function createAuth() {
 		account: {
 			// A provider sign-in is never merged into an existing account just because the
 			// email matches. The person signs in first and links the provider from settings.
-			accountLinking: { enabled: true, disableImplicitLinking: true }
+			// Linking is only ever done on purpose, by someone already signed in, so the
+			// provider account may use a different email from the app account.
+			accountLinking: { enabled: true, disableImplicitLinking: true, allowDifferentEmails: true }
+		},
+		databaseHooks: {
+			account: {
+				create: {
+					// Records every Google or Facebook account connected to a user.
+					after: async (account) => {
+						if (account.providerId === 'credential') return;
+						const userId = toUserId(account.userId);
+						await recordAuditEvent(userId, 'provider_linked', userId, {
+							details: { provider: account.providerId }
+						});
+					}
+				}
+			}
 		},
 		hooks: {
 			// Records sign-ins that come back from Google or Facebook.

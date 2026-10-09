@@ -11,7 +11,8 @@
 	items={[
 		{ label: 'Profile', href: '/settings/profile' },
 		{ label: 'Account settings', href: '/settings/account' },
-		{ label: 'Security', href: '/settings/security' }
+		{ label: 'Security', href: '/settings/security' },
+		{ label: 'Connected accounts', href: '/settings/connections' }
 	]}
 >
 	{@render children()}

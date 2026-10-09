@@ -33,7 +33,7 @@
 <Card>
 	<form
 		method="POST"
-		action="?/changePassword"
+		action={data.hasPassword ? '?/changePassword' : '?/setPassword'}
 		novalidate
 		use:enhance={() => {
 			submitting = true;
@@ -50,14 +50,16 @@
 	>
 		<Stack gap="large">
 			<Stack gap="small">
-				<Heading level={2}>Change password</Heading>
-				<Text variant="lead">Choose something long and unique. A password manager helps.</Text>
+				<Heading level={2}>{data.hasPassword ? 'Change password' : 'Set a password'}</Heading>
+				<Text variant="lead">
+					{data.hasPassword
+						? 'Choose something long and unique. A password manager helps.'
+						: 'You sign in with Google or Facebook. Add a password to have a second way in.'}
+				</Text>
 			</Stack>
 
 			{#if form?.passwordChanged}
-				<Alert variant="success" title="Password updated">
-					Your other devices were signed out, and we emailed you a confirmation.
-				</Alert>
+				<Alert variant="success" title="Password updated">We emailed you a confirmation.</Alert>
 			{:else if form?.passwordError === 'rate_limited'}
 				<Alert variant="danger" title="Too many attempts">
 					For your security we’ve paused this action. You can try again in
@@ -70,17 +72,19 @@
 			{/if}
 
 			<Stack gap="fields">
-				<TextField
-					label="Current password"
-					name="currentPassword"
-					type="password"
-					autocomplete="current-password"
-					required
-					bind:value={currentPassword}
-					error={form?.passwordError === 'current_password_wrong'
-						? 'That’s not your current password.'
-						: undefined}
-				/>
+				{#if data.hasPassword}
+					<TextField
+						label="Current password"
+						name="currentPassword"
+						type="password"
+						autocomplete="current-password"
+						required
+						bind:value={currentPassword}
+						error={form?.passwordError === 'current_password_wrong'
+							? 'That’s not your current password.'
+							: undefined}
+					/>
+				{/if}
 
 				<TextField
 					label="New password"
@@ -111,7 +115,9 @@
 				/>
 			</Stack>
 
-			<Text variant="muted">Saving signs out your other devices. This one stays signed in.</Text>
+			{#if data.hasPassword}
+				<Text variant="muted">Saving signs out your other devices. This one stays signed in.</Text>
+			{/if}
 
 			<div>
 				<Button type="submit" loading={submitting}>Save password</Button>

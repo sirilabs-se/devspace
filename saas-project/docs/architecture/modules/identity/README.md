@@ -82,6 +82,10 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `startSocialSignIn(provider, cookies)` | Starts a sign-in with Google or Facebook and returns where to send the person | `/login`, `/signup` |
 | `handleAuthRequest(request)` | Handles the provider's return, and refuses every other library address | `/api/auth/*` |
 | `completeWelcome(user, input, context)` | Records the consents and optional username after a first provider sign-in | `/welcome` |
+| `listConnections(userId)` | Lists the acting user's ways of signing in | `/settings/connections`, `/settings/account` |
+| `startLinkingProvider(user, provider, headers, cookies)` | Starts connecting Google or Facebook to the acting user's account | `/settings/connections` |
+| `unlinkProvider(user, provider, headers, context)` | Disconnects a provider, unless it is the last way to sign in | `/settings/connections` |
+| `setFirstPassword(user, headers, input, context)` | Gives a password to someone who has only signed in with a provider | `/settings/account` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
 | `requestPasswordReset(email, context)` | Emails a reset link if the address has an account; same answer either way | `/forgot-password` |
@@ -276,6 +280,8 @@ sequenceDiagram
 - An email change takes effect only after the new address is verified; the old address is notified.
 - Signing in with Google or Facebook using an email that already has an account does not merge them automatically. The person signs in to the existing account first and links the provider from settings.
 - A provider is offered only when its credentials are set. A first provider sign-in creates the account without consents, so the person is held at `/welcome` until they accept the terms and confirm their age.
+- Connecting a provider is always done on purpose by someone already signed in, so the provider account may have a different email from the app account. A provider account that is already connected to another person is refused.
+- Someone who has only signed in with a provider can set a first password from account settings. That form does nothing for people who already have a password; they must give their current one to change it.
 - The login library's own web addresses are closed to the outside, apart from the provider return addresses, so nobody can go around the app's rules (limits, lockout, consents, the password rule) by calling the library directly.
 - A passkey signs a person in on its own, with no password and no second step.
 - Trusted devices skip the second step for 30 days.

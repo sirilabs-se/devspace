@@ -48,8 +48,8 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 9 | Change username | Identity | 8 | Done |
 | 10 | Avatar upload | Identity | 8 | Done |
 | 11 | Google and Facebook sign-in | Identity | 4 | Blocked |
-| 12 | Connected accounts | Identity | 11 | In progress |
-| 13 | Change email | Identity | 7 | To do |
+| 12 | Connected accounts | Identity | 11 | Blocked |
+| 13 | Change email | Identity | 7 | In progress |
 | 14 | Security activity page | Identity | 4 | To do |
 | 15 | Delete account | Identity | 7, 9 | To do |
 | 16 | Notification preferences | Identity | 8 | To do |
@@ -596,11 +596,18 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 **Done when:**
 
 - [ ] A person with a password links Google, then signs in with it
-- [ ] A person can unlink a provider when another sign-in method remains
-- [ ] Unlinking the only sign-in method is refused with a clear message
-- [ ] Tests cover the above
+- [x] A person can unlink a provider when another sign-in method remains
+- [x] Unlinking the only sign-in method is refused with a clear message
+- [x] Tests cover the above
 
-**Notes:** —
+**Notes:**
+
+- **Not confirmed against the real Google and Facebook**, for the same reason as task 11. Connecting, signing in with the connected provider and disconnecting are all tested with a stand-in for Google. The first check, which names Google, is left unticked and the task is marked Blocked until it is tried with real credentials.
+- A connected provider account may have a different email from the app account, because connecting is done on purpose by someone already signed in. A provider account already connected to another person is refused.
+- Added, as tasks 7 and 11 noted: someone who has only ever signed in with a provider can set a first password on the account page. Without it the "last way to sign in" rule would leave them unable to ever disconnect their provider. The form does nothing for people who already have a password.
+- Disconnecting the last way to sign in is refused twice over: by this module and by the login library.
+- Passkeys (task 17) will need to count as a way to sign in for the "last way" rule.
+- Connecting and disconnecting are recorded in the audit log.
 
 ### 13. Change email
 
