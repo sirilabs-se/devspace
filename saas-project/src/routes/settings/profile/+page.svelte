@@ -2,8 +2,10 @@
 	import { enhance } from '$app/forms';
 	import {
 		Alert,
+		Avatar,
 		Button,
 		Card,
+		FileField,
 		Heading,
 		PageHeader,
 		SelectField,
@@ -25,6 +27,13 @@
 		time_zone_invalid: 'Choose a time zone from the list.'
 	};
 	const message = (code: string | undefined) => (code ? errorMessages[code] : undefined);
+
+	const photoMessages: Record<string, string> = {
+		empty: 'Choose a picture first.',
+		too_large: 'That picture is over 2 MB. Choose a smaller one.',
+		wrong_type: 'Use a JPEG, PNG or WebP picture.'
+	};
+	let savingPhoto = $state(false);
 
 	// svelte-ignore state_referenced_locally
 	let name = $state(data.profile.name);
@@ -100,6 +109,57 @@
 <PageHeader title="Profile" text="How you appear to organizers and other attendees." />
 
 <Stack gap="large">
+	<Card>
+		<Stack gap="large">
+			<Stack gap="small">
+				<Heading level={2}>Photo</Heading>
+				<Text variant="lead">Your initials are shown until you add one.</Text>
+			</Stack>
+
+			{#if form?.photoSaved}
+				<Alert variant="success" title="Photo saved" />
+			{:else if form?.photoRemoved}
+				<Alert variant="success" title="Photo removed" />
+			{/if}
+
+			<Avatar name={data.profile.name} image={data.profile.image} size="large" />
+
+			<form
+				method="POST"
+				action="?/photo"
+				enctype="multipart/form-data"
+				use:enhance={() => {
+					savingPhoto = true;
+					return async ({ update }) => {
+						await update();
+						savingPhoto = false;
+					};
+				}}
+			>
+				<Stack gap="medium">
+					<FileField
+						label="Choose a picture"
+						name="photo"
+						accept="image/jpeg,image/png,image/webp"
+						hint="JPEG, PNG or WebP, up to 2 MB."
+						error={form?.photoError ? photoMessages[form.photoError] : undefined}
+					/>
+					<div>
+						<Button type="submit" variant="outline" loading={savingPhoto}>
+							{data.profile.image ? 'Replace photo' : 'Upload photo'}
+						</Button>
+					</div>
+				</Stack>
+			</form>
+
+			{#if data.profile.image}
+				<form method="POST" action="?/removePhoto" use:enhance>
+					<Button type="submit" variant="ghost">Remove photo</Button>
+				</form>
+			{/if}
+		</Stack>
+	</Card>
+
 	<Card>
 		<form
 			method="POST"

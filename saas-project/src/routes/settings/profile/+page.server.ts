@@ -1,9 +1,12 @@
 import { fail } from '@sveltejs/kit';
 import {
+	AVATAR_MAX_BYTES,
 	changeUsername,
 	getProfile,
 	LOCALES,
+	removeAvatar,
 	requireUser,
+	setAvatar,
 	timeZones,
 	updateProfile,
 	usernameChangeAllowedAt
@@ -37,6 +40,29 @@ export const actions: Actions = {
 
 		if (!result.ok) return fail(400, { errors: result.errors });
 		return { saved: true as const };
+	},
+
+	photo: async ({ request, locals }) => {
+		const user = requireUser(locals);
+		const form = await request.formData();
+		const file = form.get('photo');
+
+		if (!(file instanceof File) || file.size === 0) {
+			return fail(400, { photoError: 'empty' as const });
+		}
+		// Checked before reading the file into memory.
+		if (file.size > AVATAR_MAX_BYTES) return fail(400, { photoError: 'too_large' as const });
+
+		const result = await setAvatar(user.id, new Uint8Array(await file.arrayBuffer()));
+
+		if (!result.ok) return fail(400, { photoError: result.error });
+		return { photoSaved: true as const };
+	},
+
+	removePhoto: async ({ locals }) => {
+		const user = requireUser(locals);
+		await removeAvatar(user.id);
+		return { photoRemoved: true as const };
 	},
 
 	username: async ({ request, locals }) => {

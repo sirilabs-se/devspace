@@ -1,6 +1,9 @@
 // Settings shared by the logic tests (Vitest) and the browser tests (Playwright).
 // Both run against their own database, never the development one.
 
+import os from 'node:os';
+import path from 'node:path';
+
 const DEFAULT_DATABASE_URL = 'postgres://saas:saas@localhost:5432/saas';
 
 /**
@@ -30,6 +33,8 @@ export function testEnvironment(env, origin) {
 		DATABASE_URL: testDatabaseUrl(env),
 		ORIGIN: origin,
 		BETTER_AUTH_SECRET: 'test-only-secret-not-used-anywhere-else',
-		EMAIL_TRANSPORT: 'console'
+		EMAIL_TRANSPORT: 'console',
+		STORAGE_DRIVER: 'local',
+		STORAGE_DIR: path.join(os.tmpdir(), 'saas-project-test-uploads')
 	};
 }

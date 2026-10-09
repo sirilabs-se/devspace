@@ -257,3 +257,40 @@ One section per build-plan task, added when the task is finished. Each says what
 **Left for later**
 
 - Clearing out holds whose 30 days have passed is part of the daily job in task 15. Until then expired rows stay in the table but no longer block anyone.
+
+## Task 10: Avatar upload
+
+**Status:** Done. `npm run verify` passes (203 logic tests, 17 browser tests).
+
+**What changed**
+
+- `src/lib/server/storage/index.ts`: the file storage helper (save, read, delete), on local disk for now.
+- `src/lib/server/modules/identity/avatar.ts`: `setAvatar`, `removeAvatar`, `readAvatar`.
+- `src/routes/files/avatars/[file]/+server.ts`: serves the pictures.
+- `src/routes/settings/profile/`: a Photo card with upload, replace and remove.
+- `src/lib/ui/Avatar.svelte` and `FileField.svelte`: new components.
+- `src/lib/server/public-paths.ts`: pictures are reachable without a login.
+- `.gitignore`, `.env.example`, `tests/setup/test-env.js`: the storage settings.
+- Tests beside each, and a browser test in `tests/e2e/settings.test.ts`.
+
+**Try it**
+
+1. Open your profile. Your initials are shown in a circle.
+2. Choose a JPEG, PNG or WebP under 2 MB and press "Upload photo": the picture replaces the initials.
+3. Try a text file, or a picture over 2 MB: a clear error.
+4. Press "Remove photo": the initials return, and the file is gone from `.data/uploads/avatars/`.
+
+**Decisions**
+
+- Files are kept on local disk until a storage provider is chosen.
+- **A new public endpoint, `/files/avatars/[file]`, which the design did not have.** I added it because the task can't work without a way to show the picture. Please confirm it, or tell me you'd rather wait for object storage.
+- JPEG, PNG and WebP up to 2 MB; the real file type is checked; SVG is refused.
+- No cropping or resizing.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- Cropping and resizing, which need an image library.
+- Raising the production upload limit, and choosing object storage (task 27).
+- Deleting the picture when an account is permanently deleted (task 15).

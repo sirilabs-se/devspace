@@ -1,5 +1,6 @@
 export { default as AccountChip } from './AccountChip.svelte';
 export { default as Alert } from './Alert.svelte';
+export { default as Avatar } from './Avatar.svelte';
 export { default as AppShell } from './AppShell.svelte';
 export { default as AuthSplit } from './AuthSplit.svelte';
 export { default as BenefitList } from './BenefitList.svelte';
@@ -9,6 +10,7 @@ export { default as CenteredCard } from './CenteredCard.svelte';
 export { default as CheckboxField } from './CheckboxField.svelte';
 export { default as Countdown } from './Countdown.svelte';
 export { default as Divider } from './Divider.svelte';
+export { default as FileField } from './FileField.svelte';
 export { default as Heading } from './Heading.svelte';
 export { default as Icon, type IconName } from './Icon.svelte';
 export { default as Logo } from './Logo.svelte';

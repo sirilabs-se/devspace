@@ -93,3 +93,38 @@ test('a person can set a username, and a second change is locked for 30 days', a
 	await expect(page.getByLabel('Username')).toBeDisabled();
 	await expect(page.getByRole('button', { name: 'Save username' })).toBeDisabled();
 });
+
+test('a person can upload a profile picture and remove it again', async ({ page }) => {
+	await signUpAndVerify(page, `e2e-photo-${Date.now().toString(36)}@example.com`);
+	await page.goto('/settings/profile');
+	const png = Buffer.from(
+		'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+		'base64'
+	);
+
+	await page.getByLabel('Choose a picture').setInputFiles({
+		name: 'notes.txt',
+		mimeType: 'text/plain',
+		buffer: Buffer.from('not a picture')
+	});
+	await page.getByRole('button', { name: 'Upload photo' }).click();
+	await expect(page.getByText('Use a JPEG, PNG or WebP picture.')).toBeVisible();
+
+	await page.getByLabel('Choose a picture').setInputFiles({
+		name: 'me.png',
+		mimeType: 'image/png',
+		buffer: png
+	});
+	await page.getByRole('button', { name: 'Upload photo' }).click();
+	await expect(page.getByText('Photo saved')).toBeVisible();
+
+	const picture = page.locator('img[src^="/files/avatars/"]');
+	await expect(picture).toBeVisible();
+	const response = await page.request.get((await picture.getAttribute('src'))!);
+	expect(response.status()).toBe(200);
+	expect(response.headers()['content-type']).toBe('image/png');
+
+	await page.getByRole('button', { name: 'Remove photo' }).click();
+	await expect(page.getByText('Photo removed')).toBeVisible();
+	await expect(picture).toHaveCount(0);
+});

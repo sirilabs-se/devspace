@@ -46,7 +46,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 7 | Change password and sign out everywhere | Identity | 4 | Done |
 | 8 | Profile basics | Identity | 3 | Done |
 | 9 | Change username | Identity | 8 | Done |
-| 10 | Avatar upload | Identity | 8 | To do |
+| 10 | Avatar upload | Identity | 8 | Done |
 | 11 | Google and Facebook sign-in | Identity | 4 | To do |
 | 12 | Connected accounts | Identity | 11 | To do |
 | 13 | Change email | Identity | 7 | To do |
@@ -526,12 +526,20 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 
 **Done when:**
 
-- [ ] A person uploads a picture and sees it on their profile
-- [ ] A file of the wrong type or over the size limit shows a clear error
-- [ ] Removing the picture deletes the stored file
-- [ ] Tests cover the above
+- [x] A person uploads a picture and sees it on their profile
+- [x] A file of the wrong type or over the size limit shows a clear error
+- [x] Removing the picture deletes the stored file
+- [x] Tests cover the above
 
-**Notes:** The storage provider is not chosen. Decide before starting whether to use a local-disk version of the helper for now.
+**Notes:**
+
+- Storage is on the app's own disk for now, in the folder named by `STORAGE_DIR` (`.data/uploads` while developing, which git ignores). The storage helper is the only code that knows this, so moving to object storage later changes one file.
+- New endpoint, not in the design: `GET /files/avatars/[file]` serves the pictures, because files on local disk have no address of their own. It is public, since a profile picture is public. The design docs were updated and marked as awaiting the owner's confirmation.
+- Accepted: JPEG, PNG and WebP, up to 2 MB. The type is judged from the file's own first bytes, not its name or what the browser says, so a renamed text or SVG file is refused. SVG is refused on purpose: it can carry scripts.
+- Pictures are stored as uploaded. There is no cropping or resizing, which would need an image library (a new dependency).
+- Each upload gets a fresh random file name, so a replaced picture never lingers in a browser's cache, and the old file is deleted.
+- For task 27: the production server limits request size to 512 KB unless `BODY_SIZE_LIMIT` is raised; it needs to be at least 3 MB for 2 MB pictures. Files on local disk are also lost if the server's disk is not kept between deploys, which is one more reason to choose object storage before going live.
+- For task 15: permanent account deletion must delete the person's picture file too.
 
 ### 11. Google and Facebook sign-in
 

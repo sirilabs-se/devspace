@@ -75,6 +75,8 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `changePassword(user, headers, cookies, input, context)` | Changes the acting user's password after checking the current one; ends their other sessions | `/settings/account` |
 | `signOutEverywhere(user, headers, cookies, context)` | Ends every session of the acting user | `/settings/security` |
 | `getProfile(userId)` | Reads the acting user's own profile | `/settings/profile` |
+| `setAvatar(userId, bytes)` / `removeAvatar(userId)` | Stores or removes the acting user's profile picture | `/settings/profile` |
+| `readAvatar(fileName)` | Reads a stored profile picture for serving | `/files/avatars/[file]` |
 | `updateProfile(userId, input)` | Changes the acting user's own name, language and time zone | `/settings/profile` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
@@ -109,6 +111,7 @@ Pages use form actions, following the shared conventions in the system doc.
 | `/admin/audit` | Views and exports the audit log | Admin |
 | `/api/auth/*` | The login library's own endpoints: Google and Facebook return addresses, passkey exchange | Anyone |
 | `GET /api/username-available` | Says whether a username is free; rate limited | Anyone |
+| `GET /files/avatars/[file]` | Serves a profile picture. Added in task 10 for local-disk storage; not yet confirmed by the owner | Anyone |
 | `POST /api/jobs/daily` | Runs the daily clean-up | The scheduler, with a secret |
 
 ### Events

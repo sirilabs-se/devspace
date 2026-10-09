@@ -13,7 +13,8 @@ const PUBLIC_PATHS = new Set([
 	'/api/jobs/daily'
 ]);
 
-const PUBLIC_PREFIXES = ['/api/auth/'];
+// Profile pictures are part of a person's public profile.
+const PUBLIC_PREFIXES = ['/api/auth/', '/files/avatars/'];
 
 export function isPublicPath(pathname: string): boolean {
 	const path = pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname;

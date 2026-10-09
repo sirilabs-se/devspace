@@ -149,7 +149,7 @@ flowchart LR
 | Login library | Better Auth, running inside the app | Sign-up, login, sessions, social login, passkeys, second step | Far less security code to write and maintain — see [ADR 0005](decisions/0005-use-better-auth-for-login.md) |
 | Database | PostgreSQL, accessed with Drizzle | Stores all app data; Drizzle generates migration files | Data must persist |
 | Email service (third-party) | EU-hosted provider, TBD, reached over SMTP. Locally a Mailpit inbox in Docker catches every email and nothing is really sent | Sends verification, reset and alert emails | Email verification and password reset |
-| File storage (third-party) | EU-hosted object storage, TBD | Stores avatar images | Avatar uploads |
+| File storage (third-party) | EU-hosted object storage, TBD. Until it is chosen, files are kept on the app's own disk and served by the app | Stores avatar images | Avatar uploads |
 | Daily job | The host's scheduler calling one protected endpoint | Permanent deletion after the grace period, releasing held usernames, clearing expired links, audit log retention | Time-based clean-up |
 | Google and Facebook (third-party) | OAuth sign-in | Confirm who a person is | Social login |
 
@@ -205,7 +205,7 @@ These rules apply to every module.
 | Logging | Logs include the user ID and a request ID, and never personal details beyond that. | SHOULD | — |
 | Dates and times | Stored in UTC, shown in the user's time zone. | SHOULD | — |
 
-The public list is: `/`, `/signup`, `/verify-email`, `/login`, `/login/two-step`, `/forgot-password`, `/reset-password`, `/api/auth/*`, `/api/username-available` and `/api/jobs/daily` (which requires its own secret).
+The public list is: `/`, `/signup`, `/verify-email`, `/login`, `/login/two-step`, `/forgot-password`, `/reset-password`, `/api/auth/*`, `/api/username-available`, `/files/avatars/*` (profile pictures, which are public) and `/api/jobs/daily` (which requires its own secret).
 
 The replaceable design rules are explained in [ADR 0002](decisions/0002-keep-the-design-replaceable.md).
 
