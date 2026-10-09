@@ -7,6 +7,7 @@ vi.mock('$lib/server/email', () => ({ sendEmail: vi.fn() }));
 
 function check(query: string, ipAddress = '203.0.113.5') {
 	const event = {
+		locals: { user: null },
 		url: new URL(`http://localhost:5173/api/username-available${query}`),
 		getClientAddress: () => ipAddress
 	};

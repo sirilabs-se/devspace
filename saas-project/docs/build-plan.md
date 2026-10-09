@@ -45,7 +45,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 6 | Forgot and reset password | Identity | 4 | Done |
 | 7 | Change password and sign out everywhere | Identity | 4 | Done |
 | 8 | Profile basics | Identity | 3 | Done |
-| 9 | Change username | Identity | 8 | To do |
+| 9 | Change username | Identity | 8 | Done |
 | 10 | Avatar upload | Identity | 8 | To do |
 | 11 | Google and Facebook sign-in | Identity | 4 | To do |
 | 12 | Connected accounts | Identity | 11 | To do |
@@ -494,12 +494,20 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 
 **Done when:**
 
-- [ ] A person with no username can set one
-- [ ] A person changes their username and the old one can't be taken by anyone else
-- [ ] A second change within 30 days is refused with a clear message
-- [ ] Tests cover the above
+- [x] A person with no username can set one
+- [x] A person changes their username and the old one can't be taken by anyone else
+- [x] A second change within 30 days is refused with a clear message
+- [x] Tests cover the above
 
-**Notes:** —
+**Notes:**
+
+- Setting a first username does not start the 30-day clock, so a typo made when first choosing one can be fixed straight away. The clock starts when an existing username is replaced or removed.
+- A person can take their own held name back, once the clock allows another change. Nobody else can take it during the hold.
+- A username can be removed again, since it is optional. Removing counts as a change, and the old name is held.
+- Changing only the capital letters ("anna" to "Anna") is not a change of name: no hold, and the clock is untouched.
+- A held name already stops blocking once its 30 days are up, even before the daily job (task 15) clears the row.
+- The availability check now knows who is asking, so a signed-in person's own name and their own held names show as available to them.
+- While a change is locked, the field and its button are switched off, with the date the next change is allowed.
 
 ### 10. Avatar upload
 

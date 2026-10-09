@@ -36,7 +36,11 @@ export {
 } from './sign-up';
 export type { UserId } from './user-id';
 export {
+	changeUsername,
 	checkUsernameAvailable,
+	USERNAME_CHANGE_DAYS,
+	usernameChangeAllowedAt,
+	type ChangeUsernameResult,
 	type UsernameAvailability,
 	type UsernameProblem
 } from './username';

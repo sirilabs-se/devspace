@@ -32,11 +32,13 @@ describe('the profile page', () => {
 			profile: { name: string };
 			locales: string[];
 			timeZones: string[];
+			usernameChangeAllowedAt: string | null;
 		};
 
 		expect(data.profile.name).toBe('Anna Berg');
 		expect(data.locales).toEqual(['en', 'sv']);
 		expect(data.timeZones).toContain('Europe/Stockholm');
+		expect(data.usernameChangeAllowedAt).toBeNull();
 	});
 
 	it('saves the name, language and time zone, which are still there on the next visit', async () => {
@@ -79,8 +81,38 @@ describe('the profile page', () => {
 		});
 	});
 
+	it('sets a username, then refuses a second change within 30 days with the date it is allowed', async () => {
+		expect(await actions.username(event(anna, { username: 'anna' }))).toEqual({
+			usernameSaved: true
+		});
+		expect(await actions.username(event(anna, { username: 'anna.berg' }))).toEqual({
+			usernameSaved: true
+		});
+
+		const refused = await actions.username(event(anna, { username: 'anna.b' }));
+
+		expect(refused).toMatchObject({ status: 400, data: { usernameError: 'too_soon' } });
+		const { allowedAt } = (refused as unknown as { data: { allowedAt: string } }).data;
+		const days = (new Date(allowedAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000);
+		expect(days).toBeGreaterThan(29.9);
+		expect(days).toBeLessThan(30.1);
+
+		const data = (await load(event(anna))) as { usernameChangeAllowedAt: string | null };
+		expect(data.usernameChangeAllowedAt).toBe(allowedAt);
+	});
+
+	it('refuses a username another person has, and never changes theirs', async () => {
+		await actions.username(event(bo, { username: 'bo.lind' }));
+
+		const result = await actions.username(event(anna, { username: 'Bo.Lind', userId: bo.id }));
+
+		expect(result).toMatchObject({ status: 400, data: { usernameError: 'taken' } });
+		expect((await getProfile(bo.id)).username).toBe('bo.lind');
+	});
+
 	it('refuses someone who is not signed in', async () => {
 		await expect(async () => load(event(null))).rejects.toMatchObject({ status: 401 });
 		await expect(async () => actions.save(event(null))).rejects.toMatchObject({ status: 401 });
+		await expect(async () => actions.username(event(null))).rejects.toMatchObject({ status: 401 });
 	});
 });

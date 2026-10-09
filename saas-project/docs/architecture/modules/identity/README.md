@@ -67,7 +67,9 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | Function | What it does | Used by |
 |---|---|---|
 | `signUp(input, context)` | Checks the input (full name, email, password, optional username, the consent checkbox), registers the account and sends the verification email. Gives the same answer whether or not the email is already registered. | `/signup` |
-| `checkUsernameAvailable(username)` | Says whether a username can be registered, and why not if it can't | `/api/username-available` |
+| `checkUsernameAvailable(username, forUser)` | Says whether a username can be taken, and why not if it can't. Names on hold for someone else count as taken | `/api/username-available` |
+| `changeUsername(userId, username)` | Sets, changes or removes the acting user's username under the 30-day rules | `/settings/profile` |
+| `usernameChangeAllowedAt(userId)` | Says when the acting user may next change their username | `/settings/profile` |
 | `getSessionUser(headers, cookies)` | Finds who is signed in from the session cookie; the only source of the acting user | `hooks.server.ts` |
 | `limitRequests(name, subject)` | Counts one request against a named limit and says whether it is allowed | `/api/username-available` |
 | `changePassword(user, headers, cookies, input, context)` | Changes the acting user's password after checking the current one; ends their other sessions | `/settings/account` |
@@ -268,7 +270,7 @@ sequenceDiagram
 - Signing in with Google or Facebook using an email that already has an account does not merge them automatically. The person signs in to the existing account first and links the provider from settings.
 - A passkey signs a person in on its own, with no password and no second step.
 - Trusted devices skip the second step for 30 days.
-- A username is optional. When set: 3 to 30 characters (letters, numbers, dots, hyphens, underscores), starting and ending with a letter or number, compared without regard to case, checked against a reserved list kept in code. One change every 30 days; the old name is held for 30 days. A deleted account's name is held permanently.
+- A username is optional. When set: 3 to 30 characters (letters, numbers, dots, hyphens, underscores), starting and ending with a letter or number, compared without regard to case, checked against a reserved list kept in code. Setting a first username is always allowed; replacing or removing one is allowed once every 30 days. The old name is held for 30 days, during which only its previous owner can take it back. Changing only the capital letters is not a change. A deleted account's name is held permanently.
 - Sign-up has one checkbox covering the terms, the privacy policy and being 18 or older. Each is still saved as its own consent record.
 - A suspended user can't sign in and their sessions are ended.
 - Audit log entries are kept for 12 months.

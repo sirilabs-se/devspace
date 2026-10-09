@@ -11,6 +11,7 @@
 		placeholder,
 		autocomplete,
 		required = false,
+		disabled = false,
 		optional = false,
 		hint,
 		status,
@@ -26,6 +27,8 @@
 		placeholder?: string;
 		autocomplete?: FullAutoFill;
 		required?: boolean;
+		/** Shown but not editable, and not sent with the form. */
+		disabled?: boolean;
 		/** Marks the field "Optional" beside its label. */
 		optional?: boolean;
 		/** Standing guidance shown under the field. */
@@ -52,7 +55,7 @@
 		<span>{label}</span>
 		{#if optional}<span class="optional">Optional</span>{/if}
 	</label>
-	<div class="control" class:error={!!error} class:confirmed>
+	<div class="control" class:error={!!error} class:confirmed class:disabled>
 		<input
 			class="input"
 			{id}
@@ -60,6 +63,7 @@
 			type={type === 'password' && revealed ? 'text' : type}
 			{placeholder}
 			{autocomplete}
+			{disabled}
 			aria-required={required ? 'true' : undefined}
 			bind:value
 			aria-invalid={error ? 'true' : undefined}
@@ -137,6 +141,15 @@
 
 	.control.confirmed {
 		border-color: var(--color-ink);
+	}
+
+	.control.disabled {
+		background: var(--color-sunken);
+		border-style: dashed;
+	}
+
+	.control.disabled .input {
+		color: var(--color-ink-faint);
 	}
 
 	.control.error {

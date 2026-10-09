@@ -223,3 +223,37 @@ One section per build-plan task, added when the task is finished. Each says what
 
 - Username (task 9) and photo (task 10) join this page next.
 - If you want City and Bio, they need adding to the requirements and the database first.
+
+## Task 9: Change username
+
+**Status:** Done. `npm run verify` passes (186 logic tests, 16 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/username.ts`: `changeUsername`, `usernameChangeAllowedAt`, and an availability check that respects holds.
+- `identity/schema.ts` and `migrations/0003_username_holds.sql`: the `username_holds` table.
+- `src/routes/settings/profile/`: a Username card with a live availability check, and its action.
+- `src/routes/api/username-available/+server.ts`: knows who is asking.
+- `src/lib/ui/TextField.svelte`: can be switched off.
+- Tests beside each, and a browser test in `tests/e2e/settings.test.ts`.
+
+**Try it**
+
+1. Run `npm run db:migrate` (there is a new table).
+2. Open your profile and set a username. "Available" appears as you type; save it.
+3. Change it to something else and save. That works once.
+4. Reload: the field is switched off, with the date you can change it again.
+5. Log in as a second person and try to take the first person's old username: "already taken".
+
+**Decisions**
+
+- A first username doesn't start the 30-day clock.
+- The owner can take a held name back; nobody else can.
+- A username can be removed, which counts as a change.
+- A change of capital letters only is not a change.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- Clearing out holds whose 30 days have passed is part of the daily job in task 15. Until then expired rows stay in the table but no longer block anyone.

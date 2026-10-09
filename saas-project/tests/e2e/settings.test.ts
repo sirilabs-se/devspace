@@ -73,3 +73,23 @@ test('a person can edit their profile and the changes are still there after a re
 	await expect(page.getByLabel('Time zone')).toHaveValue('Europe/Stockholm');
 	await expect(page.getByRole('link', { name: 'Maya Okafor-Lindqvist' })).toBeVisible();
 });
+
+test('a person can set a username, and a second change is locked for 30 days', async ({ page }) => {
+	const unique = Date.now().toString(36);
+	await signUpAndVerify(page, `e2e-username-${unique}@example.com`);
+	await page.goto('/settings/profile');
+
+	await page.getByLabel('Username').fill(`maya.${unique}`);
+	await expect(page.getByText('Available', { exact: true })).toBeVisible();
+	await page.getByRole('button', { name: 'Save username' }).click();
+	await expect(page.getByText('Username saved')).toBeVisible();
+
+	await page.getByLabel('Username').fill(`maya2.${unique}`);
+	await page.getByRole('button', { name: 'Save username' }).click();
+	await expect(page.getByText('Username saved')).toBeVisible();
+
+	await page.reload();
+	await expect(page.getByText('You changed your username recently')).toBeVisible();
+	await expect(page.getByLabel('Username')).toBeDisabled();
+	await expect(page.getByRole('button', { name: 'Save username' })).toBeDisabled();
+});

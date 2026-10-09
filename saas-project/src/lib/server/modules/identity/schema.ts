@@ -103,6 +103,17 @@ export const verifications = pgTable(
 	(table) => [index('verifications_identifier_idx').on(table.identifier)]
 );
 
+// Usernames nobody else can take: a changed name for 30 days, a deleted account's name for good.
+export const usernameHolds = pgTable('username_holds', {
+	id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+	username: varchar('username').notNull().unique(),
+	userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+	/** When the name becomes free again. Null means it is held permanently. */
+	releaseAt: timestamp('release_at', { withTimezone: true }),
+	createdAt: createdAt(),
+	updatedAt: updatedAt()
+});
+
 // Attempt counters. One row per thing being counted, e.g. resends for one email.
 export const rateLimits = pgTable('rate_limits', {
 	id: text('id').primaryKey(),
