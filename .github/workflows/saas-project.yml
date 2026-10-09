@@ -1,0 +1,43 @@
+name: saas-project
+
+on:
+  push:
+    paths:
+      - 'saas-project/**'
+      - '.github/workflows/saas-project.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: saas-project
+    env:
+      DATABASE_URL: postgres://saas:saas@localhost:5432/saas
+    services:
+      db:
+        # The official image from a mirror, because GitHub runners share
+        # Docker Hub download limits and are often refused there.
+        image: public.ecr.aws/docker/library/postgres:18
+        env:
+          POSTGRES_USER: saas
+          POSTGRES_PASSWORD: saas
+          POSTGRES_DB: saas
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U saas -d saas"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: saas-project/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run db:migrate
+      - run: npm run verify

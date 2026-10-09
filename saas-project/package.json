@@ -1,0 +1,57 @@
+{
+	"name": "saas-project",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"engines": {
+		"node": ">=24"
+	},
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "(git config core.hooksPath .githooks || true) && (svelte-kit sync || true)",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"format": "prettier --write .",
+		"lint": "npm run lint:format && npm run lint:code && npm run lint:deps && npm run lint:styles",
+		"lint:format": "prettier --check .",
+		"lint:code": "eslint .",
+		"lint:deps": "svelte-kit sync && depcruise src tests --config .dependency-cruiser.cjs",
+		"lint:styles": "stylelint \"src/**/*.{css,svelte}\"",
+		"test": "vitest run",
+		"test:e2e": "playwright test",
+		"verify": "npm run lint && npm run check && npm run test && npm run test:e2e",
+		"db:up": "docker compose up -d --wait",
+		"db:down": "docker compose down",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "node --env-file-if-exists=.env node_modules/drizzle-kit/bin.cjs migrate"
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"@playwright/test": "^1.64.0",
+		"@sveltejs/adapter-node": "^5.5.7",
+		"@sveltejs/kit": "^2.70.3",
+		"@sveltejs/vite-plugin-svelte": "^7.3.1",
+		"@types/node": "^24.19.2",
+		"@types/pg": "^8.23.1",
+		"dependency-cruiser": "^18.5.0",
+		"drizzle-kit": "^0.31.11",
+		"eslint": "^10.12.0",
+		"eslint-plugin-svelte": "^3.23.1",
+		"globals": "^17.13.0",
+		"postcss-html": "^2.0.0",
+		"prettier": "^3.9.9",
+		"prettier-plugin-svelte": "^4.1.1",
+		"stylelint": "^17.16.0",
+		"svelte": "^5.57.2",
+		"svelte-check": "^4.7.6",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.71.1",
+		"vite": "^8.3.4",
+		"vitest": "^5.0.3"
+	},
+	"dependencies": {
+		"drizzle-orm": "^0.45.4",
+		"pg": "^8.23.1"
+	}
+}

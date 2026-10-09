@@ -1,0 +1,12 @@
+# Docs and agent files are written by hand
+/docs
+/CLAUDE.md
+/.claude
+
+# Generated
+/.svelte-kit
+/build
+/migrations
+/test-results
+/playwright-report
+package-lock.json
