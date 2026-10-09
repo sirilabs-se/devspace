@@ -10,10 +10,8 @@
 		Heading,
 		PasswordChecklist,
 		Stack,
-		StatusIcon,
 		Text,
-		TextField,
-		TextLink
+		TextField
 	} from '$lib/ui';
 
 	let { form } = $props();
@@ -107,129 +105,106 @@
 
 <AuthSplit
 	appName="SaaS"
-	headline={form?.sent
-		? 'Almost there — confirm it’s really you.'
-		: 'Your next favourite night out starts here.'}
-	text={form?.sent
-		? 'A quick email check keeps events, tickets and organizers safe.'
-		: 'Join people who discover, host and attend events every week.'}
+	headline="Your next favourite night out starts here."
+	text="Join people who discover, host and attend events every week."
 >
 	{#snippet aside()}
-		{#if !form?.sent}
-			<BenefitList
-				items={[
-					{ icon: 'compass', text: 'Discover events near you' },
-					{ icon: 'ticket', text: 'Register in one tap, keep every ticket' },
-					{ icon: 'users', text: 'Host your own events, securely' }
-				]}
-			/>
-		{/if}
+		<BenefitList
+			items={[
+				{ icon: 'compass', text: 'Discover events near you' },
+				{ icon: 'ticket', text: 'Register in one tap, keep every ticket' },
+				{ icon: 'users', text: 'Host your own events, securely' }
+			]}
+		/>
 	{/snippet}
 
-	{#if form?.sent}
-		<StatusIcon icon="mail" variant="strong" />
+	<form
+		method="POST"
+		novalidate
+		use:enhance={() => {
+			submitting = true;
+			return async ({ update }) => {
+				await update({ reset: false });
+				submitting = false;
+			};
+		}}
+	>
 		<Stack gap="large">
 			<Stack gap="small">
-				<Heading>Check your inbox</Heading>
+				<Heading>Create your account</Heading>
 				<Text variant="lead">
-					If this email can be used, we’ve sent a verification link to <b>{form.email}</b>.
+					Discover events, host your own, and keep every ticket in one place.
 				</Text>
 			</Stack>
-			<Alert variant="info" title="The link expires in 24 hours">It can only be used once.</Alert>
-			<Text variant="footnote">
-				Wrong address? <TextLink href="/signup">Change email</TextLink> · Check spam or promotions.
-			</Text>
-		</Stack>
-	{:else}
-		<form
-			method="POST"
-			novalidate
-			use:enhance={() => {
-				submitting = true;
-				return async ({ result, update }) => {
-					await update({ reset: false });
-					submitting = false;
-					if (result.type === 'success') password = '';
-				};
-			}}
-		>
-			<Stack gap="large">
-				<Stack gap="small">
-					<Heading>Create your account</Heading>
-					<Text variant="lead">
-						Discover events, host your own, and keep every ticket in one place.
-					</Text>
-				</Stack>
 
-				{#if errorCount > 0}
-					<Alert
-						variant="danger"
-						title="Fix {errorCount} {errorCount === 1 ? 'thing' : 'things'} to continue"
-					>
-						Fields with a problem are marked below.
-					</Alert>
-				{/if}
+			{#if errorCount > 0}
+				<Alert
+					variant="danger"
+					title="Fix {errorCount} {errorCount === 1 ? 'thing' : 'things'} to continue"
+				>
+					Fields with a problem are marked below.
+				</Alert>
+			{/if}
 
-				<Stack gap="fields">
-					<TextField
-						label="Full name"
-						name="name"
-						placeholder="Maya Okafor"
-						autocomplete="name"
-						required
-						bind:value={name}
-						error={message(form?.errors?.name)}
-					/>
+			<Stack gap="fields">
+				<TextField
+					label="Full name"
+					name="name"
+					placeholder="Maya Okafor"
+					autocomplete="name"
+					required
+					bind:value={name}
+					error={message(form?.errors?.name)}
+				/>
 
-					<TextField
-						label="Username"
-						name="username"
-						placeholder="maya.okafor"
-						autocomplete="username"
-						optional
-						hint="Shown on your public profile. You can change it later."
-						bind:value={username}
-						status={showUsernameStatus && usernameStatus
-							? usernameMessages[usernameStatus]
-							: undefined}
-						statusVariant={usernameStatus === 'available' ? 'success' : 'danger'}
-						error={showUsernameStatus ? undefined : message(form?.errors?.username)}
-					/>
+				<TextField
+					label="Username"
+					name="username"
+					placeholder="maya.okafor"
+					autocomplete="username"
+					optional
+					hint="Shown on your public profile. You can change it later."
+					bind:value={username}
+					status={showUsernameStatus && usernameStatus
+						? usernameMessages[usernameStatus]
+						: undefined}
+					statusVariant={usernameStatus === 'available' ? 'success' : 'danger'}
+					error={showUsernameStatus ? undefined : message(form?.errors?.username)}
+				/>
 
-					<TextField
-						label="Email"
-						name="email"
-						type="email"
-						placeholder="you@example.com"
-						autocomplete="email"
-						required
-						bind:value={email}
-						error={message(form?.errors?.email)}
-					/>
+				<TextField
+					label="Email"
+					name="email"
+					type="email"
+					placeholder="you@example.com"
+					autocomplete="email"
+					required
+					bind:value={email}
+					error={message(form?.errors?.email)}
+				/>
 
-					<TextField
-						label="Password"
-						name="password"
-						type="password"
-						autocomplete="new-password"
-						required
-						bind:value={password}
-						error={message(form?.errors?.password)}
-					>
-						{#snippet below()}
-							<PasswordChecklist summary={passwordSummary} rules={passwordRules} />
-						{/snippet}
-					</TextField>
-				</Stack>
-
-				<CheckboxField name="acceptTerms" required error={message(form?.errors?.acceptTerms)}>
-					I am 18 or older and agree to the Terms and Privacy Policy.
-				</CheckboxField>
-
-				<Button type="submit" size="large" fullWidth loading={submitting}>
-					{submitting ? 'Creating account…' : 'Create account'}
-				</Button>
+				<TextField
+					label="Password"
+					name="password"
+					type="password"
+					autocomplete="new-password"
+					required
+					bind:value={password}
+					error={message(form?.errors?.password)}
+				>
+					{#snippet below()}
+						<PasswordChecklist summary={passwordSummary} rules={passwordRules} />
+					{/snippet}
+				</TextField>
 			</Stack>
-		</form>
-	{/if}
+
+			<CheckboxField name="acceptTerms" required error={message(form?.errors?.acceptTerms)}>
+				I am 18 or older and agree to the Terms and Privacy Policy.
+			</CheckboxField>
+
+			<Button type="submit" size="large" fullWidth loading={submitting}>
+				{submitting ? 'Creating account…' : 'Create account'}
+			</Button>
+		</Stack>
+	</form>
 </AuthSplit>

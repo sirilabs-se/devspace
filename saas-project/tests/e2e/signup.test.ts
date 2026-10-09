@@ -14,8 +14,13 @@ test('a new person can sign up and is told to check their inbox', async ({ page 
 	await page.getByLabel(/18 or older/).check();
 	await page.getByRole('button', { name: 'Create account' }).click();
 
+	await expect(page).toHaveURL('/verify-email');
 	await expect(page.getByRole('heading', { name: 'Check your inbox' })).toBeVisible();
 	await expect(page.getByText(email)).toBeVisible();
+
+	await page.getByRole('button', { name: 'Resend email' }).click();
+	await expect(page.getByText('Sent again')).toBeVisible();
+	await expect(page.getByRole('button', { name: /Resend in 00:/ })).toBeDisabled();
 
 	await page.getByRole('link', { name: 'Change email' }).click();
 	await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible();

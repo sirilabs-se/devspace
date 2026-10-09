@@ -15,6 +15,13 @@
       "when": 1791580160178,
       "tag": "0001_sign_up",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791586716706,
+      "tag": "0002_rate_limits",
+      "breakpoints": true
     }
   ]
 }

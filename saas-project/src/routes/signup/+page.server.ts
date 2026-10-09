@@ -1,11 +1,12 @@
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import { signUp } from '$lib/server/modules/identity';
+import { rememberPendingEmail } from '$lib/server/pending-email';
 import type { Actions } from './$types';
 
 const text = (value: FormDataEntryValue | null) => (typeof value === 'string' ? value : '');
 
 export const actions: Actions = {
-	default: async ({ request, getClientAddress }) => {
+	default: async ({ request, cookies, getClientAddress }) => {
 		const form = await request.formData();
 
 		const result = await signUp(
@@ -29,7 +30,9 @@ export const actions: Actions = {
 			});
 		}
 
-		// The address is only what the person just typed; it says nothing about who is registered.
-		return { sent: true as const, email };
+		// The same next page whether or not the address was already registered. It shows the
+		// address the person typed, which says nothing about who has an account.
+		rememberPendingEmail(cookies, email);
+		redirect(303, '/verify-email');
 	}
 };

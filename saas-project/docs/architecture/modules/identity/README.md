@@ -68,6 +68,9 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 |---|---|---|
 | `signUp(input, context)` | Checks the input (full name, email, password, optional username, the consent checkbox), registers the account and sends the verification email. Gives the same answer whether or not the email is already registered. | `/signup` |
 | `checkUsernameAvailable(username)` | Says whether a username can be registered, and why not if it can't | `/api/username-available` |
+| `getSessionUser(headers, cookies)` | Finds who is signed in from the session cookie; the only source of the acting user | `hooks.server.ts` |
+| `verifyEmail(token, cookies, context)` | Confirms an email from its link and signs the person in; says if the link is expired or can't be used | `/verify-email` |
+| `resendVerificationEmail(email, context)` | Sends the verification email again, at most 3 times per hour; same answer whether or not the address is registered | `/verify-email` |
 
 ### Pages and endpoints
 

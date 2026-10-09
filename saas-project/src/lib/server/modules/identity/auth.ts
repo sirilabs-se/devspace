@@ -36,6 +36,7 @@ function createAuth() {
 		},
 		emailVerification: {
 			sendOnSignUp: true,
+			autoSignInAfterVerification: true,
 			expiresIn: ONE_DAY_IN_SECONDS,
 			sendVerificationEmail: async ({ user, token }) => {
 				const url = `${appOrigin()}/verify-email?token=${encodeURIComponent(token)}`;

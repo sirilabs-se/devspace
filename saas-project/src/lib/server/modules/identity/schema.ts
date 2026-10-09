@@ -5,6 +5,7 @@ import {
 	bigint,
 	boolean,
 	index,
+	integer,
 	jsonb,
 	pgEnum,
 	pgTable,
@@ -101,6 +102,14 @@ export const verifications = pgTable(
 	},
 	(table) => [index('verifications_identifier_idx').on(table.identifier)]
 );
+
+// Attempt counters. One row per thing being counted, e.g. resends for one email.
+export const rateLimits = pgTable('rate_limits', {
+	id: text('id').primaryKey(),
+	key: varchar('key').notNull().unique(),
+	count: integer('count').notNull().default(0),
+	lastRequest: bigint('last_request', { mode: 'number' }).notNull()
+});
 
 export const consentDocument = pgEnum('consent_document', ['terms', 'privacy', 'age_confirmation']);
 

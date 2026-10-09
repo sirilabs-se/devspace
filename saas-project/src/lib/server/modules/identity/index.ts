@@ -1,6 +1,7 @@
 // Public interface of the Identity module: the only file other code may import.
 export { recordAuditEvent, type AuditContext } from './audit';
 export type { RequestContext } from './request-context';
+export { getSessionUser, requireUser, type CookieJar, type SessionUser } from './session';
 export {
 	signUp,
 	type SignUpErrorCode,
@@ -14,3 +15,9 @@ export {
 	type UsernameAvailability,
 	type UsernameProblem
 } from './username';
+export {
+	resendVerificationEmail,
+	verifyEmail,
+	type ResendVerificationResult,
+	type VerifyEmailResult
+} from './verify-email';

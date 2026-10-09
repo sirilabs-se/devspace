@@ -1,17 +1,19 @@
 <script lang="ts">
 	import '$lib/ui/theme.css';
 	import { page } from '$app/state';
-	import { AppShell, Button } from '$lib/ui';
+	import { AppShell, Button, Text } from '$lib/ui';
 
-	let { children } = $props();
+	let { data, children } = $props();
 
-	// Sign-up shows only the logo in its header, as in the UX prototype.
-	const onSignUp = $derived(page.route.id === '/signup');
+	// Sign-up and email verification show only the logo in their header, as in the UX prototype.
+	const plainHeader = $derived(page.route.id === '/signup' || page.route.id === '/verify-email');
 </script>
 
 <AppShell appName="SaaS">
 	{#snippet actions()}
-		{#if !onSignUp}
+		{#if data.user}
+			<Text variant="muted">{data.user.name}</Text>
+		{:else if !plainHeader}
 			<Button href="/signup" size="small">Sign up</Button>
 		{/if}
 	{/snippet}

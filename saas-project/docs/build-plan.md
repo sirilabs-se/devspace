@@ -39,7 +39,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 2a | Apply the design system | — | 2 | Done |
 | 2b | Align sign-up with the design | Identity | 2a | Done |
 | 2c | Local email inbox | — | 2b | Done |
-| 3 | Verify email and start a session | Identity | 2b | To do |
+| 3 | Verify email and start a session | Identity | 2b | Done |
 | 4 | Log in and log out | Identity | 3 | To do |
 | 5 | Rate limits and login lockout | Identity | 4 | To do |
 | 6 | Forgot and reset password | Identity | 4 | To do |
@@ -290,13 +290,22 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 
 **Done when:**
 
-- [ ] Opening a valid link marks the email verified and lands the person signed in on the home page
-- [ ] An expired or invalid link shows a clear message and a way to resend; links last 24 hours
-- [ ] A fourth resend within an hour is refused with the "please wait" screen
-- [ ] Visiting a protected page while signed out redirects to `/login`
-- [ ] Tests cover the above, and a test proves one signed-in user can't read another user's account details
+- [x] Opening a valid link marks the email verified and lands the person signed in on the home page
+- [x] An expired or invalid link shows a clear message and a way to resend; links last 24 hours
+- [x] A fourth resend within an hour is refused with the "please wait" screen
+- [x] Visiting a protected page while signed out redirects to `/login`
+- [x] Tests cover the above, and a test proves one signed-in user can't read another user's account details
 
-**Notes:** —
+**Notes:**
+
+- A valid link shows the prototype's "Email verified" screen, already signed in, with a Continue button to the home page.
+- The `rate_limits` table was created here, not in task 5, because the resend limit needs it. Task 5 reuses it.
+- The resend limit counts by a scrambled form of the address, for registered and unregistered addresses alike, so it can't be used to find out who has an account and no address is stored in the counter table.
+- Between sign-up and "check your inbox", the address is remembered in a short-lived cookie the page's scripts can't read, so it never appears in a URL.
+- A link works once: opening a used link shows "This link can't be used" and signs nobody in.
+- Left out of the prototype's screens: "Open email app" (a web page can't reliably open one), "Add a passkey" (task 17), and the "Log in" button on the invalid-link screen (task 4, when the page exists).
+- After a resend the button waits 60 seconds before it can be pressed again. That pause is on the page only; the limit the server enforces is 3 per hour.
+- No page outside the public list exists yet, so the redirect to `/login` is proven by tests of the hook, not by clicking. `/login` itself arrives with task 4.
 
 ### 4. Log in and log out
 
