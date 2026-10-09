@@ -28,8 +28,8 @@ Identity is built in three phases. Details are in the [Identity module doc](modu
 
 **Phase 1: accounts, login, profile**
 
-- A person registers with email, password and username, accepts the terms, confirms they are 18 or older, and verifies their email
-- A person signs in with email and password, or with Google or Facebook, and can stay signed in with "remember me"
+- A person registers with their full name, email and password, and optionally a username; accepts the terms and privacy policy and confirms they are 18 or older with one checkbox; and verifies their email
+- A person signs in by entering their email first and then their password, or with Google or Facebook, and can stay signed in with "remember me"
 - A person who forgot their password resets it by email; a signed-in person changes it
 - A person signs out of this session or of all devices
 - A person manages their profile: name, username, avatar, language, time zone
@@ -77,6 +77,12 @@ Identity is built in three phases. Details are in the [Identity module doc](modu
 - The organizer role, groups and events (later modules)
 - Mobile app
 
+## UX Prototype
+
+The interactive prototype in [`../design/event-platform-prototype_v05.html`](../design/event-platform-prototype_v05.html) is the source for the look, layout, screen states and wording. It covers more than is being built: this document and the module docs decide what is in scope and what the rules are. Where the prototype and these docs disagree on a rule, these docs win.
+
+In the prototype but not being built: organizations, members and invitations, enterprise SSO, SCIM, API credentials, the account recovery hub, step-up authentication, bot challenges, the suspicious sign-in check and the breached-password warning. Event discovery, organizer tools and participant management belong to later modules.
+
 ## Assumptions
 
 | Assumption | Status |
@@ -84,7 +90,7 @@ Identity is built in three phases. Details are in the [Identity module doc](modu
 | Private data belongs directly to a user; there are no companies or workspaces | Confirmed |
 | Consent records, the security activity log and basic account deletion are part of Phase 1 | Confirmed |
 | The active-sessions page and new-device alerts are part of Phase 2 | Confirmed |
-| Being 18 or older is a self-declaration at sign-up, with no ID check | Confirmed |
+| Being 18 or older is a self-declaration at sign-up, with no ID check. It shares one checkbox with the terms and privacy policy, and is still stored as its own consent record | Confirmed |
 | The account deletion grace period is 30 days | Confirmed |
 | Avatars are uploaded images kept in EU-hosted file storage | Confirmed |
 | An EU-hosted email service sends verification, reset and alert emails | Confirmed |
@@ -92,7 +98,9 @@ Identity is built in three phases. Details are in the [Identity module doc](modu
 | The language preference is stored from day one, although only English exists | Confirmed |
 | The admin area is minimal: find a user, suspend or reinstate, impersonate, view the audit log | Confirmed |
 | Audit log entries are kept for 12 months | Confirmed |
-| Usernames are 3 to 30 characters (letters, numbers, hyphens, underscores); upper and lower case count as the same name | Confirmed |
+| A username is optional. It is 3 to 30 characters (letters, numbers, dots, hyphens, underscores), starting and ending with a letter or number; upper and lower case count as the same name | Confirmed |
+| Passwords are at least 8 characters, with upper and lower case letters, a number and a special character | Confirmed |
+| The verification email can be resent at most 3 times per hour | Confirmed |
 | A reserved list blocks usernames such as `admin`, `support` and `help` | Confirmed |
 | A username can be changed once every 30 days; the old name is held for 30 days | Confirmed |
 | A deleted account's username is never released for reuse | Confirmed |
