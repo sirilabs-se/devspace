@@ -31,8 +31,8 @@ Table users {
   id text [pk]
   email varchar [unique, not null]
   email_verified boolean [not null, default: false]
-  name varchar [not null]
-  username varchar [unique, note: 'Public handle, stored in lower case. Empty until a social sign-up finishes the welcome step. Not used for login.']
+  name varchar [not null, note: 'Full name']
+  username varchar [unique, note: 'Optional public handle, stored in lower case. Not used for login.']
   display_username varchar [note: 'The username as the person typed it']
   image varchar [note: 'Avatar address in file storage']
   role varchar [not null, default: 'user', note: 'user or admin']
@@ -196,7 +196,7 @@ Table audit_events {
     created_at [note: 'Speeds up the admin view and the 12-month retention job']
   }
 
-  Note: 'Append-only log of security activity and admin actions. Rows are never edited; kept 12 months.'
+  Note: 'Append-only log of security activity and admin actions. Rows are never edited; kept 12 months. A database trigger (audit_events_guard) rejects every update except emptying the user links, IP address and device details, and every delete of a row younger than 12 months.'
 }
 
 Table username_holds {
