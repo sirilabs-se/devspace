@@ -78,6 +78,10 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `setAvatar(userId, bytes)` / `removeAvatar(userId)` | Stores or removes the acting user's profile picture | `/settings/profile` |
 | `readAvatar(fileName)` | Reads a stored profile picture for serving | `/files/avatars/[file]` |
 | `updateProfile(userId, input)` | Changes the acting user's own name, language and time zone | `/settings/profile` |
+| `socialProviders()` | Lists the sign-in providers that have credentials set | `/login`, `/signup` |
+| `startSocialSignIn(provider, cookies)` | Starts a sign-in with Google or Facebook and returns where to send the person | `/login`, `/signup` |
+| `handleAuthRequest(request)` | Handles the provider's return, and refuses every other library address | `/api/auth/*` |
+| `completeWelcome(user, input, context)` | Records the consents and optional username after a first provider sign-in | `/welcome` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
 | `requestPasswordReset(email, context)` | Emails a reset link if the address has an account; same answer either way | `/forgot-password` |
@@ -109,7 +113,7 @@ Pages use form actions, following the shared conventions in the system doc.
 | `/admin/users` | Finds users | Admin |
 | `/admin/users/[id]` | Suspends, reinstates and impersonates a user | Admin |
 | `/admin/audit` | Views and exports the audit log | Admin |
-| `/api/auth/*` | The login library's own endpoints: Google and Facebook return addresses, passkey exchange | Anyone |
+| `/api/auth/*` | Only the addresses on a short allowed list reach the login library: the Google and Facebook return addresses (`/api/auth/callback/google` and `/facebook`), and later the passkey exchange. Every other address under it answers "not found" | Anyone |
 | `GET /api/username-available` | Says whether a username is free; rate limited | Anyone |
 | `GET /files/avatars/[file]` | Serves a profile picture. Added in task 10 for local-disk storage; not yet confirmed by the owner | Anyone |
 | `POST /api/jobs/daily` | Runs the daily clean-up | The scheduler, with a secret |
@@ -271,6 +275,8 @@ sequenceDiagram
 - Changing a password requires the current one and ends the user's other sessions.
 - An email change takes effect only after the new address is verified; the old address is notified.
 - Signing in with Google or Facebook using an email that already has an account does not merge them automatically. The person signs in to the existing account first and links the provider from settings.
+- A provider is offered only when its credentials are set. A first provider sign-in creates the account without consents, so the person is held at `/welcome` until they accept the terms and confirm their age.
+- The login library's own web addresses are closed to the outside, apart from the provider return addresses, so nobody can go around the app's rules (limits, lockout, consents, the password rule) by calling the library directly.
 - A passkey signs a person in on its own, with no password and no second step.
 - Trusted devices skip the second step for 30 days.
 - A username is optional. When set: 3 to 30 characters (letters, numbers, dots, hyphens, underscores), starting and ending with a letter or number, compared without regard to case, checked against a reserved list kept in code. Setting a first username is always allowed; replacing or removing one is allowed once every 30 days. The old name is held for 30 days, during which only its previous owner can take it back. Changing only the capital letters is not a change. A deleted account's name is held permanently.

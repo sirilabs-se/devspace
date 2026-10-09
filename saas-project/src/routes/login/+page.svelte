@@ -7,7 +7,9 @@
 		Button,
 		CheckboxField,
 		Countdown,
+		Divider,
 		Heading,
+		ProviderButton,
 		Stack,
 		StatusIcon,
 		Text,
@@ -15,7 +17,23 @@
 		TextLink
 	} from '$lib/ui';
 
-	let { form } = $props();
+	let { data, form } = $props();
+
+	const providerNames: Record<string, string> = { google: 'Google', facebook: 'Facebook' };
+	const socialErrors: Record<string, { title: string; text: string }> = {
+		account_not_linked: {
+			title: 'That email already has an account',
+			text: 'Log in with your password, then connect Google or Facebook from your settings.'
+		}
+	};
+	const socialError = $derived(
+		data.socialError
+			? (socialErrors[data.socialError] ?? {
+					title: 'Sign-in didn’t finish',
+					text: 'It was cancelled or something went wrong. Nothing has changed. Please try again.'
+				})
+			: undefined
+	);
 
 	const step = $derived(form?.step ?? 'email');
 
@@ -120,6 +138,10 @@
 					<Text variant="lead">Log in to manage your events and tickets.</Text>
 				</Stack>
 
+				{#if socialError}
+					<Alert variant="danger" title={socialError.title}>{socialError.text}</Alert>
+				{/if}
+
 				<TextField
 					label="Email"
 					name="email"
@@ -136,11 +158,25 @@
 				<Button type="submit" size="large" fullWidth loading={submitting}>
 					Continue with email
 				</Button>
-
-				<Text variant="footnote">
-					New here? <TextLink href="/signup">Create an account</TextLink>
-				</Text>
 			</Stack>
 		</form>
+
+		{#if data.providers.length > 0}
+			<Divider label="or" />
+			<form method="POST" action="?/social">
+				<Stack gap="medium">
+					{#each data.providers as provider (provider)}
+						<ProviderButton value={provider} label="Continue with {providerNames[provider]}" />
+					{/each}
+				</Stack>
+			</form>
+		{/if}
+
+		<Stack gap="large">
+			<span></span>
+			<Text variant="footnote">
+				New here? <TextLink href="/signup">Create an account</TextLink>
+			</Text>
+		</Stack>
 	{/if}
 </AuthSplit>

@@ -1,6 +1,11 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
-import { logIn, resendVerificationEmail } from '$lib/server/modules/identity';
+import {
+	logIn,
+	resendVerificationEmail,
+	socialProviders,
+	startSocialSignIn
+} from '$lib/server/modules/identity';
 import { safeNextPath } from '$lib/server/next-path';
 import { rememberPendingEmail } from '$lib/server/pending-email';
 import type { Actions, PageServerLoad } from './$types';
@@ -11,10 +16,22 @@ const text = (value: FormDataEntryValue | null) => (typeof value === 'string' ? 
 
 export const load: PageServerLoad = ({ locals, url }) => {
 	if (locals.user) redirect(303, safeNextPath(url.searchParams.get('next')));
-	return {};
+	return {
+		providers: socialProviders(),
+		// Set when Google or Facebook sent the person back with a problem.
+		socialError: url.searchParams.get('error')
+	};
 };
 
 export const actions: Actions = {
+	// Sends the person to Google or Facebook to sign in there.
+	social: async ({ request, cookies }) => {
+		const form = await request.formData();
+		const started = await startSocialSignIn(form.get('provider'), cookies);
+		if (!started) return fail(400, { socialError: 'unavailable' as const });
+		redirect(303, started.url);
+	},
+
 	// Step 1. Every well-formed email gets the same answer: on to the password step.
 	// Nothing is looked up, so this step can't reveal who has an account.
 	email: async ({ request }) => {

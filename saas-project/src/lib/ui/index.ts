@@ -18,6 +18,7 @@ export { default as PageHeader } from './PageHeader.svelte';
 export { default as PageWrap } from './PageWrap.svelte';
 export { default as SelectField } from './SelectField.svelte';
 export { default as SettingsLayout } from './SettingsLayout.svelte';
+export { default as ProviderButton } from './ProviderButton.svelte';
 export { default as Stack } from './Stack.svelte';
 export { default as StatusIcon } from './StatusIcon.svelte';
 export { default as PasswordChecklist } from './PasswordChecklist.svelte';

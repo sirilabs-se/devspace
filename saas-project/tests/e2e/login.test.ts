@@ -60,3 +60,26 @@ test('a signed-out visitor to a page that needs a login is sent to log in', asyn
 	await expect(page).toHaveURL('/login?next=%2Flogout');
 	await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
 });
+
+test('Google and Facebook are offered on login and sign-up, and a failed return explains itself', async ({
+	page
+}) => {
+	for (const path of ['/login', '/signup']) {
+		await page.goto(path);
+		await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Continue with Facebook' })).toBeVisible();
+	}
+
+	await page.goto('/login?error=account_not_linked');
+	await expect(page.getByText('That email already has an account')).toBeVisible();
+});
+
+test('the login library’s own addresses are not reachable from outside', async ({ request }) => {
+	const signUp = await request.post('/api/auth/sign-up/email', {
+		data: { email: 'sneaky@example.com', password: 'x', name: 'Sneaky' }
+	});
+	const session = await request.get('/api/auth/get-session');
+
+	expect(signUp.status()).toBe(404);
+	expect(session.status()).toBe(404);
+});

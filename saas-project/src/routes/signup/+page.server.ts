@@ -1,12 +1,24 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { signUp } from '$lib/server/modules/identity';
+import { signUp, socialProviders, startSocialSignIn } from '$lib/server/modules/identity';
 import { rememberPendingEmail } from '$lib/server/pending-email';
-import type { Actions } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 
 const text = (value: FormDataEntryValue | null) => (typeof value === 'string' ? value : '');
 
+export const load: PageServerLoad = () => {
+	return { providers: socialProviders() };
+};
+
 export const actions: Actions = {
-	default: async ({ request, cookies, getClientAddress }) => {
+	// Sends the person to Google or Facebook to sign in there.
+	social: async ({ request, cookies }) => {
+		const form = await request.formData();
+		const started = await startSocialSignIn(form.get('provider'), cookies);
+		if (!started) return fail(400, { socialError: 'unavailable' as const });
+		redirect(303, started.url);
+	},
+
+	register: async ({ request, cookies, getClientAddress }) => {
 		const form = await request.formData();
 
 		const result = await signUp(

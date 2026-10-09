@@ -8,15 +8,19 @@
 		Button,
 		CheckboxField,
 		Countdown,
+		Divider,
 		Heading,
 		PasswordChecklist,
+		ProviderButton,
 		Stack,
 		Text,
 		TextField,
 		TextLink
 	} from '$lib/ui';
 
-	let { form } = $props();
+	let { data, form } = $props();
+
+	const providerNames: Record<string, string> = { google: 'Google', facebook: 'Facebook' };
 
 	const usernameRule =
 		'Use 3 to 30 letters, numbers, dots, hyphens or underscores, starting and ending with a letter or number.';
@@ -104,8 +108,28 @@
 		/>
 	{/snippet}
 
+	{#if data.providers.length > 0}
+		<Stack gap="large">
+			<Stack gap="small">
+				<Heading>Create your account</Heading>
+				<Text variant="lead">
+					Discover events, host your own, and keep every ticket in one place.
+				</Text>
+			</Stack>
+			<form method="POST" action="?/social">
+				<Stack gap="medium">
+					{#each data.providers as provider (provider)}
+						<ProviderButton value={provider} label="Continue with {providerNames[provider]}" />
+					{/each}
+				</Stack>
+			</form>
+		</Stack>
+		<Divider label="or sign up with email" />
+	{/if}
+
 	<form
 		method="POST"
+		action="?/register"
 		novalidate
 		use:enhance={() => {
 			submitting = true;
@@ -116,12 +140,14 @@
 		}}
 	>
 		<Stack gap="large">
-			<Stack gap="small">
-				<Heading>Create your account</Heading>
-				<Text variant="lead">
-					Discover events, host your own, and keep every ticket in one place.
-				</Text>
-			</Stack>
+			{#if data.providers.length === 0}
+				<Stack gap="small">
+					<Heading>Create your account</Heading>
+					<Text variant="lead">
+						Discover events, host your own, and keep every ticket in one place.
+					</Text>
+				</Stack>
+			{/if}
 
 			{#if form?.rateLimited && paused}
 				<Alert variant="danger" title="Too many attempts">

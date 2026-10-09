@@ -294,3 +294,44 @@ One section per build-plan task, added when the task is finished. Each says what
 - Cropping and resizing, which need an image library.
 - Raising the production upload limit, and choosing object storage (task 27).
 - Deleting the picture when an account is permanently deleted (task 15).
+
+## Task 11: Google and Facebook sign-in
+
+**Status:** Blocked on your credentials. The code is complete and `npm run verify` passes (220 logic tests, 19 browser tests), but it has only been tested against stand-ins for Google and Facebook, not the real services.
+
+**What changed**
+
+- `src/lib/server/modules/identity/social.ts`: start a provider sign-in, handle the return, the welcome step.
+- `identity/auth.ts`: the provider settings, no automatic merging of accounts, and an audit entry for provider sign-ins.
+- `identity/session.ts`: the signed-in user now carries their picture and whether the welcome step is pending.
+- `src/routes/api/auth/[...path]/+server.ts`: the return address, with everything else closed.
+- `src/routes/welcome/`: the welcome page.
+- `src/hooks.server.ts`: holds people at `/welcome` until it is completed.
+- `src/routes/login/` and `signup/`: the provider buttons, and a message when a provider sign-in is refused.
+- `src/lib/ui/ProviderButton.svelte`: new component.
+- `.env.example` and `tests/setup/test-env.js`: the four new settings.
+- Tests beside each.
+
+**Try it**
+
+Without credentials, nothing new is visible: the buttons only appear for a provider whose credentials are set.
+
+1. Create an OAuth app in the Google Cloud console (and a Facebook app in Meta for Developers).
+2. Register the return address `http://localhost:5173/api/auth/callback/google` (and `.../facebook`).
+3. Put `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (and the Facebook pair) in `saas-project/.env`, then restart `npm run dev`.
+4. On the login page, press "Continue with Google" and sign in there.
+5. You come back to "Welcome, <name>". Tick the box, optionally choose a username, and continue: you land on the home page, signed in.
+6. Log out, then sign up with email and password using a second Google account's address, verify it, log out, and press "Continue with Google" with that Google account: you are sent back to login with "That email already has an account".
+
+**Decisions**
+
+- Built without real credentials, tested against stand-ins. Two checks stay unticked until you try it for real.
+- Only the provider return addresses are open under `/api/auth/`.
+- The sign-up form action was renamed to `register` (a SvelteKit requirement once the provider buttons were added).
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- Trying it with real Google and Facebook credentials, then ticking the two checks and setting the task to Done.
+- Setting a first password for people who only use a provider (noted for task 12).

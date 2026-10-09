@@ -34,6 +34,11 @@ export function testEnvironment(env, origin) {
 		ORIGIN: origin,
 		BETTER_AUTH_SECRET: 'test-only-secret-not-used-anywhere-else',
 		EMAIL_TRANSPORT: 'console',
+		// Made-up credentials, so the Google and Facebook buttons appear under test.
+		GOOGLE_CLIENT_ID: 'test-google-client',
+		GOOGLE_CLIENT_SECRET: 'test-google-secret',
+		FACEBOOK_CLIENT_ID: 'test-facebook-client',
+		FACEBOOK_CLIENT_SECRET: 'test-facebook-secret',
 		STORAGE_DRIVER: 'local',
 		STORAGE_DIR: path.join(os.tmpdir(), 'saas-project-test-uploads')
 	};

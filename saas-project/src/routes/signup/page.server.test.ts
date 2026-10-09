@@ -28,7 +28,9 @@ async function submit(fields: Record<string, string>) {
 		getClientAddress: () => '203.0.113.5'
 	};
 	try {
-		const result = await actions.default(event as unknown as Parameters<typeof actions.default>[0]);
+		const result = await actions.register(
+			event as unknown as Parameters<typeof actions.register>[0]
+		);
 		return { result, cookies };
 	} catch (thrown) {
 		return { redirect: thrown as { status: number; location: string }, cookies };

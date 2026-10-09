@@ -2,6 +2,12 @@ import { redirect, type Handle } from '@sveltejs/kit';
 import { getSessionUser } from '$lib/server/modules/identity';
 import { isPublicPath } from '$lib/server/public-paths';
 
+const welcomeExempt = (pathname: string) =>
+	pathname === '/welcome' ||
+	pathname === '/logout' ||
+	pathname.startsWith('/api/auth/') ||
+	pathname.startsWith('/files/');
+
 export const handle: Handle = async ({ event, resolve }) => {
 	// The only place the acting user is decided: from the session cookie.
 	event.locals.user = await getSessionUser(event.request.headers, event.cookies);
@@ -11,6 +17,15 @@ export const handle: Handle = async ({ event, resolve }) => {
 		// Remember where they were going, so login can send them back.
 		const next = event.url.pathname + event.url.search;
 		redirect(303, `/login?next=${encodeURIComponent(next)}`);
+	}
+
+	// Someone who signed up through Google or Facebook must accept the terms first.
+	if (
+		event.locals.user?.welcomePending &&
+		event.route.id !== null &&
+		!welcomeExempt(event.url.pathname)
+	) {
+		redirect(303, '/welcome');
 	}
 
 	return resolve(event);

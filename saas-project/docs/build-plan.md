@@ -47,8 +47,8 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 8 | Profile basics | Identity | 3 | Done |
 | 9 | Change username | Identity | 8 | Done |
 | 10 | Avatar upload | Identity | 8 | Done |
-| 11 | Google and Facebook sign-in | Identity | 4 | To do |
-| 12 | Connected accounts | Identity | 11 | To do |
+| 11 | Google and Facebook sign-in | Identity | 4 | Blocked |
+| 12 | Connected accounts | Identity | 11 | In progress |
 | 13 | Change email | Identity | 7 | To do |
 | 14 | Security activity page | Identity | 4 | To do |
 | 15 | Delete account | Identity | 7, 9 | To do |
@@ -561,11 +561,22 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 
 - [ ] A new person signs in with Google, completes `/welcome` and lands on the home page
 - [ ] The same works with Facebook
-- [ ] Until `/welcome` is completed, every other page redirects to it
-- [ ] A provider email matching an existing account does not sign the person in to that account
-- [ ] Tests cover the welcome step and the existing-email case
+- [x] Until `/welcome` is completed, every other page redirects to it
+- [x] A provider email matching an existing account does not sign the person in to that account
+- [x] Tests cover the welcome step and the existing-email case
 
-**Notes:** Needs Google and Facebook developer app credentials from the owner.
+**Notes:**
+
+- **Not confirmed against the real Google and Facebook**, because that needs the owner's developer credentials. The whole path is tested with stand-ins that answer the way those two services do. The two checks that name Google and Facebook are left unticked, and the task is marked Blocked until someone tries it with real credentials.
+- To switch a provider on, put its client ID and secret in `.env` (see `.env.example`) and register the return address `<ORIGIN>/api/auth/callback/google` or `/facebook` in that provider's console. A provider without credentials is simply not shown.
+- Only the two return addresses are open under `/api/auth/`. Everything else there answers "not found", so the app's own rules can't be bypassed by calling the login library directly.
+- A provider sign-in with an email that already has an account is refused, and the login page explains: log in with your password, then connect the provider from settings (task 12).
+- New provider accounts have no consents, so they are held at `/welcome` (only it and logout work) until the checkbox is ticked. The username there is optional.
+- The provider's name and picture are copied to the profile. The picture stays at the provider's address; it is not downloaded.
+- Sign-ins that come back from a provider are recorded in the audit log with the provider's name. The visitor's network address is not available at that point, so it is left empty.
+- The sign-up form's action is now named `register`, because a page can't mix a named action (the provider buttons) with an unnamed one.
+- Every signed-in request now makes one extra small query to see whether the welcome step is pending.
+- People who signed up through a provider have no password. Setting a first one is not built; it belongs with task 12.
 
 ### 12. Connected accounts
 

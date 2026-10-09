@@ -1,6 +1,9 @@
 import { error } from '@sveltejs/kit';
 import { parseSetCookieHeader, toCookieOptions } from 'better-auth/cookies';
+import { and, eq } from 'drizzle-orm';
+import { db } from '$lib/server/db';
 import { getAuth, SESSION_MAX_AGE_SECONDS } from './auth';
+import { consents } from './schema';
 import { toUserId, type UserId } from './user-id';
 
 /** The signed-in person, as the rest of the app sees them. */
@@ -10,6 +13,12 @@ export type SessionUser = {
 	email: string;
 	username: string | null;
 	emailVerified: boolean;
+	image: string | null;
+	/**
+	 * True for someone who signed in with Google or Facebook and hasn't yet accepted
+	 * the terms and confirmed their age. Until they do, they can only reach `/welcome`.
+	 */
+	welcomePending: boolean;
 };
 
 /** Somewhere to put cookies. SvelteKit's `event.cookies` fits. */
@@ -73,12 +82,20 @@ export async function getSessionUser(
 		return null;
 	}
 
+	const [accepted] = await db
+		.select({ id: consents.id })
+		.from(consents)
+		.where(and(eq(consents.userId, user.id), eq(consents.document, 'terms')))
+		.limit(1);
+
 	return {
 		id: toUserId(user.id),
 		name: user.name,
 		email: user.email,
 		username: user.username ?? null,
-		emailVerified: user.emailVerified
+		emailVerified: user.emailVerified,
+		image: user.image ?? null,
+		welcomePending: !accepted
 	};
 }
 

@@ -35,6 +35,14 @@ export type { RequestContext } from './request-context';
 export { limitRequests, type RequestLimit } from './request-limits';
 export { getSessionUser, requireUser, type CookieJar, type SessionUser } from './session';
 export {
+	completeWelcome,
+	handleAuthRequest,
+	socialProviders,
+	startSocialSignIn,
+	type CompleteWelcomeResult,
+	type SocialProvider
+} from './social';
+export {
 	signUp,
 	type SignUpErrorCode,
 	type SignUpErrors,
