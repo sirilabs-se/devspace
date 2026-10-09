@@ -1,0 +1,258 @@
+# Identity Module — Design
+
+| | |
+|---|---|
+| **Status** | Draft |
+| **Last updated** | 2026-10-09 |
+| **Owner** | SiriLabs |
+| **Code folder** | `src/lib/server/modules/identity` |
+| **System doc** | [System design](../../README.md) |
+
+## Purpose
+
+Identity knows who each person is. It handles accounts, signing in, profiles and roles, and it keeps the records needed for security and GDPR.
+
+## Responsibilities
+
+### Responsible for
+
+- Sign-up, email verification, login, logout and sessions
+- Passwords: forgot, reset and change
+- Google and Facebook login, and linking and unlinking them
+- Passkeys, the second step (authenticator app or email code), backup codes and trusted devices
+- Profile: name, username, avatar, language and time zone
+- Email change
+- Notification preferences (storing them only)
+- Roles (user, admin) and the permission checks other modules call
+- Rate limits and login lockout
+- Consent records, the security activity log and the audit log
+- Suspension, impersonation, account deletion and export of Identity's own data
+
+### Not responsible for
+
+- Groups, events, organizers and anything else community-related — later modules
+- Sending notifications — later modules read the preferences and send
+- Delivering email and storing files — the shared email and file storage helpers
+- How the admin and settings pages look — pages built from `$lib/ui` that call Identity's functions
+- Deleting or exporting other modules' data — each module does its own when Identity announces "user deleted"
+
+## Build Phases
+
+| Phase | Contents |
+|---|---|
+| 1 | Registration, email verification, login, logout, passwords, Google and Facebook, profile, username, email change, notification preferences, consent records, security activity log, account deletion |
+| 2 | Passkeys, second step, backup codes, trusted devices, active-sessions page, new-device alerts |
+| 3 | Admin area (find, suspend, reinstate, impersonate), audit log view and export, data export |
+
+## Public Interface
+
+Other code MUST import this module only through its `index.ts` (see the system doc).
+
+### Functions other modules can call
+
+| Function | What it does | Used by |
+|---|---|---|
+| `requireUser(locals)` | Returns the signed-in user or stops the request | All pages and modules |
+| `requireRole(user, role)` | Stops the request if the user lacks the role | Admin pages, later modules |
+| `getPublicProfiles(userIds)` | Returns name, username and avatar only; safe to show to anyone | Later modules |
+| `getContactDetails(userId)` | Returns email and language, for sending notifications | Later modules |
+| `getNotificationPreferences(userId)` | Returns what the user has opted into | Later modules |
+| `recordAuditEvent(actor, action, target)` | Appends an entry to the audit log | Later modules |
+| `onUserDeleted(handler)` | Registers a clean-up to run when a user is permanently deleted | Later modules |
+
+### Pages and endpoints
+
+Pages use form actions, following the shared conventions in the system doc.
+
+| Path | What it does | Who can call it |
+|---|---|---|
+| `/signup` | Registers a new account | Anyone |
+| `/verify-email` | Confirms the email from the link; resends the link | Anyone |
+| `/login` | Signs in with email and password, Google, Facebook or a passkey | Anyone |
+| `/login/two-step` | Takes the second-step code or a backup code | Anyone part-way through login |
+| `/logout` | Signs out of this session | Signed-in users |
+| `/forgot-password` | Requests a reset link | Anyone |
+| `/reset-password` | Sets a new password from the link | Anyone |
+| `/welcome` | Completes the profile after the first Google or Facebook sign-in | Signed-in users |
+| `/settings/profile` | Name, username, avatar, language, time zone | Signed-in users |
+| `/settings/account` | Change email, change password, delete account | Signed-in users |
+| `/settings/security` | Passkeys, second step, backup codes, active sessions, activity log, sign out everywhere | Signed-in users |
+| `/settings/connections` | Link and unlink Google and Facebook | Signed-in users |
+| `/settings/notifications` | Notification preferences | Signed-in users |
+| `/settings/privacy` | Download my data, see accepted terms | Signed-in users |
+| `/admin/users` | Finds users | Admin |
+| `/admin/users/[id]` | Suspends, reinstates and impersonates a user | Admin |
+| `/admin/audit` | Views and exports the audit log | Admin |
+| `/api/auth/*` | The login library's own endpoints: Google and Facebook return addresses, passkey exchange | Anyone |
+| `GET /api/username-available` | Says whether a username is free; rate limited | Anyone |
+| `POST /api/jobs/daily` | Runs the daily clean-up | The scheduler, with a secret |
+
+### Events
+
+| Event | Publishes or listens | When | Data included |
+|---|---|---|---|
+| User deleted | Publishes | When an account is permanently deleted, after the grace period | userId |
+
+## Module Rules
+
+These apply on top of the system-wide rules.
+
+| Rule | Level | Checked by |
+|---|---|---|
+| Only this module imports the login library. Everything else goes through this module's `index.ts`. | MUST | Lint |
+| Sign-up, login and reset responses don't reveal whether an email is registered. | MUST | Test |
+| `audit_events` rows are never edited. Only two changes are allowed: permanent account deletion empties the user links, IP address and device details; the retention job deletes rows older than 12 months. | MUST | Test |
+| While impersonating, an admin can't change the password, email or sign-in methods, and can't delete the account. | MUST | Test |
+| A user's last way to sign in can't be removed. | MUST | Test |
+| Passwords, secrets and tokens never appear in logs or audit entries. | MUST | Review |
+| Audit entry details hold no personal information beyond the user links, IP address and device details. | SHOULD | — |
+| Every impersonation is recorded in the audit log and the user is told by email. | SHOULD | — |
+| A password change, suspension or deletion request ends the user's other sessions. | SHOULD | — |
+
+## Dependencies
+
+| Depends on | Why |
+|---|---|
+| Better Auth (library) | Sign-up, login, sessions, social login, passkeys, second step, admin roles |
+| Email helper (shared) | Sends verification, reset and alert emails |
+| File storage helper (shared) | Stores avatar images |
+| Google and Facebook (third-party) | Social login |
+| No other modules | |
+
+### What the library covers and what we write
+
+| Covered by the library | Written by us |
+|---|---|
+| Email and password, email verification, password reset and change | Progressive login lockout |
+| Google and Facebook login, account linking | Username change rules and holds |
+| Sessions, "remember me", sign out everywhere | Consent records |
+| Usernames (uniqueness, format) | Audit log and security activity view |
+| Authenticator app, email codes, backup codes, trusted devices | Account deletion grace period and permanent deletion |
+| Passkeys | Data export |
+| Admin role, suspension, impersonation | Notification preferences |
+| Rate limiting | The "user deleted" notice to other modules |
+
+## Data
+
+Tables owned by this module: see the `identity` group in [`schema.dbml`](../../database/schema.dbml).
+
+```mermaid
+erDiagram
+    users ||--o{ accounts : "signs in with"
+    users ||--o{ sessions : has
+    users |o--o{ sessions : impersonates
+    users ||--o{ passkeys : has
+    users ||--o| two_factors : has
+    users ||--o{ notification_preferences : sets
+    users ||--o{ consents : gave
+    users |o--o{ audit_events : "acted in"
+    users |o--o{ audit_events : "is subject of"
+    users |o--o{ username_holds : held
+```
+
+`verifications` and `rate_limits` have no relationships to other tables.
+
+The first seven tables (`users`, `accounts`, `sessions`, `verifications`, `passkeys`, `two_factors`, `rate_limits`) are shaped by the login library. Their exact columns are confirmed against the library's generated schema when each is first built.
+
+On permanent deletion every row tied to the user is deleted, except rows in `audit_events` and `username_holds`, which stay with the user link emptied.
+
+## Key Flows
+
+### Signing up
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Page as "Sign-up page"
+    participant ID as "Identity module"
+    participant DB as "Database"
+    participant Mail as "Email service"
+    User->>Page: Fills in email, password, username, ticks terms and 18+
+    Page->>ID: Form action sends the details
+    ID->>ID: Validates input and checks rate limits
+    ID->>DB: Saves user, password hash, consent records, audit entry
+    ID->>Mail: Sends the verification link
+    ID-->>Page: Returns "check your email"
+    User->>Page: Opens the link
+    Page->>ID: Sends the token
+    ID->>DB: Marks the email verified, starts a session
+    ID-->>Page: Redirects to the home page
+```
+
+If the email is already registered, the page shows the same "check your email" message, and the existing owner gets an email offering to sign in or reset their password.
+
+### Logging in
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Page as "Login page"
+    participant ID as "Identity module"
+    participant DB as "Database"
+    User->>Page: Enters email and password
+    Page->>ID: Form action sends the details
+    ID->>DB: Checks lockout, looks up the user, checks the password
+    alt Wrong details or locked out
+        ID->>DB: Counts the failed attempt, saves audit entry
+        ID-->>Page: Returns the same generic error
+    else Correct, no second step or trusted device
+        ID->>DB: Starts a session, saves audit entry
+        ID-->>Page: Redirects to the home page
+    else Correct, second step needed
+        ID-->>Page: Redirects to the two-step page
+        User->>Page: Enters the code or a backup code
+        Page->>ID: Sends the code
+        ID->>DB: Checks the code, starts a session, saves audit entry
+        ID-->>Page: Redirects to the home page
+    end
+```
+
+### Deleting an account
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Page as "Account settings"
+    participant ID as "Identity module"
+    participant DB as "Database"
+    participant Job as "Daily job"
+    participant Other as "Other modules"
+    User->>Page: Asks to delete the account and confirms
+    Page->>ID: Form action requests deletion
+    ID->>DB: Sets the deletion date, ends all sessions, saves audit entry
+    ID-->>Page: Shows "your account will be deleted in 30 days"
+    Note over User,ID: Signing in again within 30 days cancels the deletion
+    Job->>ID: Runs the daily clean-up
+    ID->>DB: Finds accounts past the 30 days
+    ID->>Other: Announces "user deleted"
+    ID->>DB: Holds the username permanently, deletes the user and their rows
+    ID->>DB: Empties user links and device details in the audit log
+```
+
+## Security and Access
+
+- Passwords are at least 10 characters, with no other composition rules. The strength meter is guidance only.
+- After 5 failed logins for an email, each further attempt must wait; the wait doubles from 1 minute up to 15 minutes.
+- Sign-up, login, forgot password and the username check are rate limited per IP address and per email.
+- Email verification links last 24 hours. Password reset links last 1 hour and work once.
+- Forgot password always shows the same success message.
+- Changing a password requires the current one and ends the user's other sessions.
+- An email change takes effect only after the new address is verified; the old address is notified.
+- Signing in with Google or Facebook using an email that already has an account does not merge them automatically. The person signs in to the existing account first and links the provider from settings.
+- A passkey signs a person in on its own, with no password and no second step.
+- Trusted devices skip the second step for 30 days.
+- Usernames: 3 to 30 characters (letters, numbers, hyphens, underscores), compared without regard to case, checked against a reserved list kept in code. One change every 30 days; the old name is held for 30 days. A deleted account's name is held permanently.
+- A suspended user can't sign in and their sessions are ended.
+- Audit log entries are kept for 12 months.
+
+## Decisions
+
+ADRs with scope "Identity": see the [decision log](../../decisions/README.md).
+
+## Open Questions
+
+- [ ] How long do sessions last? Suggested: 1 day without "remember me", 30 days with it.
+- [ ] How long can the old address undo an email change? Suggested: 7 days.
+- [ ] Does a successful password reset clear a login lockout? Suggested: yes.
+- [ ] Should there be a public profile page at `/u/<username>`? It is not included.
+- [ ] Which notification types exist? None until another module needs one.

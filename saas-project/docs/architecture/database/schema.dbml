@@ -1,0 +1,244 @@
+// SaaS — Database Schema
+// Source of truth for tables, columns and relationships.
+// View as a diagram by pasting into https://dbdiagram.io
+//
+// Conventions used here:
+// - One database for the whole app. Each table belongs to exactly one
+//   module, shown by the TableGroup blocks at the bottom.
+// - Table and column names are lowercase with underscores.
+// - Private data belongs to a user: tables holding it have user_id.
+// - Every table has created_at and updated_at, except audit_events
+//   (append-only, so created_at only) and rate_limits (counters only).
+// - Times are stored with time zone (timestamptz), saved in UTC.
+// - The first seven tables are shaped by the login library (Better Auth).
+//   Their exact columns are confirmed against the library's generated
+//   schema when each is first built. The library uses text IDs.
+
+Project saas {
+  database_type: 'PostgreSQL'
+  Note: 'Accounts, sign-in methods, profiles and security records for the SaaS community app'
+}
+
+// ---------- Identity module ----------
+
+Enum consent_document {
+  terms
+  privacy
+  age_confirmation
+}
+
+Table users {
+  id text [pk]
+  email varchar [unique, not null]
+  email_verified boolean [not null, default: false]
+  name varchar [not null]
+  username varchar [unique, note: 'Public handle, stored in lower case. Empty until a social sign-up finishes the welcome step. Not used for login.']
+  display_username varchar [note: 'The username as the person typed it']
+  image varchar [note: 'Avatar address in file storage']
+  role varchar [not null, default: 'user', note: 'user or admin']
+  banned boolean [not null, default: false, note: 'True while the account is suspended']
+  ban_reason varchar
+  ban_expires timestamptz
+  two_factor_enabled boolean [not null, default: false]
+  locale varchar [not null, default: 'en']
+  time_zone varchar [not null, default: 'UTC', note: 'IANA name, e.g. Europe/Stockholm']
+  username_changed_at timestamptz [note: 'Limits changes to once every 30 days']
+  deletion_requested_at timestamptz [note: 'Set when the user asks to delete; permanent deletion follows 30 days later']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    deletion_requested_at [note: 'Lets the daily job find accounts due for deletion']
+  }
+
+  Note: 'People who use the app'
+}
+
+Table accounts {
+  id text [pk]
+  user_id text [not null]
+  provider_id varchar [not null, note: 'credential (email and password), google or facebook']
+  account_id varchar [not null, note: 'The ID the provider uses for this person']
+  password varchar [note: 'One-way hash. Never store plain passwords.']
+  access_token text
+  refresh_token text
+  id_token text
+  access_token_expires_at timestamptz
+  refresh_token_expires_at timestamptz
+  scope varchar
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    user_id
+    (provider_id, account_id) [unique]
+  }
+
+  Note: 'One row per way a user can sign in'
+}
+
+Table sessions {
+  id text [pk]
+  user_id text [not null]
+  token varchar [unique, not null]
+  expires_at timestamptz [not null]
+  ip_address varchar
+  user_agent varchar [note: 'Browser and device description']
+  impersonated_by text [note: 'The admin signed in as this user, if any']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    user_id [note: 'Speeds up listing and ending all of a user sessions']
+  }
+
+  Note: 'Signed-in sessions'
+}
+
+Table verifications {
+  id text [pk]
+  identifier varchar [not null, note: 'What is being verified, e.g. an email address']
+  value varchar [not null, note: 'The one-time token or code']
+  expires_at timestamptz [not null]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    identifier
+  }
+
+  Note: 'One-time links and codes: email verification, password reset, email change, email code'
+}
+
+Table passkeys {
+  id text [pk]
+  user_id text [not null]
+  name varchar [note: 'Label the user gives the passkey']
+  public_key text [not null]
+  credential_id varchar [unique, not null]
+  counter integer [not null, default: 0]
+  device_type varchar
+  backed_up boolean [not null, default: false]
+  transports varchar
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    user_id
+  }
+
+  Note: 'Registered passkeys (Phase 2)'
+}
+
+Table two_factors {
+  id text [pk]
+  user_id text [unique, not null]
+  secret text [not null, note: 'Authenticator app secret, encrypted']
+  backup_codes text [not null, note: 'Encrypted']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Note: 'Second-step set-up, one per user (Phase 2)'
+}
+
+Table rate_limits {
+  id text [pk]
+  key varchar [unique, not null, note: 'What is being counted, e.g. an IP address and action']
+  count integer [not null, default: 0]
+  last_request bigint [not null]
+
+  Note: 'Attempt counters for rate limiting and login lockout'
+}
+
+Table notification_preferences {
+  id bigint [pk, increment]
+  user_id text [not null]
+  notification_type varchar [not null]
+  enabled boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (user_id, notification_type) [unique]
+  }
+
+  Note: 'What each user has opted into. Other modules send the notifications.'
+}
+
+Table consents {
+  id bigint [pk, increment]
+  user_id text [not null]
+  document consent_document [not null]
+  version varchar [not null, note: 'Version of the document that was accepted']
+  accepted_at timestamptz [not null, default: `now()`]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    user_id
+  }
+
+  Note: 'Which terms and privacy policy versions a user accepted, and the 18+ confirmation'
+}
+
+Table audit_events {
+  id bigint [pk, increment]
+  actor_user_id text [note: 'Who did it. Emptied when that user is permanently deleted.']
+  subject_user_id text [note: 'Whose account it concerns. Emptied when that user is permanently deleted.']
+  action varchar [not null, note: 'e.g. login, password_changed, user_suspended, impersonation_started']
+  details jsonb [note: 'Extra facts about the action. No personal information.']
+  ip_address varchar [note: 'Emptied when the user is permanently deleted']
+  user_agent varchar [note: 'Emptied when the user is permanently deleted']
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (subject_user_id, created_at) [note: 'Speeds up a user security activity page']
+    created_at [note: 'Speeds up the admin view and the 12-month retention job']
+  }
+
+  Note: 'Append-only log of security activity and admin actions. Rows are never edited; kept 12 months.'
+}
+
+Table username_holds {
+  id bigint [pk, increment]
+  username varchar [unique, not null, note: 'Lower case']
+  user_id text [note: 'The user who had the name. Emptied when that user is permanently deleted.']
+  release_at timestamptz [note: 'When the name becomes free again. Empty means held permanently.']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Note: 'Usernames nobody can take: old names for 30 days, deleted accounts names permanently'
+}
+
+// ---------- Relationships ----------
+// Each line says what happens to child rows when the parent is deleted:
+// cascade = delete them too, restrict = block the delete, set null = keep them unlinked.
+// Lines marked "cross-module" would link tables owned by different modules. There are none yet.
+
+Ref: accounts.user_id > users.id [delete: cascade]
+Ref: sessions.user_id > users.id [delete: cascade]
+Ref: sessions.impersonated_by > users.id [delete: set null]
+Ref: passkeys.user_id > users.id [delete: cascade]
+// One-to-one: the unique constraint on two_factors.user_id keeps it to one per user.
+Ref: two_factors.user_id > users.id [delete: cascade]
+Ref: notification_preferences.user_id > users.id [delete: cascade]
+Ref: consents.user_id > users.id [delete: cascade]
+Ref: audit_events.actor_user_id > users.id [delete: set null]
+Ref: audit_events.subject_user_id > users.id [delete: set null]
+Ref: username_holds.user_id > users.id [delete: set null]
+
+// ---------- Module ownership ----------
+
+TableGroup identity {
+  users
+  accounts
+  sessions
+  verifications
+  passkeys
+  two_factors
+  rate_limits
+  notification_preferences
+  consents
+  audit_events
+  username_holds
+}
