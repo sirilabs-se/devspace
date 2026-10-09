@@ -32,7 +32,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 
 | # | Task | Module | Depends on | Status |
 |---|---|---|---|---|
-| 1 | Project setup | — | — | To do |
+| 1 | Project setup | — | — | In progress |
 | 2 | Sign up | Identity | 1 | To do |
 | 3 | Verify email and start a session | Identity | 2 | To do |
 | 4 | Log in and log out | Identity | 3 | To do |
@@ -94,13 +94,25 @@ Phase 1 is tasks 2 to 16, Phase 2 is tasks 17 to 21, Phase 3 is tasks 22 to 26. 
 
 **Done when:**
 
-- [ ] The app starts locally and shows a placeholder page built from `$lib/ui` components and theme tokens
+- [x] The app starts locally and shows a placeholder page built from `$lib/ui` components and theme tokens
 - [ ] `npm run verify` passes locally and in CI
-- [ ] `npm run verify` fails when a rule is broken on purpose, e.g. importing a module's internal file or hard-coding a colour (then undo the break)
-- [ ] A commit message containing AI attribution is rejected by the hook
-- [ ] `npm run db:migrate` runs against the local database
+- [x] `npm run verify` fails when a rule is broken on purpose, e.g. importing a module's internal file or hard-coding a colour (then undo the break)
+- [x] A commit message containing AI attribution is rejected by the hook
+- [x] `npm run db:migrate` runs against the local database
 
-**Notes:** `.claude/` is inside `saas-project/`; `.githooks/` is at the `devspace` level and applies to every project in the repository.
+**Notes:**
+
+- `.claude/` is inside `saas-project/`; `.githooks/` is at the `devspace` level and applies to every project in the repository.
+- `npm run verify` passes locally. The CI half of that check is still open: the workflow has not run because nothing has been pushed. Tick the box and set the task to Done after the first green run.
+- The project was written by hand, not with the `sv create` tool, because that tool now sets up SvelteKit 3.
+- Logic tests use their own database, `saas_test`, created and migrated automatically, so they never touch development data.
+- `npm run verify` also runs the Playwright browser test, which builds the app first. The browser is installed once with `npx playwright install chromium`.
+- The import checker reads the `$lib` shortcut from `tsconfig.depcruise.json`. Without it, rules on `$lib/...` imports are silently skipped.
+- The "UI libraries only in `src/lib/ui/`" rule works from a list of package names in `.dependency-cruiser.cjs`. A newly approved UI package has to be added to that list.
+- The style rule bans fixed lengths (`px`, `rem`, `em`) outside `theme.css`, so every size is a token. Percentages and viewport units are allowed.
+- An empty `schema.ts` sits in the Identity folder because the migration tool refuses to run with no schema file.
+- Supporting packages added beyond the agreed list: `@eslint/js`, `globals`, `prettier-plugin-svelte`, `postcss-html`, `@types/node`, `@types/pg`.
+- Left for later: `npm audit` reports 12 known issues, all in development tools (mostly through `drizzle-kit`), none in code that runs in production. Zod and Better Auth are not installed yet; the tasks that first use them add them.
 
 ### 2. Sign up
 

@@ -1,0 +1,1 @@
+-- Baseline: no tables yet. Each later task adds its own migration.
