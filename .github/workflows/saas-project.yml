@@ -16,7 +16,9 @@ jobs:
       DATABASE_URL: postgres://saas:saas@localhost:5432/saas
     services:
       db:
-        image: postgres:18
+        # The official image from a mirror, because GitHub runners share
+        # Docker Hub download limits and are often refused there.
+        image: public.ecr.aws/docker/library/postgres:18
         env:
           POSTGRES_USER: saas
           POSTGRES_PASSWORD: saas
