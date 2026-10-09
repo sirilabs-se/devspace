@@ -1,19 +1,41 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
-	let { children }: { children: Snippet } = $props();
+	let {
+		variant = 'raised',
+		children
+	}: { variant?: 'raised' | 'sunken' | 'flat'; children: Snippet } = $props();
 </script>
 
-<section class="card">
+<section class="card {variant}">
 	{@render children()}
 </section>
 
 <style>
 	.card {
-		padding: var(--space-4);
+		min-width: 0;
+		padding: var(--space-24);
+		overflow-wrap: anywhere;
 		background: var(--color-surface);
-		border: var(--border-width) solid var(--color-border);
-		border-radius: var(--radius-medium);
-		box-shadow: var(--shadow-raised);
+		border: var(--border-thin) solid var(--color-line);
+		border-radius: var(--radius-22);
+		box-shadow: var(--shadow-1);
+	}
+
+	.sunken {
+		background: var(--color-sunken);
+		border-color: transparent;
+		box-shadow: none;
+	}
+
+	.flat {
+		box-shadow: none;
+	}
+
+	@media (max-width: 780px) {
+		.card {
+			padding: var(--space-18);
+			border-radius: var(--radius-20);
+		}
 	}
 </style>

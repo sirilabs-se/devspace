@@ -1,8 +1,14 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
-	let { gap = 'medium', children }: { gap?: 'small' | 'medium' | 'large'; children: Snippet } =
-		$props();
+	let {
+		gap = 'medium',
+		children
+	}: {
+		/** "fields" is the spacing between form fields. */
+		gap?: 'none' | 'small' | 'medium' | 'fields' | 'large';
+		children: Snippet;
+	} = $props();
 </script>
 
 <div class="stack {gap}">
@@ -16,14 +22,18 @@
 	}
 
 	.small {
-		gap: var(--space-2);
+		gap: var(--space-8);
 	}
 
 	.medium {
-		gap: var(--space-3);
+		gap: var(--space-12);
+	}
+
+	.fields {
+		gap: var(--space-16);
 	}
 
 	.large {
-		gap: var(--space-4);
+		gap: var(--space-24);
 	}
 </style>

@@ -9,51 +9,42 @@
 	} = $props();
 
 	const steps = [1, 2, 3, 4] as const;
-	const variant = $derived(level <= 1 ? 'weak' : level === 2 ? 'fair' : 'strong');
 </script>
 
-<div class="meter {variant}">
+<div class="meter">
 	<div class="bars" aria-hidden="true">
 		{#each steps as step (step)}
 			<span class="bar" class:filled={step <= level}></span>
 		{/each}
 	</div>
-	<span class="label" role="status">{label}</span>
+	<p class="label" role="status">{label}</p>
 </div>
 
 <style>
 	.meter {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
+		margin-top: var(--space-8);
 	}
 
 	.bars {
 		display: flex;
-		gap: var(--space-1);
+		gap: var(--space-6);
 	}
 
 	.bar {
 		flex: 1;
-		height: var(--meter-height);
-		background: var(--color-border);
-		border-radius: var(--radius-small);
+		height: var(--height-meter);
+		background: var(--color-sunken-strong);
+		border-radius: var(--radius-8);
 	}
 
-	.weak .filled {
-		background: var(--color-danger);
-	}
-
-	.fair .filled {
-		background: var(--color-warning);
-	}
-
-	.strong .filled {
-		background: var(--color-success);
+	.filled {
+		background: var(--color-ink);
 	}
 
 	.label {
-		color: var(--color-text-muted);
-		font-size: var(--font-size-small);
+		margin-top: var(--space-6);
+		color: var(--color-ink-muted);
+		font-size: var(--font-size-13);
+		font-weight: var(--font-weight-bold);
 	}
 </style>

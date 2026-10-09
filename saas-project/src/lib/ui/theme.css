@@ -2,52 +2,179 @@
  * Design tokens: the only place colours, fonts, spacing, corner radii and
  * shadows are defined. Everything else refers to these with var(--name).
  * Replacing this file changes the look of the whole app.
+ *
+ * Values come from the UX prototype (docs/design). Its colours are neutral
+ * placeholders: swap the --color-brand* and status colours when the brand
+ * palette is chosen.
  */
+@import '@fontsource-variable/inter-tight';
+
 :root {
-	/* Colours */
-	--color-background: #f7f7f8;
+	/* Colours: text */
+	--color-ink: #0c0c0e;
+	--color-ink-soft: #34343a;
+	--color-ink-muted: #5f5f68;
+	--color-ink-faint: #6e6e78;
+
+	/* Colours: surfaces and lines */
+	--color-background: #f5f5f6;
 	--color-surface: #ffffff;
-	--color-border: #dcdce0;
-	--color-text: #1c1c21;
-	--color-text-muted: #5c5c66;
-	--color-accent: #2f5fd0;
-	--color-accent-text: #ffffff;
-	--color-danger: #c0362c;
-	--color-warning: #b26a00;
-	--color-success: #1f7a43;
+	--color-surface-error: #fafafb;
+	--color-surface-nav: rgb(255 255 255 / 94%);
+	--color-sunken: #eeeef0;
+	--color-sunken-strong: #e1e1e6;
+	--color-line: #e3e3e7;
+	--color-line-strong: #c6c6ce;
+
+	/* Colours: brand and status (placeholders) */
+	--color-brand: #0c0c0e;
+	--color-brand-ink: #ffffff;
+	--color-danger: #0c0c0e;
+	--color-danger-ink: #ffffff;
+	--color-success: #0c0c0e;
+	--color-success-ink: #ffffff;
+	--color-warning: #0c0c0e;
+	--color-disabled: #c6c6ce;
+
+	/* Colours: the dark hero panel beside sign-up and login */
+	--color-hero: #111111;
+	--color-hero-ink: #ffffff;
+	--color-hero-ink-soft: rgb(255 255 255 / 82%);
+	--color-hero-chip: rgb(255 255 255 / 18%);
+	--gradient-hero:
+		radial-gradient(circle at 24% 18%, #8a8a92 0%, transparent 46%),
+		radial-gradient(circle at 82% 72%, #5f5f68 0%, transparent 52%),
+		linear-gradient(140deg, #34343a, #0c0c0e);
+	--gradient-hero-shade: linear-gradient(
+		180deg,
+		rgb(0 0 0 / 62%),
+		rgb(0 0 0 / 60%) 40%,
+		rgb(0 0 0 / 88%)
+	);
+	--gradient-mark: conic-gradient(from 200deg, #111111, #8a8a92, #111111, #c4c4ca, #111111);
 
 	/* Fonts */
-	--font-family-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-	--font-size-small: 0.875rem;
-	--font-size-body: 1rem;
-	--font-size-heading-2: 1.375rem;
-	--font-size-heading-1: 1.875rem;
-	--font-weight-normal: 400;
-	--font-weight-bold: 650;
-	--line-height-body: 1.5;
-	--line-height-heading: 1.2;
+	--font-family-body:
+		'Inter Tight Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
+		Arial, sans-serif;
+	--font-family-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
 
-	/* Spacing */
-	--space-1: 0.25rem;
-	--space-2: 0.5rem;
-	--space-3: 1rem;
-	--space-4: 1.5rem;
-	--space-5: 2.5rem;
+	--font-size-12: 0.75rem;
+	--font-size-13: 0.8125rem;
+	--font-size-14: 0.875rem;
+	--font-size-15: 0.9375rem;
+	--font-size-16: 1rem;
+	--font-size-17: 1.0625rem;
+	--font-size-18: 1.125rem;
+	--font-size-heading-3: 1.0625rem;
+	--font-size-heading-2: 1.4375rem;
+	--font-size-heading-1: 2.125rem;
+	--font-size-heading-1-small: 1.75rem;
+	--font-size-display: 2.75rem;
+	--font-size-display-small: 1.875rem;
+
+	--font-weight-normal: 400;
+	--font-weight-medium: 500;
+	--font-weight-semibold: 650;
+	--font-weight-bold: 700;
+	--font-weight-heavy: 750;
+	--font-weight-black: 800;
+
+	--line-height-body: 1.5;
+	--line-height-snug: 1.3;
+	--line-height-heading-2: 1.2;
+	--line-height-heading-1: 1.08;
+	--line-height-display: 1.02;
+
+	--tracking-heading-3: -0.012em;
+	--tracking-heading-2: -0.025em;
+	--tracking-logo: -0.03em;
+	--tracking-heading-1: -0.035em;
+	--tracking-display: -0.045em;
+
+	/* Spacing, named by its size in pixels at the default text size */
+	--space-1: 0.0625rem;
+	--space-2: 0.125rem;
+	--space-4: 0.25rem;
+	--space-6: 0.375rem;
+	--space-8: 0.5rem;
+	--space-10: 0.625rem;
+	--space-12: 0.75rem;
+	--space-14: 0.875rem;
+	--space-16: 1rem;
+	--space-18: 1.125rem;
+	--space-20: 1.25rem;
+	--space-22: 1.375rem;
+	--space-24: 1.5rem;
+	--space-30: 1.875rem;
+	--space-32: 2rem;
+	--space-36: 2.25rem;
+	--space-38: 2.375rem;
+	--space-40: 2.5rem;
+	--space-44: 2.75rem;
 
 	/* Sizes */
-	--width-content: 44rem;
-	--width-form: 26rem;
-	--border-width: 1px;
-	--focus-ring-width: 2px;
-	--meter-height: 0.375rem;
-	--control-size: 1.125rem;
+	--width-page: 72.5rem;
+	--width-page-narrow: 47.5rem;
+	--width-auth-form: 27.5rem;
+	--width-centered-card: 31.25rem;
+	--width-centered-card-wide: 40rem;
+	--width-lead: 64ch;
+	--width-hero-text: 38ch;
+
+	--height-nav: 4.25rem;
+	--height-control-small: 2.5rem;
+	--height-control: 3rem;
+	--height-control-large: 3.5rem;
+	--height-input: 3.125rem;
+	--height-meter: 0.375rem;
+
+	--size-checkbox: 1.375rem;
+	--size-touch: 2.75rem;
+	--size-icon-button: 2rem;
+	--size-icon-box: 2.75rem;
+	--size-status-icon: 4rem;
+	--size-logo-mark: 1.875rem;
+	--size-logo-dot: 0.625rem;
+	--size-spinner: 1rem;
+
+	--border-thin: 1px;
+	--border-medium: 1.5px;
+	--border-thick: 2px;
+	--border-heavy: 2.5px;
+	--border-accent: 7px;
+	--focus-ring-width: 3px;
+	--focus-ring-offset: 2px;
+	--blur-nav: 12px;
 
 	/* Corner radii */
-	--radius-small: 0.25rem;
-	--radius-medium: 0.5rem;
+	--radius-7: 0.4375rem;
+	--radius-8: 0.5rem;
+	--radius-12: 0.75rem;
+	--radius-14: 0.875rem;
+	--radius-16: 1rem;
+	--radius-20: 1.25rem;
+	--radius-22: 1.375rem;
+	--radius-24: 1.5rem;
+	--radius-28: 1.75rem;
+	--radius-pill: 999px;
+	--radius-round: 50%;
 
 	/* Shadows */
-	--shadow-raised: 0 1px 3px rgb(0 0 0 / 12%);
+	--shadow-1: 0 1px 2px rgb(12 12 14 / 6%);
+	--shadow-2: 0 10px 28px -10px rgb(12 12 14 / 22%);
+	--shadow-3: 0 30px 80px -24px rgb(12 12 14 / 45%);
+	--shadow-button-hover: 0 10px 22px -8px rgb(12 12 14 / 60%);
+	--shadow-input-focus: 0 0 0 4px rgb(12 12 14 / 14%);
+
+	/* Motion */
+	--ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+	--duration-fast: 0.12s;
+	--duration-normal: 0.15s;
+	--duration-slow: 0.18s;
+	--duration-spin: 0.7s;
+	--lift-hover: -1px;
+	--skip-link-hidden: -70px;
 }
 
 *,
@@ -56,11 +183,46 @@
 	box-sizing: border-box;
 }
 
+html,
 body {
 	margin: 0;
+}
+
+body {
 	background: var(--color-background);
-	color: var(--color-text);
+	color: var(--color-ink);
 	font-family: var(--font-family-body);
-	font-size: var(--font-size-body);
+	font-size: var(--font-size-16);
 	line-height: var(--line-height-body);
+	-webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p {
+	margin: 0;
+}
+
+button {
+	font: inherit;
+	color: inherit;
+	cursor: pointer;
+}
+
+a {
+	color: inherit;
+}
+
+:focus-visible {
+	outline: var(--focus-ring-width) solid var(--color-ink);
+	outline-offset: var(--focus-ring-offset);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		animation: none !important;
+		transition: none !important;
+		scroll-behavior: auto !important;
+	}
 }

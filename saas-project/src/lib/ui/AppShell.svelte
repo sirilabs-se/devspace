@@ -1,30 +1,86 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import Logo from './Logo.svelte';
 
-	let { appName, children }: { appName: string; children: Snippet } = $props();
+	let {
+		appName,
+		actions,
+		children
+	}: {
+		appName: string;
+		/** Links or buttons shown at the right of the header. */
+		actions?: Snippet;
+		children: Snippet;
+	} = $props();
 </script>
 
-<header class="header">
-	<span class="name">{appName}</span>
-</header>
-<main class="main">
-	{@render children()}
-</main>
+<div class="shell">
+	<a class="skip" href="#main">Skip to main content</a>
+	<header class="nav">
+		<Logo name={appName} />
+		<span class="spacer"></span>
+		{#if actions}
+			{@render actions()}
+		{/if}
+	</header>
+	<main class="main" id="main" tabindex="-1">
+		{@render children()}
+	</main>
+</div>
 
 <style>
-	.header {
-		padding: var(--space-3) var(--space-4);
-		background: var(--color-surface);
-		border-bottom: var(--border-width) solid var(--color-border);
+	.shell {
+		display: flex;
+		flex-direction: column;
+		min-height: 100dvh;
 	}
 
-	.name {
+	.skip {
+		position: absolute;
+		top: var(--skip-link-hidden);
+		left: var(--space-12);
+		z-index: 100;
+		padding: var(--space-10) var(--space-16);
+		background: var(--color-surface);
+		border: var(--border-thick) solid var(--color-ink);
+		border-radius: var(--radius-12);
 		font-weight: var(--font-weight-bold);
+		text-decoration: none;
+	}
+
+	.skip:focus {
+		top: var(--space-10);
+	}
+
+	.nav {
+		display: flex;
+		flex: none;
+		align-items: center;
+		gap: var(--space-10);
+		height: var(--height-nav);
+		padding: 0 var(--space-24);
+		background: var(--color-surface-nav);
+		border-bottom: var(--border-thin) solid var(--color-line);
+		backdrop-filter: blur(var(--blur-nav));
+	}
+
+	.spacer {
+		flex: 1;
 	}
 
 	.main {
-		max-width: var(--width-content);
-		margin: 0 auto;
-		padding: var(--space-5) var(--space-4);
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+	}
+
+	.main:focus {
+		outline: none;
+	}
+
+	@media (max-width: 780px) {
+		.nav {
+			padding: 0 var(--space-16);
+		}
 	}
 </style>

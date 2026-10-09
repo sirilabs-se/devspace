@@ -7,7 +7,7 @@ test('a new person can sign up and is told to check their email', async ({ page 
 	await page.getByLabel('Email').fill(`e2e-${unique}@example.com`);
 	await page.getByLabel('Username').fill(`e2e-${unique}`);
 	await expect(page.getByText('Available', { exact: true })).toBeVisible();
-	await page.getByLabel('Password').fill('correct horse battery');
+	await page.getByLabel('Password', { exact: true }).fill('correct horse battery');
 	await expect(page.getByText('Strong', { exact: true })).toBeVisible();
 	await page.getByLabel(/terms of service/).check();
 	await page.getByLabel(/18 or older/).check();
@@ -20,7 +20,7 @@ test('sign-up shows clear errors for a short password and unticked boxes', async
 	await page.goto('/signup');
 	await page.getByLabel('Email').fill('someone@example.com');
 	await page.getByLabel('Username').fill('admin');
-	await page.getByLabel('Password').fill('short');
+	await page.getByLabel('Password', { exact: true }).fill('short');
 	await page.getByRole('button', { name: 'Create account' }).click();
 
 	await expect(page.getByText('Use at least 10 characters.')).toBeVisible();

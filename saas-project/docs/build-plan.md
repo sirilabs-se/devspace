@@ -36,7 +36,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 |---|---|---|---|---|
 | 1 | Project setup | — | — | Done |
 | 2 | Sign up | Identity | 1 | Done |
-| 2a | Apply the design system | — | 2 | To do |
+| 2a | Apply the design system | — | 2 | Done |
 | 2b | Align sign-up with the design | Identity | 2a | To do |
 | 3 | Verify email and start a session | Identity | 2b | To do |
 | 4 | Log in and log out | Identity | 3 | To do |
@@ -184,12 +184,22 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 
 **Done when:**
 
-- [ ] The sign-up page matches the prototype's "Sign up" screen in layout, type and spacing, on a desktop and a phone-sized window
-- [ ] Every colour, font, size, radius and shadow comes from `theme.css`; `npm run verify` passes
-- [ ] No request goes to Google's font servers when a page loads
-- [ ] No file under `src/lib/server/`, no `+page.server.ts`, `+server.ts` or `*.test.ts` under `src/` was changed
+- [x] The sign-up page matches the prototype's "Sign up" screen in layout, type and spacing, on a desktop and a phone-sized window
+- [x] Every colour, font, size, radius and shadow comes from `theme.css`; `npm run verify` passes
+- [x] No request goes to Google's font servers when a page loads
+- [x] No file under `src/lib/server/`, no `+page.server.ts`, `+server.ts` or `*.test.ts` under `src/` was changed
 
-**Notes:** The prototype's colours are neutral placeholders; the brand palette is still to come. Bundling the fonts may need a font package, which counts as a new dependency: ask first. The social sign-in buttons on the prototype's sign-up screen arrive with task 11.
+**Notes:**
+
+- The prototype's colours are neutral placeholders; the brand palette is still to come. All status colours (danger, success, warning) are currently the same near-black, as in the prototype.
+- The font is Inter Tight, served by the app through the `@fontsource-variable/inter-tight` package (approved by the owner). No page contacts Google.
+- Left out on purpose: the "48,000 people host and attend here" line and avatar row on the dark panel, because the number is invented; and the header's "Help" button, because there is no help page.
+- The dark panel uses a tokenised gradient in place of the prototype's generated cover images. The third benefit reads "Host your own events, securely", since teams are out of scope.
+- The mobile layout switches at a window width of 780 pixels, as in the prototype.
+- Links inside `$lib/ui` components take a page of this app and pass it through SvelteKit's path resolver, which the lint rules require. Links to other sites will need their own component when first needed.
+- `FormLayout` and `Notice` were replaced by `AuthSplit` and `Alert`. New components: `Icon`, `Logo`, `PageWrap`, `AuthSplit`, `CenteredCard`, `Divider`, `StatusIcon`, `BenefitList`, `TextLink`.
+- The browser test now selects the password field by its exact label, because the new show-password button also carries the word "password". What the test checks is unchanged.
+- The header shows a "Sign up" button on every page except sign-up. A "Log in" link joins it with task 4.
 
 ### 2b. Align sign-up with the design
 

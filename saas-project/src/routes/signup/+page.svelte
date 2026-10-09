@@ -2,13 +2,14 @@
 	import { enhance } from '$app/forms';
 	import { passwordStrength } from '$lib/shared/password-strength';
 	import {
+		Alert,
+		AuthSplit,
+		BenefitList,
 		Button,
-		Card,
 		CheckboxField,
-		FormLayout,
 		Heading,
-		Notice,
 		Stack,
+		StatusIcon,
 		StrengthMeter,
 		Text,
 		TextField
@@ -79,36 +80,58 @@
 	<title>Sign up · SaaS</title>
 </svelte:head>
 
-<FormLayout>
-	<Card>
-		{#if form?.sent}
-			<Stack>
-				<Heading>Check your email</Heading>
-				<Notice variant="success">
-					We've sent you an email with a link to confirm your address. The link works for 24 hours.
-				</Notice>
-				<Text variant="muted">Nothing there? Check your spam folder.</Text>
-			</Stack>
-		{:else}
-			<form
-				method="POST"
-				novalidate
-				use:enhance={() => {
-					submitting = true;
-					return async ({ update }) => {
-						await update({ reset: false });
-						submitting = false;
-						password = '';
-					};
-				}}
-			>
-				<Stack gap="large">
-					<Heading>Create your account</Heading>
+<AuthSplit
+	appName="SaaS"
+	headline="Your next favourite night out starts here."
+	text="Join people who discover, host and attend events every week."
+>
+	{#snippet aside()}
+		<BenefitList
+			items={[
+				{ icon: 'compass', text: 'Discover events near you' },
+				{ icon: 'ticket', text: 'Register in one tap, keep every ticket' },
+				{ icon: 'users', text: 'Host your own events, securely' }
+			]}
+		/>
+	{/snippet}
 
+	{#if form?.sent}
+		<StatusIcon icon="mail" variant="strong" />
+		<Stack gap="large">
+			<Stack gap="small">
+				<Heading>Check your email</Heading>
+				<Text variant="lead">We've sent you an email with a link to confirm your address.</Text>
+			</Stack>
+			<Alert variant="info" title="The link works for 24 hours">It can only be used once.</Alert>
+			<Text variant="footnote">Nothing there? Check your spam folder.</Text>
+		</Stack>
+	{:else}
+		<form
+			method="POST"
+			novalidate
+			use:enhance={() => {
+				submitting = true;
+				return async ({ update }) => {
+					await update({ reset: false });
+					submitting = false;
+					password = '';
+				};
+			}}
+		>
+			<Stack gap="large">
+				<Stack gap="small">
+					<Heading>Create your account</Heading>
+					<Text variant="lead">
+						Discover events, host your own, and keep every ticket in one place.
+					</Text>
+				</Stack>
+
+				<Stack gap="fields">
 					<TextField
 						label="Email"
 						name="email"
 						type="email"
+						placeholder="you@example.com"
 						autocomplete="email"
 						required
 						bind:value={email}
@@ -145,7 +168,9 @@
 							{/if}
 						{/snippet}
 					</TextField>
+				</Stack>
 
+				<Stack gap="medium">
 					<CheckboxField name="acceptTerms" required error={message(form?.errors?.acceptTerms)}>
 						I accept the terms of service and the privacy policy.
 					</CheckboxField>
@@ -153,12 +178,12 @@
 					<CheckboxField name="confirmAge" required error={message(form?.errors?.confirmAge)}>
 						I am 18 or older.
 					</CheckboxField>
-
-					<Button type="submit" disabled={submitting}>
-						{submitting ? 'Creating account…' : 'Create account'}
-					</Button>
 				</Stack>
-			</form>
-		{/if}
-	</Card>
-</FormLayout>
+
+				<Button type="submit" size="large" fullWidth loading={submitting}>
+					{submitting ? 'Creating account…' : 'Create account'}
+				</Button>
+			</Stack>
+		</form>
+	{/if}
+</AuthSplit>

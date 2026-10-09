@@ -30,7 +30,9 @@ const UI_PACKAGES = [
 	'svelte-hero-icons',
 	'@steeze-ui/',
 	'@tabler/',
-	'@fortawesome/'
+	'@fortawesome/',
+	'@fontsource/',
+	'@fontsource-variable/'
 ];
 
 const uiPackagePattern = `(^|node_modules/)(${UI_PACKAGES.map((name) =>

@@ -1,14 +1,17 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { FullAutoFill } from 'svelte/elements';
+	import Icon from './Icon.svelte';
 
 	let {
 		label,
 		name,
 		type = 'text',
 		value = $bindable(''),
+		placeholder,
 		autocomplete,
 		required = false,
+		optional = false,
 		hint,
 		status,
 		statusVariant = 'neutral',
@@ -17,13 +20,17 @@
 	}: {
 		label: string;
 		name: string;
+		/** A password field gets a button to show or hide what was typed. */
 		type?: 'text' | 'email' | 'password';
 		value?: string;
+		placeholder?: string;
 		autocomplete?: FullAutoFill;
 		required?: boolean;
-		/** Standing guidance shown under the label. */
+		/** Marks the field "Optional" beside its label. */
+		optional?: boolean;
+		/** Standing guidance shown under the field. */
 		hint?: string;
-		/** A short live message, e.g. the result of a check. */
+		/** A short live message, e.g. the result of a check. Replaces the hint. */
 		status?: string;
 		statusVariant?: 'neutral' | 'success' | 'danger';
 		error?: string;
@@ -32,78 +39,153 @@
 	} = $props();
 
 	const id = $props.id();
+
+	let revealed = $state(false);
+
+	const confirmed = $derived(!error && !!status && statusVariant === 'success');
+	const flagged = $derived(!!error || (!!status && statusVariant === 'danger'));
+	const message = $derived(error ?? status ?? hint);
 </script>
 
 <div class="field">
-	<label class="label" for={id}>{label}</label>
-	{#if hint}
-		<span class="hint" id="{id}-hint">{hint}</span>
-	{/if}
-	<input
-		class="input"
-		class:invalid={!!error}
-		{id}
-		{name}
-		{type}
-		{autocomplete}
-		{required}
-		bind:value
-		aria-invalid={error ? 'true' : undefined}
-		aria-describedby="{hint ? `${id}-hint ` : ''}{error ? `${id}-error` : ''}"
-	/>
+	<label class="label" for={id}>
+		<span>{label}</span>
+		{#if optional}<span class="optional">Optional</span>{/if}
+	</label>
+	<div class="control" class:error={!!error} class:confirmed>
+		<input
+			class="input"
+			{id}
+			{name}
+			type={type === 'password' && revealed ? 'text' : type}
+			{placeholder}
+			{autocomplete}
+			aria-required={required ? 'true' : undefined}
+			bind:value
+			aria-invalid={error ? 'true' : undefined}
+			aria-describedby={message ? `${id}-message` : undefined}
+		/>
+		{#if type === 'password'}
+			<button
+				class="reveal"
+				type="button"
+				aria-label={revealed ? 'Hide password' : 'Show password'}
+				aria-pressed={revealed}
+				onclick={() => (revealed = !revealed)}
+			>
+				<Icon name={revealed ? 'eye-off' : 'eye'} size={18} />
+			</button>
+		{/if}
+		{#if confirmed}<Icon name="check" size={18} />{/if}
+		{#if error}<Icon name="alert" size={18} />{/if}
+	</div>
 	{#if below}
 		{@render below()}
 	{/if}
-	{#if status && !error}
-		<span class="status {statusVariant}" role="status">{status}</span>
-	{/if}
-	{#if error}
-		<span class="error" id="{id}-error">{error}</span>
+	{#if message}
+		<p
+			class="message"
+			class:flagged
+			id="{id}-message"
+			role={error ? 'alert' : status ? 'status' : undefined}
+		>
+			{#if flagged}<Icon name="alert" size={14} />{/if}
+			<span>{message}</span>
+		</p>
 	{/if}
 </div>
 
 <style>
-	.field {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-	}
-
 	.label {
-		font-weight: var(--font-weight-bold);
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: var(--space-6);
+		font-size: var(--font-size-14);
+		font-weight: var(--font-weight-semibold);
 	}
 
-	.hint,
-	.status {
-		color: var(--color-text-muted);
-		font-size: var(--font-size-small);
+	.optional {
+		color: var(--color-ink-muted);
+		font-weight: var(--font-weight-medium);
 	}
 
-	.status.success {
-		color: var(--color-success);
+	.control {
+		display: flex;
+		align-items: center;
+		gap: var(--space-10);
+		height: var(--height-input);
+		padding: 0 var(--space-14);
+		background: var(--color-surface);
+		border: var(--border-medium) solid var(--color-line-strong);
+		border-radius: var(--radius-14);
+		color: var(--color-ink-muted);
+		transition:
+			border-color var(--duration-normal),
+			box-shadow var(--duration-normal);
 	}
 
-	.status.danger,
-	.error {
-		color: var(--color-danger);
-		font-size: var(--font-size-small);
+	.control:hover {
+		border-color: var(--color-ink-muted);
+	}
+
+	.control:focus-within {
+		border-color: var(--color-ink);
+		outline: var(--border-thick) solid var(--color-ink);
+		outline-offset: var(--space-1);
+		box-shadow: var(--shadow-input-focus);
+	}
+
+	.control.confirmed {
+		border-color: var(--color-ink);
+	}
+
+	.control.error {
+		background: var(--color-surface-error);
+		border: var(--border-thick) solid var(--color-danger);
 	}
 
 	.input {
-		padding: var(--space-2);
-		background: var(--color-surface);
-		color: var(--color-text);
-		border: var(--border-width) solid var(--color-border);
-		border-radius: var(--radius-small);
-		font-family: inherit;
-		font-size: var(--font-size-body);
+		flex: 1;
+		min-width: 0;
+		height: 100%;
+		background: none;
+		border: 0;
+		outline: 0;
+		color: var(--color-ink);
+		font: inherit;
 	}
 
-	.input:focus-visible {
-		outline: var(--focus-ring-width) solid var(--color-accent);
+	.input::placeholder {
+		color: var(--color-ink-faint);
 	}
 
-	.input.invalid {
-		border-color: var(--color-danger);
+	.reveal {
+		display: grid;
+		place-items: center;
+		min-width: var(--size-icon-button);
+		min-height: var(--size-icon-button);
+		padding: var(--space-6);
+		background: none;
+		border: 0;
+		border-radius: var(--radius-8);
+		color: var(--color-ink-muted);
+	}
+
+	.message {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-6);
+		margin-top: var(--space-6);
+		color: var(--color-ink-muted);
+		font-size: var(--font-size-13);
+	}
+
+	.message :global(.icon) {
+		margin-top: var(--space-2);
+	}
+
+	.message.flagged {
+		color: var(--color-ink);
+		font-weight: var(--font-weight-semibold);
 	}
 </style>
