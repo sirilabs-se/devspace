@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft |
+| **Status** | Approved |
 | **Last updated** | 2026-10-09 |
 | **Owner** | SiriLabs |
 
@@ -262,8 +262,8 @@ Users sign in with email and password, Google, Facebook or (Phase 2) a passkey, 
 
 | Topic | Approach |
 |---|---|
-| Repository layout | The git repository is the parent folder, `devspace`, which holds several projects. This app lives in its `saas-project/` subfolder. CI workflow files live in `devspace/.github/workflows/` and run their steps inside `saas-project/`; git hooks are set with `core.hooksPath saas-project/.githooks`; the hosting provider's root directory is `saas-project`. |
-| Environments | Local for development, one production environment in the EU |
+| Repository layout | The git repository is the parent folder, `devspace`, which holds several projects. This app lives in its `saas-project/` subfolder. CI workflow files live in `devspace/.github/workflows/` and run their steps inside `saas-project/`; git hooks live in `devspace/.githooks` and apply to every project in the repository, set with `core.hooksPath .githooks`; the hosting provider's root directory is `saas-project`. |
+| Environments | Local only for now. One production environment in the EU is added once the hosting provider is chosen. |
 | Automated checks | CI runs `npm run verify` on every push; nothing deploys unless it passes |
 | How changes go live | TBD with the hosting provider |
 | Database changes | Migration files, run automatically on deploy |

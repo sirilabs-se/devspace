@@ -1,0 +1,27 @@
+#!/bin/sh
+# Rejects commit messages that attribute work to an AI agent.
+# Enabled per clone with: git config core.hooksPath .githooks
+# (the project's npm "prepare" script runs this automatically on npm install).
+
+msg_file="$1"
+
+# Ignore comment lines that git strips anyway.
+body=$(grep -v '^#' "$msg_file")
+
+# AI tools and vendors, used where they can only mean attribution.
+tools='(claude|anthropic|openai|chatgpt|gpt-?[0-9]|copilot|gemini|cursor|codeium|windsurf)'
+named='(claude|anthropic|openai|chatgpt|gpt-?[0-9]|copilot|gemini|codeium|windsurf|llm|ai([^a-z]|$))'
+
+problems=$(printf '%s\n' "$body" | grep -inE \
+  -e "^co-authored-by:.*${tools}" \
+  -e "(generated|written|created|authored|made) (with|by|using) (an? |the )?\[?${named}" \
+  -e "^claude-session:" \
+  -e "claude\.ai/code" \
+  -e "🤖")
+
+if [ -n "$problems" ]; then
+  echo "Commit rejected: the message attributes work to an AI agent." >&2
+  echo "Remove these lines and commit again:" >&2
+  printf '%s\n' "$problems" | sed 's/^/  line /' >&2
+  exit 1
+fi
