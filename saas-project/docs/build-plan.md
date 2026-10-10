@@ -61,7 +61,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 22 | Admin user search | Identity | 4 | Done |
 | 23 | Suspend and reinstate | Identity | 22 | Done |
 | 24 | Impersonation | Identity | 22 | Done |
-| 25 | Admin audit log | Identity | 22 | To do |
+| 25 | Admin audit log | Identity | 22 | Done |
 | 26 | Download my data | Identity | 14 | To do |
 | 27 | First deploy to production | — | 1 | To do |
 
@@ -1020,11 +1020,21 @@ Blocked: no notification types exist until another module defines one, so there 
 
 **Done when:**
 
-- [ ] An admin filters the log and downloads the result
-- [ ] A non-admin is refused
-- [ ] Tests cover the above
+- [x] An admin filters the log and downloads the result
+- [x] A non-admin is refused
+- [x] Tests cover the above
 
-**Notes:** —
+**Notes:**
+
+- Filters: a person (part of their email, name or username, matching entries they made or that are about them), an action from a list of every kind in the log, and a from and to date. Dates are in UTC and include the whole of the last day. A date that makes no sense is ignored.
+- The list shows 25 entries to a page, newest first, each with the time, the action, who acted, whom it concerns, the device, the network address and any details.
+- The export is a CSV file of the filtered entries, newest first, up to 10,000. It downloads from `/admin/audit/export`, which sits under `/admin` and so is closed to non-admins like the rest.
+- Every exported cell is quoted, and a cell that begins with `=`, `+`, `-` or `@` is given a leading apostrophe, so opening the file in a spreadsheet can't run a formula planted in the log.
+- Making an export is itself recorded in the audit log, with how many entries it held.
+- Entries about a deleted account have no person attached, by design; they show as "no account".
+- Action names are shown as recorded, with underscores turned into spaces, since those are the names an admin filters by.
+- There is no way to edit or delete entries from the page, the functions or anywhere in the app; the database refuses it too.
+- The retention period of 12 months is enforced by the daily job (task 15).
 
 ### 26. Download my data
 

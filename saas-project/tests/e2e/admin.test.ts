@@ -141,3 +141,34 @@ test('an admin can view the app as a user, with a notice, and return to their ow
 	await expect(page.getByRole('link', { name: 'Admin', exact: true })).toBeVisible();
 	await expect(page.getByText('You are viewing the app as')).toHaveCount(0);
 });
+
+test('an admin can filter the audit log and download the result', async ({ page }) => {
+	const unique = Date.now().toString(36);
+	const adminEmail = `e2e-auditor-${unique}@example.com`;
+	await signUpAndVerify(page, adminEmail, 'Ada Auditor');
+	execFileSync('node', ['scripts/grant-admin.js', adminEmail], {
+		env: { ...process.env, DATABASE_URL: testDatabaseUrl(process.env) }
+	});
+
+	await page.goto('/admin/users');
+	await page.getByRole('link', { name: 'Audit log' }).click();
+	await expect(page.getByRole('heading', { name: 'Audit log', level: 1 })).toBeVisible();
+
+	await page.getByLabel('Person').fill(adminEmail);
+	await page.getByLabel('Action').selectOption('signup');
+	await page.getByRole('button', { name: 'Apply filters' }).click();
+	await expect(page.getByText(/1\s+entry/)).toBeVisible();
+	await expect(page.getByText(new RegExp(`about Ada Auditor <${adminEmail}>`))).toBeVisible();
+
+	const download = page.waitForEvent('download');
+	await page.getByRole('button', { name: 'Download as CSV' }).click();
+	const file = await download;
+	expect(file.suggestedFilename()).toMatch(/^audit-log-\d{4}-\d{2}-\d{2}\.csv$/);
+	const stream = await file.createReadStream();
+	let csv = '';
+	for await (const chunk of stream) csv += chunk;
+	const lines = csv.trim().split('\r\n');
+	expect(lines).toHaveLength(2);
+	expect(lines[1]).toContain('"signup"');
+	expect(lines[1]).toContain(adminEmail);
+});

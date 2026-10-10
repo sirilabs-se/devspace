@@ -9,6 +9,13 @@
 	);
 </script>
 
-<SettingsLayout heading="Admin" {current} items={[{ label: 'Users', href: '/admin/users' }]}>
+<SettingsLayout
+	heading="Admin"
+	{current}
+	items={[
+		{ label: 'Users', href: '/admin/users' },
+		{ label: 'Audit log', href: '/admin/audit' }
+	]}
+>
 	{@render children()}
 </SettingsLayout>

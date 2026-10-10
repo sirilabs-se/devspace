@@ -99,6 +99,7 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `getUserForAdmin(admin, userId, context)` | One user's account details and recent security events; looking is recorded. Admins only | `/admin/users/[id]` |
 | `suspendUser(admin, userId, reason, context)` / `reinstateUser(admin, userId, context)` | Suspends a user with a reason, signing them out everywhere, and lifts a suspension. Admins only | `/admin/users/[id]` |
 | `startImpersonation(admin, headers, cookies, userId, context)` / `stopImpersonation(user, headers, cookies, context)` | Switches an admin's browser to a session as a user for up to an hour, and back. Recorded, and the user is emailed | `/admin/users/[id]`, `/stop-impersonating` |
+| `listAuditEvents(admin, filters, page)` / `exportAuditEvents(admin, filters, context)` | Reads the audit log with filters, and exports it as CSV. Read-only. Admins only | `/admin/audit`, `/admin/audit/export` |
 | `listSecurityActivity(userId)` | Lists the acting user's own recent security events, newest first | `/settings/security` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
@@ -132,7 +133,8 @@ Pages use form actions, following the shared conventions in the system doc.
 | `/admin/users` | Finds users | Admin |
 | `/admin/users/[id]` | Suspends, reinstates and impersonates a user | Admin |
 | `/stop-impersonating` | Returns an admin from viewing the app as a user to their own account. Outside `/admin`, which is closed while viewing as a user. Added in task 24; not yet confirmed by the owner | The impersonating admin |
-| `/admin/audit` | Views and exports the audit log | Admin |
+| `/admin/audit` | Views the audit log, filtered by person, action and date, 25 to a page | Admin |
+| `GET /admin/audit/export` | Downloads the filtered log as a CSV file, up to 10,000 entries; the export is itself recorded | Admin |
 | `/api/auth/*` | Only the addresses on a short allowed list reach the login library: the Google and Facebook return addresses (`/api/auth/callback/google` and `/facebook`), and the four addresses of the passkey exchange under `/api/auth/passkey/` (start and finish adding a passkey, start and finish signing in with one). Every other address under it answers "not found" | Anyone |
 | `GET /api/username-available` | Says whether a username is free; rate limited | Anyone |
 | `GET /files/avatars/[file]` | Serves a profile picture. Added in task 10 for local-disk storage; not yet confirmed by the owner | Anyone |

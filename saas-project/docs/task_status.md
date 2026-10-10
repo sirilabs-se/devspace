@@ -763,3 +763,34 @@ An account less than 15 minutes old gets no alert, so use one you made earlier, 
 **Left for later**
 
 - Recording the admin, not the user, on each audit entry made while impersonating.
+
+## Task 25: Admin audit log
+
+**Status:** Done. `npm run verify` passes (407 logic tests, 31 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/admin-audit.ts`: `listAuditEvents`, `exportAuditEvents`.
+- `src/routes/admin/audit/`: the page, its filters, and the export endpoint.
+- `src/routes/admin/+layout.svelte`: "Audit log" in the admin navigation.
+- `src/lib/ui/TextField.svelte`: can be a date field.
+- Tests beside each, and a browser test of filtering and downloading.
+
+**Try it**
+
+1. As an admin, open Admin then "Audit log".
+2. Filter by part of someone's email, choose an action such as "login failed", optionally set dates, and press "Apply filters".
+3. Press "Download as CSV" and open the file in a spreadsheet.
+4. Filter by the action "audit log exported": your download is recorded there.
+
+**Decisions**
+
+- The export is capped at 10,000 entries.
+- Cells that could be read as spreadsheet formulas are neutralised.
+- Exporting is recorded in the log.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- Friendlier wording for action names, if the recorded names prove hard to read.

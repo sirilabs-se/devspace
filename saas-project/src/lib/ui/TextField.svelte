@@ -23,7 +23,7 @@
 		label: string;
 		name: string;
 		/** A password field gets a button to show or hide what was typed. */
-		type?: 'text' | 'email' | 'password';
+		type?: 'text' | 'email' | 'password' | 'date';
 		value?: string;
 		placeholder?: string;
 		autocomplete?: FullAutoFill;

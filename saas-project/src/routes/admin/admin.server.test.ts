@@ -7,6 +7,8 @@ import { resetDatabase } from '../../../tests/setup/reset-database';
 import { handle } from '../../hooks.server';
 import { load as layoutLoad } from './+layout.server';
 import { load as indexLoad } from './+page.server';
+import { load as auditLoad } from './audit/+page.server';
+import { GET as auditExport } from './audit/export/+server';
 import { load as usersLoad } from './users/+page.server';
 import { actions as userActions, load as userLoad } from './users/[id]/+page.server';
 
@@ -224,6 +226,53 @@ describe('viewing the app as a user', () => {
 				)
 			).thrown
 		).toMatchObject({ status: 403 });
+	});
+});
+
+describe('the audit log pages', () => {
+	it('lists entries with the chosen filters, and remembers the filters', async () => {
+		const data = (await auditLoad(
+			event(admin, '/admin/audit?user=anna&action=signup&from=2020-01-01')
+		)) as {
+			filters: object;
+			total: number;
+			actions: string[];
+			entries: { action: string; at: string; subject: { email: string } }[];
+		};
+
+		expect(data.filters).toEqual({ user: 'anna', action: 'signup', from: '2020-01-01', to: '' });
+		expect(data.total).toBe(1);
+		expect(data.entries[0]).toMatchObject({
+			action: 'signup',
+			subject: { email: 'anna@example.com' }
+		});
+		expect(data.entries[0].at).toMatch(/^\d{4}-/);
+		expect(data.actions).toContain('signup');
+	});
+
+	it('downloads the filtered log as a CSV file', async () => {
+		const response = await auditExport(event(admin, '/admin/audit/export?user=anna'));
+
+		expect(response.status).toBe(200);
+		expect(response.headers.get('content-type')).toBe('text/csv; charset=utf-8');
+		expect(response.headers.get('content-disposition')).toMatch(
+			/^attachment; filename="audit-log-\d{4}-\d{2}-\d{2}\.csv"$/
+		);
+		const lines = (await response.text()).trim().split('\r\n');
+		expect(lines[0]).toContain('"Action"');
+		expect(lines.slice(1).every((line) => line.includes('anna@example.com'))).toBe(true);
+		expect(lines.length).toBeGreaterThan(1);
+	});
+
+	it('is refused to a non-admin and to a signed-out visitor', async () => {
+		for (const page of [
+			(user: SessionUser | null) => auditLoad(event(user, '/admin/audit')),
+			(user: SessionUser | null) => auditExport(event(user, '/admin/audit/export'))
+		]) {
+			expect((await outcome(() => page(anna))).thrown).toMatchObject({ status: 403 });
+			expect((await outcome(() => page(null))).thrown).toMatchObject({ status: 401 });
+		}
+		expect((await visit('/admin/audit/export', annaJar)).thrown).toMatchObject({ status: 403 });
 	});
 });
 

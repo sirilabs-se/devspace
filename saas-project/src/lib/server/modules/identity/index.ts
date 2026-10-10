@@ -1,5 +1,12 @@
 // Public interface of the Identity module: the only file other code may import.
 export {
+	exportAuditEvents,
+	listAuditEvents,
+	type AuditEntry,
+	type AuditFilters,
+	type AuditListResult
+} from './admin-audit';
+export {
 	ADMIN_PAGE_SIZE,
 	getUserForAdmin,
 	reinstateUser,
