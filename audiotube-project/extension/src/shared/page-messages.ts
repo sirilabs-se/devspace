@@ -1,3 +1,5 @@
+import type { PlayState } from './storage/playback-tab';
+
 const SOURCE = 'audiotube';
 
 export type QualityMode = 'lowest' | 'normal';
@@ -6,8 +8,24 @@ export type QualityMode = 'lowest' | 'normal';
 export type ContentToPage =
 	{ type: 'quality/set'; mode: QualityMode } | { type: 'player/toggle-playback' };
 
+/** The details of the video in a player. */
+export interface PlayerVideoDetails {
+	videoId: string;
+	title: string;
+	channel: string;
+	/** Null for live streams and upcoming premieres. */
+	durationSec: number | null;
+	isLive: boolean;
+}
+
+/** What the page script reports about YouTube's main player. */
+export type PlayerReport =
+	| ({ type: 'player/video' } & PlayerVideoDetails)
+	| { type: 'player/state'; state: PlayState; positionSec: number }
+	| { type: 'player/position'; positionSec: number };
+
 /** Page script → content script. */
-export type PageToContent = { type: 'quality/ready' };
+export type PageToContent = { type: 'quality/ready' } | PlayerReport;
 
 type Envelope =
 	| { source: typeof SOURCE; direction: 'to-page'; message: ContentToPage }

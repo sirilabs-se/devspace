@@ -101,6 +101,11 @@
 			// A stand-in for YouTube's player API, recording what it is asked for.
 			window.__levels = ['hd1080', 'hd720', 'large', 'medium', 'small', 'tiny', 'auto'];
 			window.__qualityCalls = [];
+			// A clock for the fake player: one second of position per second of playing.
+			setInterval(() => {
+				const video = document.querySelector('#movie_player video');
+				if (video && !video.paused) window.__position = (window.__position ?? 0) + 1;
+			}, 1000);
 			window.__playbackCalls = [];
 			window.__keys = [];
 			document.addEventListener('keydown', (event) => window.__keys.push(event.key));
@@ -119,6 +124,17 @@
 					hd720: 720,
 					hd1080: 1080
 				};
+				player.getVideoData = () => {
+					const id = new URLSearchParams(location.search).get('v') || '';
+					return {
+						video_id: id,
+						title: window.__title ?? 'Test video ' + id,
+						author: window.__author ?? 'Test channel',
+						isLive: window.__isLive === true
+					};
+				};
+				player.getDuration = () => window.__duration ?? 212;
+				player.getCurrentTime = () => window.__position ?? 0;
 				player.getAvailableQualityLevels = () => window.__levels;
 				player.getPlayerState = () => (player.querySelector('video').paused ? 2 : 1);
 				player.playVideo = () => {
@@ -213,6 +229,24 @@
 				window.__noPlayer = false;
 				render();
 				pageChanged();
+			};
+			// A hover preview on the home page: a player that is not #movie_player.
+			window.__showPreview = () => {
+				const preview = document.createElement('ytd-video-preview');
+				const player = document.createElement('div');
+				player.id = 'inline-player';
+				player.className = 'html5-video-player';
+				player.getVideoData = () => ({
+					video_id: 'previewvid1',
+					title: 'A preview',
+					author: 'Someone',
+					isLive: false
+				});
+				player.getPlayerState = () => 1;
+				player.getCurrentTime = () => 3;
+				player.getDuration = () => 30;
+				preview.append(player);
+				document.body.append(preview);
 			};
 			window.__showError = () => {
 				const player = document.getElementById('movie_player');

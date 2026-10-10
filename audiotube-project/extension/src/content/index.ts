@@ -1,7 +1,9 @@
 import {
+	isPlayerReport,
 	onMessageToContent,
 	readSettings,
 	reportOverlayStatus,
+	reportPlayer,
 	requestSetAudioOnly,
 	sendToPage,
 	watchSettings
@@ -43,7 +45,11 @@ if (!scope[GUARD]) {
 		return response.ok;
 	};
 
+	// What the page script says about the player is checked before it goes on; the page can forge messages.
 	stops.push(
+		onMessageToContent((message) => {
+			if (isPlayerReport(message)) void reportPlayer(message);
+		}),
 		startVisibilityFlag(
 			{ read: readSettings, watch: watchSettings },
 			document.documentElement,

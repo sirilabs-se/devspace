@@ -86,6 +86,44 @@ describe('listenForRequests', () => {
 		expect(sessionSet).not.toHaveBeenCalled();
 	});
 
+	it("hands a player report to the playback logic with the sender's tab, not one from the message", async () => {
+		const sendResponse = vi.fn();
+		const keepOpen = handler(
+			{
+				type: 'player/video',
+				videoId: 'aqz-KE-bpKQ',
+				title: 't',
+				channel: 'c',
+				durationSec: 10,
+				isLive: false
+			},
+			{ id: 'our-extension', tab: { id: 8, windowId: 3 } } as never,
+			sendResponse
+		);
+		expect(keepOpen).toBe(false);
+		await vi.waitFor(() => expect(sessionSet).toHaveBeenCalled());
+		expect(sessionSet).toHaveBeenCalledWith({
+			'tabVideo:8': expect.objectContaining({ videoId: 'aqz-KE-bpKQ' })
+		});
+	});
+
+	it('ignores a player report with the wrong shape', () => {
+		const keepOpen = handler(
+			{
+				type: 'player/video',
+				videoId: 'nope',
+				title: 't',
+				channel: 'c',
+				durationSec: 1,
+				isLive: false
+			},
+			{ id: 'our-extension', tab: { id: 8, windowId: 3 } } as never,
+			vi.fn()
+		);
+		expect(keepOpen).toBe(false);
+		expect(sessionSet).not.toHaveBeenCalled();
+	});
+
 	it('ignores messages it does not know', () => {
 		const keepOpen = handler({ type: 'nope' }, { id: 'our-extension' }, vi.fn());
 		expect(keepOpen).toBe(false);

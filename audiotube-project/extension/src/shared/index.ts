@@ -16,6 +16,8 @@ export {
 } from './storage/overlay-status';
 export {
 	isBackgroundRequest,
+	isPlayerReport,
+	reportPlayer,
 	reportOverlayStatus,
 	requestSetAudioOnly,
 	type BackgroundRequest,
@@ -31,6 +33,28 @@ export {
 	sendToPage,
 	type ContentToPage,
 	type PageToContent,
+	type PlayerReport,
+	type PlayerVideoDetails,
 	type QualityMode
 } from './page-messages';
-export { PLAYER_SELECTOR } from './youtube';
+export { findMainPlayer, isInMiniPlayer, isWatchPath, PLAYER_SELECTOR } from './youtube';
+export {
+	cleanText,
+	CHANNEL_MAX,
+	isVideoId,
+	NOW_PLAYING_KEY,
+	parseNowPlaying,
+	readNowPlaying,
+	TITLE_MAX,
+	watchNowPlaying,
+	type NowPlaying
+} from './storage/now-playing';
+export {
+	isPlayState,
+	parsePlaybackTab,
+	PLAYBACK_TAB_KEY,
+	readPlaybackTab,
+	watchPlaybackTab,
+	type PlaybackTab,
+	type PlayState
+} from './storage/playback-tab';

@@ -1,4 +1,5 @@
 import { isBackgroundRequest } from '../shared';
+import { handlePlayerReport } from './playback';
 import { recordOverlayStatus } from './overlay-status';
 import { setAudioOnly } from './settings-store';
 
@@ -14,6 +15,14 @@ export function listenForRequests(): void {
 
 		const tabId = sender.tab?.id;
 		if (tabId === undefined) return false;
+
+		if (message.type !== 'overlay/status') {
+			// A report about a tab takes the tab from the sender, never from the message.
+			const windowId = sender.tab?.windowId ?? -1;
+			void handlePlayerReport(message, { tabId, windowId });
+			return false;
+		}
+
 		recordOverlayStatus(tabId, message.status).then(
 			() => sendResponse({ ok: true }),
 			() => sendResponse({ ok: false })

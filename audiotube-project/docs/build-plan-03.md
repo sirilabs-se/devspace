@@ -40,8 +40,8 @@ These apply to this phase only and do not change the requirements document.
 |---|---|---|---|---|
 | 15 | Fixes from the phase 2 review, and the new architecture checks | GLB-009, ADR 0001, ADR 0004 | 14 | Done |
 | 16 | Spike: the playback tab | PLY-041, PLY-043, PLY-044, PLY-050, PLY-053, OQ-001 | 15 | Done |
-| 17 | Now Playing from YouTube's player | PLY-037, PLY-038, PLY-048, PLY-130 | 16 | In progress |
-| 18 | One playback tab across all windows | GLB-001, PLY-039, PLY-040, PLY-045 | 17 | To do |
+| 17 | Now Playing from YouTube's player | PLY-037, PLY-038, PLY-048, PLY-130 | 16 | Done |
+| 18 | One playback tab across all windows | GLB-001, PLY-039, PLY-040, PLY-045 | 17 | In progress |
 | 19 | Now Playing in the side panel | PLY-036, PLY-051, PLY-055, PLY-056, PLY-057, PLY-115, PLY-119 | 17 | To do |
 | 20 | Playback tab lost, and Resume | PLY-049, PLY-050, PLY-052, PLY-053, PLY-054 | 18, 19 | To do |
 | 21 | Moving around in the playback tab | PLY-044, PLY-045 | 18 | To do |
@@ -144,13 +144,25 @@ Task 15 comes first, then the spike. Tasks 18 and 19 can be done in either order
 
 **Done when:**
 
-- [ ] On the test page, playing a video stores Now Playing with its ID, title, channel, duration and live flag, and makes the tab the playback tab
-- [ ] Pausing stores the state and the position; while playing, the stored position is never more than 5 seconds old
-- [ ] The hover-preview player never becomes Now Playing
-- [ ] A title or channel longer than the cap is stored cut to the cap
-- [ ] After a browser restart (same profile), Now Playing is still stored and there is no playback tab
-- [ ] Playback continues with the tab in the background or its window minimised (manual check, `PLY-048`)
-- [ ] Logic tests cover the background's handling of each message, and the read helpers
+- [x] On the test page, playing a video stores Now Playing with its ID, title, channel, duration and live flag, and makes the tab the playback tab
+- [x] Pausing stores the state and the position; while playing, the stored position is never more than 5 seconds old
+- [x] The hover-preview player never becomes Now Playing
+- [x] A title or channel longer than the cap is stored cut to the cap
+- [x] After a browser restart (same profile), Now Playing is still stored and there is no playback tab
+- [x] Playback continues with the tab in the background or its window minimised (manual check, `PLY-048`)
+- [x] Logic tests cover the background's handling of each message, and the read helpers
+
+**Notes:**
+
+- Page script (`inject/`): `reporter.ts` turns what the main player shows into `player/video`, `player/state` and `player/position` reports (video details, play state with position, and the position every 5 seconds while playing; ad time is never sent as a position). It is driven by the player's `<video>` events and a 1 second beat, and by `yt-navigate-finish`. The main player is `#movie_player` on a watch path or inside `ytd-miniplayer` with a size; the helpers (`findMainPlayer`, `isWatchPath`, `isInMiniPlayer`) moved to `shared/youtube.ts` so the page and content scripts agree.
+- Content script: checks each page report with `isPlayerReport` (the page can forge messages) and forwards it; nothing from the page can change saved state by itself.
+- Background (`background/playback.ts`): applies reports one after another. A `player/video` report is kept per tab in session storage (`tabVideo:<tabId>`) so the details are there when that tab starts playing. A `playing` report from a tab that is not the playback tab makes it the playback tab, stores its video as Now Playing and sets `autoDiscardable: false`; the playback tab's pauses and positions update the state and position; a different video in the playback tab replaces Now Playing. A tab that only loads a video never changes anything. The tab and window come from the message's sender.
+- Stored text is cleaned (control characters to spaces, whitespace collapsed) and capped at 300 and 100 characters; markup is kept as plain text.
+- `shared/storage/` gained `now-playing.ts` and `playback-tab.ts` (schema, read and watch helpers with defaults, validation).
+- Not in this task, by design: pausing the previous playback tab and giving back its discard mark (task 18), and noticing a lost tab (task 20).
+- Browser tests use a test page whose player answers `getVideoData`, `getDuration` and `getCurrentTime` and keeps a clock, plus a hover-preview player (`#inline-player`). The restart test relaunches the same profile.
+- Real YouTube (headless, signed out): playing stored the real title, channel and duration, the position was under 5 seconds old, playback continued with another tab in front, pausing stored the state and position, `autoDiscardable` read back false, and `loadVideoById` of another video replaced Now Playing. A minimised window (`PLY-048`) could not be tried here; the other-tab case stands in for it.
+
 
 ### 18. One playback tab across all windows
 
