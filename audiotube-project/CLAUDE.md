@@ -50,13 +50,14 @@ extension/
 │   ├── inject/              ← page-context script — the only code that can reach
 │   │                           YouTube's own internal player object
 │   ├── sidepanel/
-│   │   ├── core/            ← business logic: state, messaging, storage access
+│   │   ├── core/            ← business logic: state, messaging, use of the settings read helper
 │   │   │                       (no Svelte imports — the replaceable-design boundary)
 │   │   ├── ui/               ← Svelte components, theme.css design tokens, icon set
 │   │   │                       (replaceable)
 │   │   └── index.html
 │   └── shared/               ← types and small utilities safe for every context,
-│                                 no business logic
+│                                 no business logic; also the settings schema and the
+│                                 settings read helper (the only code that reads storage)
 └── public/
     ├── manifest.json
     └── icons/
@@ -90,7 +91,9 @@ Each MUST ends with what checks it, in brackets. `npm run verify` runs every aut
 
 The app's look (colours, components, layout) must be replaceable with a new design without changing business logic, state or screen behaviour. This applies to the **side panel only** — the content script's overlay has no real "design" to swap, and the background service worker has no UI at all. The test: replacing `sidepanel/ui/` and its theme tokens must not require changing anything in `sidepanel/core/`, the background service worker, the content script, or any non-UI test.
 
-- Business rules, validation and storage access MUST live only in `sidepanel/core/` or `background/`, never in `.svelte` files. [review]
+- Only `background/` MUST write to `chrome.storage` (set, remove, clear). [lint]
+- Reading stored values MUST go through the settings read helper in `shared/` (keys, defaults, validation, change events). `sidepanel/core/` and `content/` MAY use it; `.svelte` files MUST NOT touch storage. [lint]
+- Business rules and validation other than the settings schema MUST live only in `sidepanel/core/` or `background/`, never in `.svelte` files. [review]
 - `sidepanel/core/` MUST NOT import from `sidepanel/ui/`, and MUST NOT contain Svelte components. [lint]
 - Colours, fonts, spacing, corner radii and shadows MUST come from design tokens in `sidepanel/ui/theme.css`. [lint]
 - A component library, icon set or CSS framework MUST be imported only inside `sidepanel/ui/`. [lint]

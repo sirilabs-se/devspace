@@ -40,7 +40,7 @@ These apply to this phase only. They do not change the requirements document, wh
 | # | Task | Requirements | Depends on | Status |
 |---|---|---|---|---|
 | 1 | Project setup | — | — | In progress |
-| 2 | Saved audio-only value | PLY-001–003 | 1 | To do |
+| 2 | Saved audio-only value | PLY-001–003 | 1 | Done |
 | 3 | Side panel switch | PLY-004, PLY-005 | 2 | To do |
 | 4 | Overlay on YouTube | PLY-005, PLY-006 (+ 4.2 basics) | 2 | To do |
 | 5 | Spike: requesting the lowest quality | PLY-008, OQ-001 | 1 | To do |
@@ -117,11 +117,20 @@ Task 5 can run at any point after task 1, in parallel with tasks 2 to 4.
 
 **Done when:**
 
-- [ ] On a fresh install, audio-only reads as on
-- [ ] After setting it off and restarting the browser, it still reads as off
-- [ ] An invalid saved value reads as on, and `saveBandwidth` is unaffected
-- [ ] When the write fails, the saved value is unchanged and the caller gets an error
-- [ ] Tests cover the above
+- [x] On a fresh install, audio-only reads as on
+- [x] After setting it off and restarting the browser, it still reads as off
+- [x] An invalid saved value reads as on, and `saveBandwidth` is unaffected
+- [x] When the write fails, the saved value is unchanged and the caller gets an error
+- [x] Tests cover the above
+
+**Notes:**
+
+- Decision: CLAUDE.md's storage rule was replaced (your option 3): only `background/` writes to `chrome.storage`; reads go through the settings read helper in `shared/`. Enforced by ESLint `no-restricted-syntax` (not dependency-cruiser, which only sees imports, not `chrome.storage` calls): any `chrome.storage` use outside `background/` and `shared/settings/` fails, and `shared/settings/` may not call set/remove/clear.
+- Each saved value is its own storage key, so a write never rewrites the other value (`GLB-013`). Nothing is written on first run; a missing key reads as the default.
+- The background checks the value with the same schema the readers use before writing, and only accepts messages from this extension.
+- A request that cannot reach the background returns `background-unavailable`; a read failure rejects, and the caller decides what to show (task 3).
+- Browser tests cover a real restart (same profile, relaunched) and a real full-quota write failure.
+
 
 ### 3. Side panel switch
 

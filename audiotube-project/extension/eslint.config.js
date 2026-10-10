@@ -17,6 +17,35 @@ export default ts.config(
 		}
 	},
 	{
+		// chrome.storage: only background/ writes; only the settings helper in shared/ reads.
+		files: ['src/**/*.{ts,js,svelte}'],
+		ignores: ['src/background/**', 'src/shared/settings/**', 'src/**/*.test.ts'],
+		rules: {
+			'no-restricted-syntax': [
+				'error',
+				{
+					selector: "MemberExpression[object.name='chrome'][property.name='storage']",
+					message:
+						'Do not use chrome.storage here. Read stored values through the settings read helper in shared/; only background/ writes.'
+				}
+			]
+		}
+	},
+	{
+		files: ['src/shared/settings/**'],
+		ignores: ['src/**/*.test.ts'],
+		rules: {
+			'no-restricted-syntax': [
+				'error',
+				{
+					selector:
+						"CallExpression[callee.property.name=/^(set|remove|clear)$/] > MemberExpression.callee > MemberExpression > MemberExpression[object.name='chrome'][property.name='storage']",
+					message: 'Only background/ writes to chrome.storage (set, remove, clear).'
+				}
+			]
+		}
+	},
+	{
 		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
 		languageOptions: {
 			parserOptions: {
