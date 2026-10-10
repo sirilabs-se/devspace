@@ -1,3 +1,4 @@
+import { assertNotImpersonating } from './impersonation';
 import { APIError } from 'better-auth/api';
 import { z } from 'zod';
 import { recordAuditEvent } from './audit';
@@ -44,6 +45,7 @@ export async function changePassword(
 	context: RequestContext
 ): Promise<ChangePasswordResult> {
 	await assertSessionBelongsTo(user, headers);
+	assertNotImpersonating(user);
 
 	const parsed = changeSchema.safeParse(input);
 	if (!parsed.success) return { status: 'current_password_wrong' };
@@ -89,6 +91,8 @@ export async function signOutEverywhere(
 	context: RequestContext
 ): Promise<void> {
 	await assertSessionBelongsTo(user, headers);
+	// It would sign the real person out of their own devices.
+	assertNotImpersonating(user);
 
 	await getAuth().api.revokeSessions({ headers });
 	// The session is gone; this clears its cookie from the browser.

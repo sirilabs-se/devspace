@@ -47,6 +47,11 @@ export {
 	type DailyJobResult,
 	type RequestDeletionResult
 } from './deletion';
+export {
+	startImpersonation,
+	stopImpersonation,
+	type StartImpersonationResult
+} from './impersonation';
 export { logIn, logOut, type LogInResult } from './log-in';
 export {
 	listPasskeys,

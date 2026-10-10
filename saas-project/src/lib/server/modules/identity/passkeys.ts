@@ -5,6 +5,8 @@ import { recordAuditEvent } from './audit';
 import { signInMethodCount } from './connections';
 import type { RequestContext } from './request-context';
 import { passkeys } from './schema';
+import { assertNotImpersonating } from './impersonation';
+import type { SessionUser } from './session';
 import type { UserId } from './user-id';
 
 // Adding a passkey, and signing in with one, is an exchange between the
@@ -62,10 +64,12 @@ export type RemovePasskeyResult = { status: 'removed' | 'not_found' | 'last_meth
 
 /** Removes one of the acting user's own passkeys, unless it is their last way to sign in. */
 export async function removePasskey(
-	userId: UserId,
+	user: SessionUser,
 	passkeyId: unknown,
 	context: RequestContext
 ): Promise<RemovePasskeyResult> {
+	assertNotImpersonating(user);
+	const userId = user.id;
 	if (typeof passkeyId !== 'string') return { status: 'not_found' };
 
 	const [own] = await db

@@ -61,6 +61,15 @@ export async function handleAuthRequest(
 	if (!ALLOWED_AUTH_PATHS.some((allowed) => allowed.test(pathname))) {
 		return new Response('Not found', { status: 404 });
 	}
+	// Adding a passkey is a change to how the account signs in, which an admin viewing
+	// the app as someone else must not make.
+	if (pathname.startsWith('/api/auth/passkey/') && pathname.includes('regist')) {
+		const current = await getAuth().api.getSession({ headers: request.headers });
+		if (current?.session.impersonatedBy) {
+			return new Response('Not allowed while viewing the app as another person', { status: 403 });
+		}
+	}
+
 	// The network address is set from the server's own knowledge of the connection,
 	// replacing anything the visitor sent, so sessions record the real one.
 	const headers = new Headers(request.headers);

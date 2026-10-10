@@ -1,3 +1,4 @@
+import { assertNotImpersonating } from './impersonation';
 import { APIError } from 'better-auth/api';
 import { eq, like, lt, lte, or, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
@@ -38,6 +39,7 @@ export async function requestAccountDeletion(
 	now: Date = new Date()
 ): Promise<RequestDeletionResult> {
 	await assertSessionBelongsTo(user, headers);
+	assertNotImpersonating(user);
 	if (input.confirmed !== true) return { status: 'not_confirmed' };
 
 	if ((await listConnections(user.id)).hasPassword) {

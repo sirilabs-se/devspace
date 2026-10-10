@@ -20,6 +20,14 @@
 </script>
 
 <AppShell appName="SaaS">
+	{#snippet banner()}
+		{#if data.user?.impersonated}
+			<form method="POST" action="/stop-impersonating">
+				You are viewing the app as <b>{data.user.name}</b>. They have been told.
+				<Button type="submit" variant="outline" size="small">Return to your own account</Button>
+			</form>
+		{/if}
+	{/snippet}
 	{#snippet actions()}
 		{#if data.user}
 			{#if data.user.isAdmin}

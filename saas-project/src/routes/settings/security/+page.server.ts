@@ -126,7 +126,7 @@ export const actions: Actions = {
 		const user = requireUser(locals);
 		const form = await request.formData();
 
-		const result = await removePasskey(user.id, form.get('passkeyId'), {
+		const result = await removePasskey(user, form.get('passkeyId'), {
 			ipAddress: getClientAddress(),
 			userAgent: request.headers.get('user-agent')
 		});

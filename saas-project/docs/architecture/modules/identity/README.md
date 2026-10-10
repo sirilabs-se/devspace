@@ -98,6 +98,7 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `searchUsers(admin, query, page)` | Finds users by email, name or username, 25 to a page. Admins only | `/admin/users` |
 | `getUserForAdmin(admin, userId, context)` | One user's account details and recent security events; looking is recorded. Admins only | `/admin/users/[id]` |
 | `suspendUser(admin, userId, reason, context)` / `reinstateUser(admin, userId, context)` | Suspends a user with a reason, signing them out everywhere, and lifts a suspension. Admins only | `/admin/users/[id]` |
+| `startImpersonation(admin, headers, cookies, userId, context)` / `stopImpersonation(user, headers, cookies, context)` | Switches an admin's browser to a session as a user for up to an hour, and back. Recorded, and the user is emailed | `/admin/users/[id]`, `/stop-impersonating` |
 | `listSecurityActivity(userId)` | Lists the acting user's own recent security events, newest first | `/settings/security` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
@@ -130,6 +131,7 @@ Pages use form actions, following the shared conventions in the system doc.
 | `/settings/privacy` | Download my data, see accepted terms | Signed-in users |
 | `/admin/users` | Finds users | Admin |
 | `/admin/users/[id]` | Suspends, reinstates and impersonates a user | Admin |
+| `/stop-impersonating` | Returns an admin from viewing the app as a user to their own account. Outside `/admin`, which is closed while viewing as a user. Added in task 24; not yet confirmed by the owner | The impersonating admin |
 | `/admin/audit` | Views and exports the audit log | Admin |
 | `/api/auth/*` | Only the addresses on a short allowed list reach the login library: the Google and Facebook return addresses (`/api/auth/callback/google` and `/facebook`), and the four addresses of the passkey exchange under `/api/auth/passkey/` (start and finish adding a passkey, start and finish signing in with one). Every other address under it answers "not found" | Anyone |
 | `GET /api/username-available` | Says whether a username is free; rate limited | Anyone |
@@ -151,7 +153,7 @@ These apply on top of the system-wide rules.
 | Only this module imports the login library. Everything else goes through this module's `index.ts`. | MUST | Lint |
 | Sign-up, login and reset responses don't reveal whether an email is registered. | MUST | Test |
 | `audit_events` rows are never edited. Only two changes are allowed: permanent account deletion empties the user links, IP address and device details; the retention job deletes rows older than 12 months. | MUST | Test |
-| While impersonating, an admin can't change the password, email or sign-in methods, and can't delete the account. | MUST | Test |
+| While impersonating, an admin can't change the password, email or sign-in methods (password, providers, passkeys, two-step verification), can't delete the account, and can't sign the person out of their own devices. | MUST | Test |
 | A user's last way to sign in can't be removed. | MUST | Test |
 | Passwords, secrets and tokens never appear in logs or audit entries. | MUST | Review |
 | Audit entry details hold no personal information beyond the user links, IP address and device details. | SHOULD | — |

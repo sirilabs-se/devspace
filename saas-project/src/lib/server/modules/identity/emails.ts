@@ -233,3 +233,17 @@ export async function sendAccountReinstatedEmail(to: string, origin: string): Pr
 		].join('\n')
 	});
 }
+
+export async function sendImpersonationNoticeEmail(to: string): Promise<void> {
+	await sendEmail({
+		to,
+		subject: `A ${APP_NAME} admin viewed your account`,
+		text: [
+			`A member of the ${APP_NAME} team has just opened the app as you, to see what you see. This is usually done to help with a problem you reported.`,
+			'',
+			"They can't see your password, and they can't change your password, email or ways of signing in, or delete your account. The visit is recorded.",
+			'',
+			"If you didn't expect this, reply to this email."
+		].join('\n')
+	});
+}

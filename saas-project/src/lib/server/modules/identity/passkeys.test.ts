@@ -78,7 +78,7 @@ describe('removePasskey', () => {
 	it('removes a passkey when another way to sign in remains, and records it', async () => {
 		await givePasskey(anna, 'a1');
 
-		expect(await removePasskey(anna.id, 'a1', testContext)).toEqual({ status: 'removed' });
+		expect(await removePasskey(anna, 'a1', testContext)).toEqual({ status: 'removed' });
 
 		expect(await listPasskeys(anna.id)).toHaveLength(0);
 		const events = await db
@@ -95,7 +95,7 @@ describe('removePasskey', () => {
 		await db.delete(accounts).where(eq(accounts.userId, anna.id));
 
 		expect(await signInMethodCount(anna.id)).toBe(1);
-		expect(await removePasskey(anna.id, 'a1', testContext)).toEqual({ status: 'last_method' });
+		expect(await removePasskey(anna, 'a1', testContext)).toEqual({ status: 'last_method' });
 		expect(await listPasskeys(anna.id)).toHaveLength(1);
 	});
 
@@ -104,15 +104,15 @@ describe('removePasskey', () => {
 		await givePasskey(anna, 'a2');
 		await db.delete(accounts).where(eq(accounts.userId, anna.id));
 
-		expect(await removePasskey(anna.id, 'a1', testContext)).toEqual({ status: 'removed' });
-		expect(await removePasskey(anna.id, 'a2', testContext)).toEqual({ status: 'last_method' });
+		expect(await removePasskey(anna, 'a1', testContext)).toEqual({ status: 'removed' });
+		expect(await removePasskey(anna, 'a2', testContext)).toEqual({ status: 'last_method' });
 	});
 
 	it('cannot remove another person’s passkey', async () => {
 		await givePasskey(bo, 'b1');
 
-		expect(await removePasskey(anna.id, 'b1', testContext)).toEqual({ status: 'not_found' });
-		expect(await removePasskey(anna.id, null, testContext)).toEqual({ status: 'not_found' });
+		expect(await removePasskey(anna, 'b1', testContext)).toEqual({ status: 'not_found' });
+		expect(await removePasskey(anna, null, testContext)).toEqual({ status: 'not_found' });
 		expect(await listPasskeys(bo.id)).toHaveLength(1);
 	});
 });

@@ -18,6 +18,8 @@ export type SessionUser = {
 	emailVerified: boolean;
 	image: string | null;
 	role: Role;
+	/** Set when this session is an admin viewing the app as this user: the admin's ID. */
+	impersonatedBy: UserId | null;
 	/**
 	 * True for someone who signed in with Google or Facebook and hasn't yet accepted
 	 * the terms and confirmed their age. Until they do, they can only reach `/welcome`.
@@ -101,6 +103,7 @@ export async function getSessionUser(
 		image: user.image ?? null,
 		// Anything other than a known elevated role counts as an ordinary user.
 		role: user.role === 'admin' ? 'admin' : 'user',
+		impersonatedBy: session.impersonatedBy ? toUserId(session.impersonatedBy) : null,
 		welcomePending: !accepted
 	};
 }

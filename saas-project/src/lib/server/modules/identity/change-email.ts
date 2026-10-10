@@ -1,3 +1,4 @@
+import { assertNotImpersonating } from './impersonation';
 import { createHash, randomBytes } from 'node:crypto';
 import { APIError } from 'better-auth/api';
 import { eq } from 'drizzle-orm';
@@ -41,6 +42,7 @@ export async function requestEmailChange(
 	context: RequestContext
 ): Promise<RequestEmailChangeResult> {
 	await assertSessionBelongsTo(user, headers);
+	assertNotImpersonating(user);
 
 	const parsed = changeSchema.safeParse(input);
 	if (!parsed.success) return { status: 'invalid_email' };

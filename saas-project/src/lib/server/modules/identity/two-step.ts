@@ -1,3 +1,4 @@
+import { assertNotImpersonating } from './impersonation';
 import { APIError } from 'better-auth/api';
 import { eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
@@ -56,6 +57,7 @@ export async function startTwoStepSetup(
 	context: RequestContext
 ): Promise<StartTwoStepSetupResult> {
 	await assertSessionBelongsTo(user, headers);
+	assertNotImpersonating(user);
 	if (await isTwoStepOn(user.id)) return { status: 'already_on' };
 
 	try {
@@ -86,6 +88,7 @@ export async function confirmTwoStepSetup(
 	context: RequestContext
 ): Promise<{ status: 'on' | 'code_wrong' }> {
 	await assertSessionBelongsTo(user, headers);
+	assertNotImpersonating(user);
 
 	try {
 		const result = await getAuth().api.verifyTOTP({
@@ -113,6 +116,7 @@ export async function regenerateBackupCodes(
 	{ status: 'done'; backupCodes: string[] } | { status: 'current_password_wrong' | 'not_on' }
 > {
 	await assertSessionBelongsTo(user, headers);
+	assertNotImpersonating(user);
 	if (!(await isTwoStepOn(user.id))) return { status: 'not_on' };
 
 	try {
@@ -138,6 +142,7 @@ export async function turnOffTwoStep(
 	context: RequestContext
 ): Promise<{ status: 'off' | 'current_password_wrong' | 'not_on' }> {
 	await assertSessionBelongsTo(user, headers);
+	assertNotImpersonating(user);
 	if (!(await isTwoStepOn(user.id))) return { status: 'not_on' };
 
 	try {

@@ -1,3 +1,4 @@
+import { assertNotImpersonating } from './impersonation';
 import { APIError } from 'better-auth/api';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -68,6 +69,7 @@ export async function startLinkingProvider(
 	cookies: CookieJar
 ): Promise<{ url: string } | null> {
 	await assertSessionBelongsTo(user, headers);
+	assertNotImpersonating(user);
 	const name = asProvider(provider);
 	if (!name || !socialProviders().includes(name)) return null;
 
@@ -96,6 +98,7 @@ export async function unlinkProvider(
 	context: RequestContext
 ): Promise<UnlinkProviderResult> {
 	await assertSessionBelongsTo(user, headers);
+	assertNotImpersonating(user);
 	const name = asProvider(provider);
 	const connections = await listConnections(user.id);
 	if (!name || !connections.providers.some((entry) => entry.provider === name && entry.connected)) {
@@ -143,6 +146,7 @@ export async function setFirstPassword(
 	context: RequestContext
 ): Promise<SetFirstPasswordResult> {
 	await assertSessionBelongsTo(user, headers);
+	assertNotImpersonating(user);
 	if ((await listConnections(user.id)).hasPassword) return { status: 'already_has_password' };
 
 	const parsed = firstPasswordSchema.safeParse(input);

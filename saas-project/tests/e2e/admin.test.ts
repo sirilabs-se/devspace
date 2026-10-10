@@ -100,3 +100,44 @@ test('an admin can suspend a user, who is then signed out and can’t log in unt
 	await expect(member.getByRole('heading', { name: 'Welcome, Sam Member' })).toBeVisible();
 	await memberContext.close();
 });
+
+test('an admin can view the app as a user, with a notice, and return to their own account', async ({
+	page,
+	browser
+}) => {
+	const unique = Date.now().toString(36);
+	const memberEmail = `e2e-viewed-${unique}@example.com`;
+	const adminEmail = `e2e-viewer-${unique}@example.com`;
+
+	const memberContext = await browser.newContext();
+	await signUpAndVerify(await memberContext.newPage(), memberEmail, 'Vera Member');
+	await memberContext.close();
+
+	await signUpAndVerify(page, adminEmail, 'Ada Admin');
+	execFileSync('node', ['scripts/grant-admin.js', adminEmail], {
+		env: { ...process.env, DATABASE_URL: testDatabaseUrl(process.env) }
+	});
+	await page.goto(`/admin/users?q=${encodeURIComponent(memberEmail)}`);
+	await page.getByRole('link', { name: 'Open Vera Member' }).click();
+	await page.getByRole('button', { name: 'View as Vera Member' }).click();
+
+	await expect(page.getByRole('heading', { name: 'Welcome, Vera Member' })).toBeVisible();
+	await expect(page.getByText('You are viewing the app as')).toBeVisible();
+	await expect(page.getByRole('link', { name: 'Admin', exact: true })).toHaveCount(0);
+
+	// A blocked action is refused.
+	await page.goto('/settings/account');
+	await page.getByLabel('Current password').fill(password);
+	await page.getByLabel('New password', { exact: true }).fill('Brand-New-Horse-7');
+	await page.getByLabel('Confirm new password').fill('Brand-New-Horse-7');
+	await page.getByRole('button', { name: 'Save password' }).click();
+	await expect(
+		page.getByText(/can’t be done while viewing the app as another person/)
+	).toBeVisible();
+
+	await page.goto('/');
+	await page.getByRole('button', { name: 'Return to your own account' }).click();
+	await expect(page.getByRole('heading', { name: 'Vera Member', level: 1 })).toBeVisible();
+	await expect(page.getByRole('link', { name: 'Admin', exact: true })).toBeVisible();
+	await expect(page.getByText('You are viewing the app as')).toHaveCount(0);
+});

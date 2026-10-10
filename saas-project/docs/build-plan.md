@@ -60,7 +60,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 21 | New-device alerts | Identity | 20 | Done |
 | 22 | Admin user search | Identity | 4 | Done |
 | 23 | Suspend and reinstate | Identity | 22 | Done |
-| 24 | Impersonation | Identity | 22 | To do |
+| 24 | Impersonation | Identity | 22 | Done |
 | 25 | Admin audit log | Identity | 22 | To do |
 | 26 | Download my data | Identity | 14 | To do |
 | 27 | First deploy to production | — | 1 | To do |
@@ -987,12 +987,21 @@ Blocked: no notification types exist until another module defines one, so there 
 
 **Done when:**
 
-- [ ] An admin impersonates a user, sees the app as them, and returns to their own account
-- [ ] The user receives an email and the audit log shows who impersonated whom
-- [ ] While impersonating, the blocked actions are refused
-- [ ] Tests cover the above
+- [x] An admin impersonates a user, sees the app as them, and returns to their own account
+- [x] The user receives an email and the audit log shows who impersonated whom
+- [x] While impersonating, the blocked actions are refused
+- [x] Tests cover the above
 
-**Notes:** —
+**Notes:**
+
+- Impersonation uses the login library's own mechanism: the admin's browser gets a session as the user, marked with the admin's ID, and the admin's own session is set aside in a signed cookie to return to. It lasts at most an hour.
+- While viewing as a user, a notice across the top of every page names the person and has a "Return to your own account" button.
+- New page, not in the design: `/stop-impersonating`. It can't live under `/admin`, because the admin area is closed while viewing as a user. The Identity doc was updated and marked as awaiting confirmation.
+- Refused while impersonating: changing or setting the password, changing the email, connecting or disconnecting Google or Facebook, adding or removing a passkey, any change to two-step verification, deleting the account, ending the person's sessions and signing them out everywhere. The last two go beyond the design's list; without them an admin could sign the real person out of their own devices. Ordinary things, such as editing the profile, are allowed.
+- The user is emailed when it starts. Starting and stopping are recorded in the audit log, with the admin as the one who acted.
+- Impersonating doesn't count as the user signing in: it sends no new-device alert and doesn't cancel a pending account deletion.
+- An admin can't view the app as themselves, another admin, or a suspended user.
+- A limitation to know about: things done while viewing as a user are recorded in the audit log as done by that user, as they would be for the user themselves. The start and stop entries on either side, and the session's "impersonated by" mark, show an admin was acting. Recording the admin on each entry would mean passing that through every function; it is noted for a later task.
 
 ### 25. Admin audit log
 

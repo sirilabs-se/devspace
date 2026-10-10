@@ -726,3 +726,40 @@ An account less than 15 minutes old gets no alert, so use one you made earlier, 
 **Left for later**
 
 - An appeal process, and timed suspensions, if wanted.
+
+## Task 24: Impersonation
+
+**Status:** Done. `npm run verify` passes (392 logic tests, 30 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/impersonation.ts`: `startImpersonation`, `stopImpersonation`, and the check that blocks sensitive actions.
+- `identity/session.ts`: the signed-in user now says whether an admin is viewing as them.
+- The functions for passwords, email, providers, passkeys, two-step, deletion and sessions: each refuses while impersonating.
+- `identity/social.ts`: adding a passkey is refused while impersonating.
+- `identity/auth.ts`, `device-recognition.ts`: impersonating isn't treated as the user signing in.
+- `identity/emails.ts`: the notice to the user.
+- `src/routes/admin/users/[id]/`: a "View the app as this person" card.
+- `src/routes/stop-impersonating/`: the way back.
+- `src/lib/ui/AppShell.svelte` and `src/routes/+layout.*`: the notice across the top.
+- Tests beside each, and a browser test in `tests/e2e/admin.test.ts`.
+
+**Try it**
+
+1. As an admin, open a user's page and press "View as <name>".
+2. You see the app as they do, with a dark notice across the top naming them. The Admin link is gone.
+3. Open http://localhost:8025: the user has an email saying an admin viewed their account.
+4. Go to Settings then "Account settings" and try to change the password: it is refused.
+5. Press "Return to your own account": you are back on that user's admin page, as yourself.
+
+**Decisions**
+
+- **A new page, `/stop-impersonating`.** Please confirm it.
+- Ending the person's sessions and signing them out everywhere are also refused while impersonating, beyond the design's list.
+- It lasts at most an hour.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- Recording the admin, not the user, on each audit entry made while impersonating.

@@ -21,7 +21,8 @@
 		is_admin: 'An admin’s account can’t be suspended.',
 		already_suspended: 'This account is already suspended.',
 		not_suspended: 'This account is not suspended.',
-		not_found: 'That account no longer exists.'
+		not_found: 'That account can’t be viewed. It may be suspended or no longer exist.',
+		already_impersonating: 'You are already viewing the app as someone.'
 	};
 
 	const user = $derived(data.user);
@@ -85,6 +86,24 @@
 			</div>
 		</Stack>
 	</Card>
+
+	{#if user.role !== 'admin' && !user.suspended}
+		<Card>
+			<Stack gap="large">
+				<Stack gap="small">
+					<Heading level={2}>View the app as this person</Heading>
+					<Text variant="lead">
+						Opens the app as they see it, for up to an hour. They are told by email, and it is
+						recorded. You won’t be able to change their password, email or ways of signing in, or
+						delete their account.
+					</Text>
+				</Stack>
+				<form method="POST" action="?/impersonate">
+					<Button type="submit" variant="outline">View as {user.name}</Button>
+				</form>
+			</Stack>
+		</Card>
+	{/if}
 
 	<Card>
 		<Stack gap="large">

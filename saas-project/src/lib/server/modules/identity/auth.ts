@@ -109,6 +109,8 @@ function createAuth() {
 				create: {
 					// Signing in, by any method, cancels a pending account deletion.
 					after: async (session) => {
+						// An admin viewing the app as the user is not the user signing in.
+						if (session.impersonatedBy) return;
 						await cancelPendingDeletion(toUserId(session.userId));
 					}
 				}

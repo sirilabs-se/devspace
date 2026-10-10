@@ -69,6 +69,9 @@ export async function recogniseDevice(
 	context: RequestContext,
 	now: Date = new Date()
 ): Promise<DeviceRecognition> {
+	// An admin viewing the app as the user is not a new device of theirs.
+	if (user.impersonatedBy) return 'known';
+
 	const marks = readMarks(cookies);
 	const mark = markFor(user.id);
 	if (marks.includes(mark)) return 'known';

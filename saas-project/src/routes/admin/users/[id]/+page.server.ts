@@ -1,8 +1,9 @@
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import {
 	getUserForAdmin,
 	reinstateUser,
 	requireRole,
+	startImpersonation,
 	suspendUser
 } from '$lib/server/modules/identity';
 import type { Actions, PageServerLoad } from './$types';
@@ -30,6 +31,19 @@ export const load: PageServerLoad = async ({ locals, params, request, getClientA
 };
 
 export const actions: Actions = {
+	impersonate: async ({ request, cookies, locals, params, getClientAddress }) => {
+		const admin = requireRole(locals.user, 'admin');
+
+		const result = await startImpersonation(admin, request.headers, cookies, params.id, {
+			ipAddress: getClientAddress(),
+			userAgent: request.headers.get('user-agent')
+		});
+
+		if (result.status !== 'started') return fail(400, { adminError: result.status });
+		// From here the browser is signed in as the user.
+		redirect(303, '/');
+	},
+
 	suspend: async ({ request, locals, params, getClientAddress }) => {
 		const admin = requireRole(locals.user, 'admin');
 		const form = await request.formData();

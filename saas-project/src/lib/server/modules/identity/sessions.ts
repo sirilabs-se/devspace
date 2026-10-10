@@ -3,6 +3,7 @@ import { db } from '$lib/server/db';
 import { recordAuditEvent } from './audit';
 import { getAuth } from './auth';
 import { describeDevice } from './device';
+import { assertNotImpersonating } from './impersonation';
 import type { RequestContext } from './request-context';
 import { sessions } from './schema';
 import { assertSessionBelongsTo, type SessionUser } from './session';
@@ -66,6 +67,7 @@ export async function endSession(
 	context: RequestContext
 ): Promise<EndSessionResult> {
 	await assertSessionBelongsTo(user, headers);
+	assertNotImpersonating(user);
 	if (typeof sessionId !== 'string') return { status: 'not_found' };
 
 	const current = await getAuth().api.getSession({ headers });

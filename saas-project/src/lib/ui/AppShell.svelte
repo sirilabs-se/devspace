@@ -5,17 +5,23 @@
 	let {
 		appName,
 		actions,
+		banner,
 		children
 	}: {
 		appName: string;
 		/** Links or buttons shown at the right of the header. */
 		actions?: Snippet;
+		/** An important notice shown across the top of every page. Empty when there is none. */
+		banner?: Snippet;
 		children: Snippet;
 	} = $props();
 </script>
 
 <div class="shell">
 	<a class="skip" href="#main">Skip to main content</a>
+	{#if banner}
+		<div class="banner" role="status">{@render banner()}</div>
+	{/if}
 	<header class="nav">
 		<Logo name={appName} />
 		<span class="spacer"></span>
@@ -50,6 +56,26 @@
 
 	.skip:focus {
 		top: var(--space-10);
+	}
+
+	.banner:empty {
+		display: none;
+	}
+
+	.banner {
+		padding: var(--space-10) var(--space-24);
+		background: var(--color-ink);
+		color: var(--color-surface);
+		font-size: var(--font-size-14);
+		text-align: center;
+	}
+
+	.banner :global(form) {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-12);
 	}
 
 	.nav {

@@ -180,6 +180,53 @@ describe('suspending from the user page', () => {
 	});
 });
 
+describe('viewing the app as a user', () => {
+	function post(jar: TestCookieJar, user: SessionUser | null, path: string, params = {}) {
+		const url = new URL(`http://localhost:5173${path}`);
+		return {
+			url,
+			params,
+			locals: { user },
+			cookies: jar,
+			request: new Request(url, { method: 'POST', headers: jar.headers() }),
+			getClientAddress: () => '203.0.113.5'
+		} as never;
+	}
+
+	it('switches the admin’s browser to the user, shows the banner, and switches back', async () => {
+		const started = await outcome(() =>
+			userActions.impersonate(post(adminJar, admin, `/admin/users/${anna.id}`, { id: anna.id }))
+		);
+		expect(started.thrown).toMatchObject({ status: 303, location: '/' });
+
+		const asAnna = (await getSessionUser(adminJar.headers()))!;
+		expect(asAnna).toMatchObject({ id: anna.id, impersonatedBy: admin.id });
+		const { load: rootLoad } = await import('../+layout.server');
+		expect(await rootLoad({ locals: { user: asAnna } } as never)).toEqual({
+			user: { name: 'Anna Berg', isAdmin: false, impersonated: true }
+		});
+		// The admin area is closed while viewing as the user.
+		expect((await visit('/admin/users', adminJar)).thrown).toMatchObject({ status: 403 });
+
+		const { actions: stopActions } = await import('../stop-impersonating/+page.server');
+		const stopped = await outcome(() =>
+			stopActions.default(post(adminJar, asAnna, '/stop-impersonating'))
+		);
+		expect(stopped.thrown).toMatchObject({ status: 303, location: `/admin/users/${anna.id}` });
+		expect(await getSessionUser(adminJar.headers())).toMatchObject({ id: admin.id, role: 'admin' });
+	});
+
+	it('is refused to a non-admin', async () => {
+		expect(
+			(
+				await outcome(() =>
+					userActions.impersonate(post(annaJar, anna, `/admin/users/${admin.id}`, { id: admin.id }))
+				)
+			).thrown
+		).toMatchObject({ status: 403 });
+	});
+});
+
 describe('the command that makes the first admin', () => {
 	const run = (email: string) =>
 		execFileSync('node', ['scripts/grant-admin.js', email], {
