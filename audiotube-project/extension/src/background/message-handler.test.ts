@@ -3,7 +3,7 @@ import { listenForRequests } from './message-handler';
 
 type Handler = (
 	message: unknown,
-	sender: { id?: string },
+	sender: { id?: string; url?: string },
 	sendResponse: (response: unknown) => void
 ) => boolean;
 
@@ -20,9 +20,13 @@ beforeEach(() => {
 	vi.stubGlobal('chrome', {
 		runtime: {
 			id: 'our-extension',
+			getURL: (path: string) => `chrome-extension://our-extension/${path}`,
 			onMessage: { addListener: (h: Handler) => (handler = h) }
 		},
-		storage: { local: { set }, session: { set: sessionSet, remove: sessionRemove } }
+		storage: {
+			local: { set },
+			session: { set: sessionSet, remove: sessionRemove, get: async () => ({}) }
+		}
 	});
 	listenForRequests();
 });
@@ -122,6 +126,30 @@ describe('listenForRequests', () => {
 		);
 		expect(keepOpen).toBe(false);
 		expect(sessionSet).not.toHaveBeenCalled();
+	});
+
+	it('does not let a tab send a command for the player', () => {
+		const keepOpen = handler(
+			{ type: 'player/command', command: 'pause' },
+			{
+				id: 'our-extension',
+				url: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
+				tab: { id: 8, windowId: 3 }
+			} as never,
+			vi.fn()
+		);
+		expect(keepOpen).toBe(false);
+	});
+
+	it('answers a command from the side panel', async () => {
+		const sendResponse = vi.fn();
+		const keepOpen = handler(
+			{ type: 'player/command', command: 'pause' },
+			{ id: 'our-extension', url: 'chrome-extension://our-extension/src/sidepanel/index.html' },
+			sendResponse
+		);
+		expect(keepOpen).toBe(true);
+		await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
 	});
 
 	it('ignores messages it does not know', () => {

@@ -1,4 +1,5 @@
 import { isBackgroundRequest } from '../shared';
+import { handlePanelCommand } from './commands';
 import { handlePlayerReport } from './playback';
 import { recordOverlayStatus } from './overlay-status';
 import { setAudioOnly } from './settings-store';
@@ -10,6 +11,13 @@ export function listenForRequests(): void {
 
 		if (message.type === 'settings/set-audio-only') {
 			void setAudioOnly(message.value).then((response) => sendResponse(response));
+			return true;
+		}
+
+		if (message.type === 'player/command') {
+			// Only the extension's own pages (the side panel) may command the player, never a YouTube tab.
+			if (!sender.url?.startsWith(chrome.runtime.getURL(''))) return false;
+			void handlePanelCommand(message.command).then((response) => sendResponse(response));
 			return true;
 		}
 

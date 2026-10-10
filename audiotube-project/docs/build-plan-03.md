@@ -42,8 +42,8 @@ These apply to this phase only and do not change the requirements document.
 | 16 | Spike: the playback tab | PLY-041, PLY-043, PLY-044, PLY-050, PLY-053, OQ-001 | 15 | Done |
 | 17 | Now Playing from YouTube's player | PLY-037, PLY-038, PLY-048, PLY-130 | 16 | Done |
 | 18 | One playback tab across all windows | GLB-001, PLY-039, PLY-040, PLY-045 | 17 | Done |
-| 19 | Now Playing in the side panel | PLY-036, PLY-051, PLY-055, PLY-056, PLY-057, PLY-115, PLY-119 | 17 | In progress |
-| 20 | Playback tab lost, and Resume | PLY-049, PLY-050, PLY-052, PLY-053, PLY-054 | 18, 19 | To do |
+| 19 | Now Playing in the side panel | PLY-036, PLY-051, PLY-055, PLY-056, PLY-057, PLY-115, PLY-119 | 17 | Done |
+| 20 | Playback tab lost, and Resume | PLY-049, PLY-050, PLY-052, PLY-053, PLY-054 | 18, 19 | In progress |
 | 21 | Moving around in the playback tab | PLY-044, PLY-045 | 18 | To do |
 
 Statuses: **To do**, **In progress**, **Done**, **Blocked** (say why in the task's notes).
@@ -220,14 +220,24 @@ Task 15 comes first, then the spike. Tasks 18 and 19 can be done in either order
 
 **Done when:**
 
-- [ ] The card shows the thumbnail, title and channel of Now Playing; a title containing markup shows as plain text
-- [ ] Pause and play from the side panel change YouTube's player within 1 second
-- [ ] Pausing on YouTube (overlay click, `K`) changes the side panel's button within 1 second
-- [ ] Go to video brings the playback tab and its window to the front
-- [ ] The card stays the same while the user switches tabs in the window (`PLY-055`)
-- [ ] "Nothing playing" shows on a fresh install
-- [ ] Usable from 320 to 600 px wide, keyboard operable, buttons labelled for screen readers
-- [ ] Logic tests cover `sidepanel/core/` without importing any `.svelte` file
+- [x] The card shows the thumbnail, title and channel of Now Playing; a title containing markup shows as plain text
+- [x] Pause and play from the side panel change YouTube's player within 1 second
+- [x] Pausing on YouTube (overlay click, `K`) changes the side panel's button within 1 second
+- [x] Go to video brings the playback tab and its window to the front
+- [x] The card stays the same while the user switches tabs in the window (`PLY-055`)
+- [x] "Nothing playing" shows on a fresh install
+- [x] Usable from 320 to 600 px wide, keyboard operable, buttons labelled for screen readers
+- [x] Logic tests cover `sidepanel/core/` without importing any `.svelte` file
+
+**Notes:**
+
+- `sidepanel/core/now-playing.ts` combines the stored Now Playing and the playback tab into one view (video with a thumbnail URL derived from its ID, playing or not, whether there is a tab to control); `sidepanel/ui/NowPlayingCard.svelte` only renders it. The card sits under the Audio only card, and the empty state is the prototype's "Nothing playing" with its wording shortened to what exists ("Open any YouTube video.").
+- Thumbnails come from `i.ytimg.com` by video ID (decision n); the browser tests answer that host with a one-pixel image so they never depend on the network. The title and channel are rendered by Svelte as text; a title containing `<img onerror=…>` shows literally and runs nothing (browser test).
+- Commands: the side panel sends `player/command` (`play`, `pause`, `go-to-video`, and `resume` for task 20) to the background. The background passes play and pause to the playback tab, and for `go-to-video` makes the tab active and focuses its window. The background accepts the command only from an extension page (its URL is under `chrome-extension://<id>/`), never from a YouTube tab; the first version checked "has no tab", which wrongly refused the panel when it was opened in a tab in the tests.
+- With no playback tab (for example after a restart) the card still shows the stored video, with Play and Go to video disabled; Resume arrives in task 20.
+- Real YouTube (headless, signed out): the card showed the real title, channel and a loaded thumbnail; Pause and Play from the panel changed YouTube's player state within a second, and pausing on YouTube flipped the panel button.
+- Left out as planned: progress, volume, Next and Previous, Live and Buffering labels, Up next, the panel mini-player, the Save control.
+
 
 ### 20. Playback tab lost, and Resume
 

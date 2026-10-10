@@ -11,3 +11,11 @@ export {
 	type CoverStatusDeps,
 	type CoverStatusView
 } from './cover-status';
+export {
+	createNowPlayingController,
+	thumbnailUrl,
+	type NowPlayingController,
+	type NowPlayingDeps,
+	type NowPlayingVideo,
+	type NowPlayingView
+} from './now-playing';

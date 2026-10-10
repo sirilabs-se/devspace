@@ -13,13 +13,24 @@ export interface SetAudioOnlyRequest {
 export type SetAudioOnlyResponse =
 	{ ok: true; audioOnly: boolean } | { ok: false; error: SettingsError };
 
+/** Side panel → background: do this with the playback tab. */
+export interface PlayerCommandRequest {
+	type: 'player/command';
+	command: 'play' | 'pause' | 'go-to-video' | 'resume';
+}
+
+export type PlayerCommandError = 'no-playback-tab' | 'nothing-to-resume' | 'failed';
+
+export type PlayerCommandResponse = { ok: true } | { ok: false; error: PlayerCommandError };
+
 export interface OverlayStatusReport {
 	type: 'overlay/status';
 	status: OverlayStatus;
 }
 
 /** Every request any context may send to the background. */
-export type BackgroundRequest = SetAudioOnlyRequest | OverlayStatusReport | PlayerReport;
+export type BackgroundRequest =
+	SetAudioOnlyRequest | OverlayStatusReport | PlayerCommandRequest | PlayerReport;
 
 const MAX_RAW_TEXT = 2000;
 const MAX_SECONDS = 10_000_000;
@@ -56,7 +67,27 @@ export function isBackgroundRequest(message: unknown): message is BackgroundRequ
 	const { type, status, value } = message as { type?: unknown; status?: unknown; value?: unknown };
 	if (type === 'settings/set-audio-only') return value !== undefined;
 	if (type === 'overlay/status') return status === 'failed' || status === 'ok';
+	if (type === 'player/command') return isPlayerCommandRequest(message);
 	return isPlayerReport(message);
+}
+
+function isPlayerCommandRequest(message: unknown): message is PlayerCommandRequest {
+	const command = (message as { command?: unknown }).command;
+	return (
+		command === 'play' || command === 'pause' || command === 'go-to-video' || command === 'resume'
+	);
+}
+
+/** Asks the background to act on the playback tab. */
+export async function requestPlayerCommand(
+	command: PlayerCommandRequest['command']
+): Promise<PlayerCommandResponse> {
+	const request: PlayerCommandRequest = { type: 'player/command', command };
+	try {
+		return (await chrome.runtime.sendMessage(request)) as PlayerCommandResponse;
+	} catch {
+		return { ok: false, error: 'failed' };
+	}
 }
 
 /** Passes a checked player report on to the background. The tab is taken from the sender there. */

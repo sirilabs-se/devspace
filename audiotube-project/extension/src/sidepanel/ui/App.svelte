@@ -1,19 +1,28 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import type { AudioOnlyController, CoverStatusController } from '../core';
+	import type { AudioOnlyController, CoverStatusController, NowPlayingController } from '../core';
 	import AudioOnlyCard from './AudioOnlyCard.svelte';
 	import Logo from './Logo.svelte';
+	import NowPlayingCard from './NowPlayingCard.svelte';
 
 	let {
 		audioOnly,
-		coverStatus
-	}: { audioOnly: AudioOnlyController; coverStatus: CoverStatusController } = $props();
+		coverStatus,
+		nowPlaying
+	}: {
+		audioOnly: AudioOnlyController;
+		coverStatus: CoverStatusController;
+		nowPlaying: NowPlayingController;
+	} = $props();
 
 	let view = $state(untrack(() => audioOnly.get()));
 	$effect(() => audioOnly.subscribe((next) => (view = next)));
 
 	let cover = $state(untrack(() => coverStatus.get()));
 	$effect(() => coverStatus.subscribe((next) => (cover = next)));
+
+	let playing = $state(untrack(() => nowPlaying.get()));
+	$effect(() => nowPlaying.subscribe((next) => (playing = next)));
 
 	const messages = {
 		'save-failed': "Couldn't save that change. Audio only is back to its saved setting.",
@@ -34,6 +43,11 @@
 				onToggle={audioOnly.toggle}
 			/>
 		{/if}
+		<NowPlayingCard
+			view={playing}
+			onTogglePlayPause={nowPlaying.togglePlayPause}
+			onGoToVideo={nowPlaying.goToVideo}
+		/>
 		{#if cover.coverFailed}
 			<p role="status" class="m-0 rounded-card bg-card px-3.5 py-2.5 text-xs text-muted">
 				Couldn't cover YouTube's player on this page
