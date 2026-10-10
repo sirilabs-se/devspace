@@ -24,7 +24,8 @@
 		"db:up": "docker compose up -d --wait",
 		"db:down": "docker compose down",
 		"db:generate": "drizzle-kit generate",
-		"db:migrate": "node --env-file-if-exists=.env node_modules/drizzle-kit/bin.cjs migrate"
+		"db:migrate": "node --env-file-if-exists=.env node_modules/drizzle-kit/bin.cjs migrate",
+		"admin:grant": "node --env-file-if-exists=.env scripts/grant-admin.js"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

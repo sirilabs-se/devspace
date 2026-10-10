@@ -47,6 +47,7 @@ npm run check           # check types and Svelte code
 npm run verify          # run every check: lint, types, architecture rules, tests
 npm run db:generate     # create a migration file from schema changes
 npm run db:migrate      # apply database migrations
+npm run admin:grant -- person@example.com   # make an existing account an admin
 ```
 
 ## Folder structure

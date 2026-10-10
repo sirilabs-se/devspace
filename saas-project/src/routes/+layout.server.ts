@@ -1,5 +1,7 @@
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = ({ locals }) => {
-	return { user: locals.user ? { name: locals.user.name } : null };
+	return {
+		user: locals.user ? { name: locals.user.name, isAdmin: locals.user.role === 'admin' } : null
+	};
 };

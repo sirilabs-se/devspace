@@ -6,6 +6,9 @@ import { getAuth, SESSION_MAX_AGE_SECONDS } from './auth';
 import { consents } from './schema';
 import { toUserId, type UserId } from './user-id';
 
+export const ROLES = ['user', 'admin'] as const;
+export type Role = (typeof ROLES)[number];
+
 /** The signed-in person, as the rest of the app sees them. */
 export type SessionUser = {
 	id: UserId;
@@ -14,6 +17,7 @@ export type SessionUser = {
 	username: string | null;
 	emailVerified: boolean;
 	image: string | null;
+	role: Role;
 	/**
 	 * True for someone who signed in with Google or Facebook and hasn't yet accepted
 	 * the terms and confirmed their age. Until they do, they can only reach `/welcome`.
@@ -95,6 +99,8 @@ export async function getSessionUser(
 		username: user.username ?? null,
 		emailVerified: user.emailVerified,
 		image: user.image ?? null,
+		// Anything other than a known elevated role counts as an ordinary user.
+		role: user.role === 'admin' ? 'admin' : 'user',
 		welcomePending: !accepted
 	};
 }
@@ -109,6 +115,13 @@ export async function assertSessionBelongsTo(user: SessionUser, headers: Headers
 	if (current?.user.id !== user.id) {
 		throw new Error('The session does not belong to the acting user');
 	}
+}
+
+/** Stops the request with "not allowed" unless the user has this role. Returns the user. */
+export function requireRole(user: SessionUser | null, role: Role): SessionUser {
+	if (!user) error(401, { message: 'Sign in to continue' });
+	if (user.role !== role) error(403, { message: 'You don’t have access to this area' });
+	return user;
 }
 
 /** Returns the signed-in user, or stops the request if nobody is signed in. */

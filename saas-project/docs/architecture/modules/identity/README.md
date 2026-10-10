@@ -53,7 +53,7 @@ Other code MUST import this module only through its `index.ts` (see the system d
 | Function | What it does | Used by |
 |---|---|---|
 | `requireUser(locals)` | Returns the signed-in user or stops the request | All pages and modules |
-| `requireRole(user, role)` | Stops the request if the user lacks the role | Admin pages, later modules |
+| `requireRole(user, role)` | Stops the request with "not allowed" if the user lacks the role; returns the user | Admin pages, later modules |
 | `getPublicProfiles(userIds)` | Returns name, username and avatar only; safe to show to anyone | Later modules |
 | `getContactDetails(userId)` | Returns email, name, language and time zone, for sending notifications | Later modules |
 | `getNotificationPreferences(userId)` | Returns what the user has opted into | Later modules |
@@ -95,6 +95,8 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `hasTwoStepChallenge(headers)` / `sendTwoStepEmailCode(headers, context)` / `completeTwoStepLogin(method, code, headers, cookies, context, trustDevice)` | Finishes a login that is waiting for its code: from the app, by email or a backup code; optionally trusting the device | `/login/two-step` |
 | `listActiveSessions(user, headers)` / `endSession(user, headers, sessionId, context)` | Lists where the acting user is signed in, and ends one of their other sessions | `/settings/security` |
 | `recogniseDevice(user, cookies, context)` | Marks the browser as known for this account; on a new browser, records it and emails the owner | `hooks.server.ts` |
+| `searchUsers(admin, query, page)` | Finds users by email, name or username, 25 to a page. Admins only | `/admin/users` |
+| `getUserForAdmin(admin, userId, context)` | One user's account details and recent security events; looking is recorded. Admins only | `/admin/users/[id]` |
 | `listSecurityActivity(userId)` | Lists the acting user's own recent security events, newest first | `/settings/security` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
@@ -304,6 +306,7 @@ sequenceDiagram
 - "Trust this device for 30 days" marks the browser with a signed cookie the page's scripts can't read. A correct password from that browser then signs in without the second step. Other browsers are still asked, and switching the second step off clears the mark.
 - A username is optional. When set: 3 to 30 characters (letters, numbers, dots, hyphens, underscores), starting and ending with a letter or number, compared without regard to case, checked against a reserved list kept in code. Setting a first username is always allowed; replacing or removing one is allowed once every 30 days. The old name is held for 30 days, during which only its previous owner can take it back. Changing only the capital letters is not a change. A deleted account's name is held permanently.
 - Sign-up has one checkbox covering the terms, the privacy policy and being 18 or older. Each is still saved as its own consent record.
+- The admin area is checked three times: in `hooks.server.ts` before any page code runs, in each admin page, and inside each admin function. The first admin is made from the command line with `npm run admin:grant -- <email>`, since only an admin could do it from inside the app. An admin looking at a user's details is recorded in the audit log.
 - A suspended user can't sign in and their sessions are ended.
 - Audit log entries are kept for 12 months.
 

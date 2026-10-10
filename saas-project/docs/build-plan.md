@@ -58,7 +58,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 19 | Email code and trusted devices | Identity | 18 | Done |
 | 20 | Active sessions | Identity | 4 | Done |
 | 21 | New-device alerts | Identity | 20 | Done |
-| 22 | Admin user search | Identity | 4 | To do |
+| 22 | Admin user search | Identity | 4 | Done |
 | 23 | Suspend and reinstate | Identity | 22 | To do |
 | 24 | Impersonation | Identity | 22 | To do |
 | 25 | Admin audit log | Identity | 22 | To do |
@@ -920,11 +920,21 @@ Blocked: no notification types exist until another module defines one, so there 
 
 **Done when:**
 
-- [ ] An admin finds a user by email and opens their details
-- [ ] A non-admin who visits any `/admin` page is refused
-- [ ] Tests cover the above
+- [x] An admin finds a user by email and opens their details
+- [x] A non-admin who visits any `/admin` page is refused
+- [x] Tests cover the above
 
-**Notes:** The paging convention is an open question; settle it before starting.
+**Notes:**
+
+- Paging, which the design left open: 25 to a page, chosen with a page number. A page number out of range is brought back into range. The system doc was updated; the owner has not confirmed it.
+- The admin area is refused to non-admins in three places: `hooks.server.ts` (before any page code runs), each admin page, and each admin function. A signed-in non-admin gets "not allowed" (403); a signed-out visitor is sent to log in.
+- The first admin is made from the command line: `npm run admin:grant -- person@example.com`. The account must already exist. It is recorded in the audit log. The person may need to log in again to see the Admin link.
+- The login library's admin add-on was switched on, for roles now and for suspension and impersonation in the next tasks. Its own web addresses stay closed.
+- Search matches part of the email, name or username, whatever the letter case. An empty search lists everyone, newest first. `%` and `_` are treated as ordinary characters.
+- The user page shows role, username, whether the email is verified, when they joined, their ways of signing in, whether two-step is on, and their 20 latest security events. It never shows a password hash or any secret.
+- An admin opening a user's page is recorded in the audit log ("admin viewed user"), so there is a trail of who looked at whom. It does not appear in the person's own activity list wording yet; it shows there as "Security event".
+- The admin pages reuse the settings layout and the list-row component. The prototype's admin console has a table and filters; this is the minimal version the requirements asked for.
+- An unknown role in the database counts as an ordinary user.
 
 ### 23. Suspend and reinstate
 

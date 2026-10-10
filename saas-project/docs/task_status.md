@@ -658,3 +658,39 @@ An account less than 15 minutes old gets no alert, so use one you made earlier, 
 **Left for later**
 
 - Nothing in this task. This completes Phase 2.
+
+## Task 22: Admin user search
+
+**Status:** Done. `npm run verify` passes (366 logic tests, 28 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/admin.ts`: `searchUsers`, `getUserForAdmin`.
+- `identity/session.ts`: the signed-in user's role, and `requireRole`.
+- `identity/auth.ts`: the admin add-on.
+- `src/hooks.server.ts`: refuses `/admin` to non-admins.
+- `src/routes/admin/`: the layout, the user list with search and paging, and the user details page.
+- `scripts/grant-admin.js` and `package.json`: `npm run admin:grant`.
+- `src/routes/+layout.*`: an "Admin" link in the header for admins.
+- `src/lib/ui/Button.svelte`: can carry a form field.
+- `CLAUDE.md`: the new command.
+- Tests beside each, plus `tests/e2e/admin.test.ts`.
+
+**Try it**
+
+1. Make yourself an admin: `npm run admin:grant -- your@email` (use the email you signed up with), then log out and back in.
+2. An "Admin" link appears in the header. Open it.
+3. Search for part of an email, name or username, and press "Open" beside a result.
+4. Log in as a different, ordinary account and visit http://localhost:5173/admin/users: "You don't have access to this area".
+
+**Decisions**
+
+- 25 to a page, with a page number. Please confirm.
+- The first admin is made from the command line.
+- An admin opening a user's page is recorded.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- Suspend, reinstate, impersonate and the audit log view are tasks 23 to 25.

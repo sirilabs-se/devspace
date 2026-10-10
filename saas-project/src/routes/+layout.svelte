@@ -22,6 +22,9 @@
 <AppShell appName="SaaS">
 	{#snippet actions()}
 		{#if data.user}
+			{#if data.user.isAdmin}
+				<Button href="/admin/users" variant="ghost" size="small">Admin</Button>
+			{/if}
 			<Button href="/settings/account" variant="ghost" size="small">{data.user.name}</Button>
 			<form method="POST" action="/logout">
 				<Button type="submit" variant="ghost" size="small">Log out</Button>

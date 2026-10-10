@@ -1,4 +1,12 @@
 // Public interface of the Identity module: the only file other code may import.
+export {
+	ADMIN_PAGE_SIZE,
+	getUserForAdmin,
+	searchUsers,
+	type AdminUserDetails,
+	type AdminUserSummary,
+	type UserSearchResult
+} from './admin';
 export { listSecurityActivity, type SecurityActivity } from './activity';
 export { recordAuditEvent, type AuditContext } from './audit';
 export {
@@ -67,7 +75,14 @@ export {
 export type { RateLimitResult } from './rate-limit';
 export type { RequestContext } from './request-context';
 export { limitRequests, type RequestLimit } from './request-limits';
-export { getSessionUser, requireUser, type CookieJar, type SessionUser } from './session';
+export {
+	getSessionUser,
+	requireRole,
+	requireUser,
+	type CookieJar,
+	type Role,
+	type SessionUser
+} from './session';
 export {
 	endSession,
 	listActiveSessions,

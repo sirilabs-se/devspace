@@ -239,7 +239,7 @@ Endpoints are listed in each module doc. Only the shared conventions are here.
 | How requests prove who the user is | Session cookie, sent automatically by the browser |
 | Request and response format | Form data for form actions; JSON for `/api` routes |
 | Error format | Form actions return an error code and a readable message per field. `/api` routes return JSON with an error code and message, plus a matching HTTP status. |
-| Lists and paging | TBD; first needed by the admin user list in Phase 3 |
+| Lists and paging | Long lists are shown 25 to a page, chosen with a `page` number starting at 1. A page number out of range is brought back into range. Built this way in task 22; not yet confirmed by the owner |
 | Versioning | None; frontend and backend are deployed together |
 
 ## Security and Access
@@ -352,7 +352,7 @@ See the [decision log](decisions/README.md) for why the main choices were made.
 - [ ] How long can the old address undo an email change? Suggested: 7 days.
 - [ ] Does a successful password reset clear a login lockout? Suggested: yes.
 - [ ] Which notification types exist? None until another module needs one.
-- [ ] How are long lists paged? First needed by the admin user list.
+- [ ] How are long lists paged? Built as 25 to a page with a page number (task 22); confirm or change.
 
 ## Glossary
 

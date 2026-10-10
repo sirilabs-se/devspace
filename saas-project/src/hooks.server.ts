@@ -1,4 +1,4 @@
-import { redirect, type Handle, type RequestEvent } from '@sveltejs/kit';
+import { error, redirect, type Handle, type RequestEvent } from '@sveltejs/kit';
 import { getSessionUser, recogniseDevice } from '$lib/server/modules/identity';
 import { isPublicPath } from '$lib/server/public-paths';
 
@@ -10,6 +10,8 @@ function clientAddress(event: RequestEvent): string | null {
 		return null;
 	}
 }
+
+const isAdminPath = (pathname: string) => pathname === '/admin' || pathname.startsWith('/admin/');
 
 const welcomeExempt = (pathname: string) =>
 	pathname === '/welcome' ||
@@ -34,6 +36,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 		// Remember where they were going, so login can send them back.
 		const next = event.url.pathname + event.url.search;
 		redirect(303, `/login?next=${encodeURIComponent(next)}`);
+	}
+
+	// The admin area is for admins only. Each admin page and function checks again.
+	if (isAdminPath(event.url.pathname) && event.locals.user?.role !== 'admin') {
+		error(403, { message: 'You don’t have access to this area' });
 	}
 
 	// Someone who signed up through Google or Facebook must accept the terms first.

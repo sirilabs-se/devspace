@@ -13,6 +13,8 @@
 		loading = false,
 		onclick,
 		formaction,
+		name,
+		value,
 		children
 	}: {
 		type?: 'button' | 'submit';
@@ -24,6 +26,9 @@
 		disabled?: boolean;
 		/** Shows a spinner and blocks further presses. */
 		loading?: boolean;
+		/** A form field sent only when this button is the one pressed. */
+		name?: string;
+		value?: string;
 		/** Sends the form to a different action than the form's own. */
 		formaction?: string;
 		/** Called when the button is pressed. Not used for links. */
@@ -44,6 +49,8 @@
 		{type}
 		{onclick}
 		{formaction}
+		{name}
+		{value}
 		disabled={disabled || loading}
 		aria-busy={loading ? 'true' : undefined}
 	>

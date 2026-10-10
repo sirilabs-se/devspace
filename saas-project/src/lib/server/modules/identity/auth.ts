@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { createAuthMiddleware } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { twoFactor, username } from 'better-auth/plugins';
+import { admin, twoFactor, username } from 'better-auth/plugins';
 import { passkey } from '@better-auth/passkey';
 import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
@@ -165,6 +165,9 @@ function createAuth() {
 			}
 		},
 		plugins: [
+			// Roles, suspension and impersonation. Its own web addresses stay closed; the
+			// admin area uses this module's functions.
+			admin({ defaultRole: 'user', adminRoles: ['admin'] }),
 			// The optional second step after a password login.
 			twoFactor({
 				issuer: 'SaaS',

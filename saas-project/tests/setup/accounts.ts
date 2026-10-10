@@ -1,5 +1,7 @@
 import { createHmac } from 'node:crypto';
+import { sql } from 'drizzle-orm';
 import { vi } from 'vitest';
+import { db } from '$lib/server/db';
 import { sendEmail } from '$lib/server/email';
 import { signUp, verifyEmail, type CookieJar } from '$lib/server/modules/identity';
 
@@ -120,4 +122,9 @@ export async function createSignedInUser(
 	const result = await verifyEmail(verificationTokenFor(email), jar, testContext);
 	if (result.status !== 'verified') throw new Error(`Verification failed: ${result.status}`);
 	return jar;
+}
+
+/** Gives an account the admin role, the way the command-line script does. */
+export async function makeAdmin(email: string): Promise<void> {
+	await db.execute(sql`update users set role = 'admin' where email = ${email}`);
 }
