@@ -120,6 +120,7 @@ Table passkeys {
   device_type varchar
   backed_up boolean [not null, default: false]
   transports varchar
+  aaguid varchar [note: 'Identifies the make of authenticator, when it says']
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]
 

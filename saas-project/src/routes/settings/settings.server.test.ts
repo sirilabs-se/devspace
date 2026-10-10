@@ -135,6 +135,38 @@ describe('deleting the account', () => {
 	});
 });
 
+describe('passkeys on the security page', () => {
+	it('lists none at first, and refuses to rename or remove one that isn’t there', async () => {
+		const data = (await securityLoad(event('/settings/security'))) as { passkeys: unknown[] };
+		expect(data.passkeys).toEqual([]);
+
+		expect(
+			(
+				await outcome(() =>
+					securityActions.removePasskey(event('/settings/security', { passkeyId: 'x' }))
+				)
+			).result
+		).toMatchObject({ status: 400, data: { passkeyError: 'not_found' } });
+		expect(
+			(
+				await outcome(() =>
+					securityActions.renamePasskey(
+						event('/settings/security', { passkeyId: 'x', name: 'New' })
+					)
+				)
+			).result
+		).toMatchObject({ status: 400, data: { passkeyError: 'not_found' } });
+	});
+
+	it('refuses someone who is not signed in', async () => {
+		user = null;
+
+		for (const action of [securityActions.removePasskey, securityActions.renamePasskey]) {
+			expect((await outcome(() => action(event('/settings/security')))).thrown?.status).toBe(401);
+		}
+	});
+});
+
 describe('security settings', () => {
 	it('lists the signed-in person’s own security activity, and nobody else’s', async () => {
 		await createSignedInUser('bo@example.com', 'Bo Lind');

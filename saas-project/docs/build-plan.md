@@ -53,7 +53,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 14 | Security activity page | Identity | 4 | Done |
 | 15 | Delete account | Identity | 7, 9 | Done |
 | 16 | Notification preferences | Identity | 8 | Blocked |
-| 17 | Passkeys | Identity | 4 | In progress |
+| 17 | Passkeys | Identity | 4 | Done |
 | 18 | Authenticator app and backup codes | Identity | 4 | To do |
 | 19 | Email code and trusted devices | Identity | 18 | To do |
 | 20 | Active sessions | Identity | 4 | To do |
@@ -754,11 +754,23 @@ Blocked: no notification types exist until another module defines one, so there 
 
 **Done when:**
 
-- [ ] A person adds a passkey and signs in with it
-- [ ] A person removes a passkey, unless it is their last way to sign in
-- [ ] Tests cover adding, removing and the last-method rule
+- [x] A person adds a passkey and signs in with it
+- [x] A person removes a passkey, unless it is their last way to sign in
+- [x] Tests cover adding, removing and the last-method rule
 
-**Notes:** —
+**Notes:**
+
+- Adding a passkey and signing in with one are an exchange between the browser and the login library, through four addresses under `/api/auth/passkey/` that were added to the short allowed list. Listing, naming and removing passkeys go through this module's own functions.
+- The browser side uses what current browsers provide themselves, so no extra browser library was added. Older browsers are told passkeys aren't supported and can use email and password.
+- New package: `@better-auth/passkey`, the login library's passkey add-on, which the plan already named.
+- The `passkeys` table has one more column than the design listed, `aaguid`, because the add-on stores it. `schema.dbml` was updated.
+- The login library only lets someone add a passkey within a day of logging in. After that the page says to log in again first.
+- "Continue with passkey" is now the first button on the login page, as in the prototype, with "or use your email" below it.
+- Passkeys count for the "last way to sign in" rule, for removing a passkey and for disconnecting a provider alike. This module now makes that decision alone; the library's own narrower check was switched off, because it doesn't know about passkeys.
+- A passkey sign-in and a newly added passkey are both recorded in the audit log.
+- Renaming a passkey is built and tested on the server, but the page has no rename control yet; a passkey is named when it is added.
+- Tested in a real browser with a pretend authenticator: add a passkey, log out, sign in with it, remove it.
+- The browser tests now clear the per-address attempt counters before each test, because together they had started to trip the sign-up limit.
 
 ### 18. Authenticator app and backup codes
 

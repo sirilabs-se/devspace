@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './base';
 
 test('the placeholder page loads inside the app shell', async ({ page }) => {
 	await page.goto('/');

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './base';
 
 test('forgot password shows the same confirmation for any address', async ({ page }) => {
 	await page.goto('/login');

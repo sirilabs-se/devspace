@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './base';
 import { browserTestVerificationToken } from '../setup/verification-token';
 
 test('a person can sign up, verify, log out and log back in', async ({ page }) => {

@@ -46,7 +46,11 @@ export async function startSocialSignIn(
 // The only login-library addresses reachable from outside: where a provider
 // sends people back. Everything else goes through this module's own functions,
 // which apply the app's rules.
-const ALLOWED_AUTH_PATHS = [/^\/api\/auth\/callback\/(google|facebook)$/];
+const ALLOWED_AUTH_PATHS = [
+	/^\/api\/auth\/callback\/(google|facebook)$/,
+	// The passkey exchange between the browser and the login library.
+	/^\/api\/auth\/passkey\/(generate-register-options|verify-registration|generate-authenticate-options|verify-authentication)$/
+];
 
 /** Handles a request to `/api/auth/*`. Anything not on the short allowed list is "not found". */
 export async function handleAuthRequest(request: Request): Promise<Response> {

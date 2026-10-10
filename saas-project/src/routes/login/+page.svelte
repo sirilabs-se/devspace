@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { signInWithPasskey } from '$lib/shared/passkey-browser';
 	import {
 		AccountChip,
 		Alert,
@@ -36,6 +37,27 @@
 	);
 
 	const step = $derived(form?.step ?? 'email');
+
+	let usingPasskey = $state(false);
+	let passkeyProblem = $state<string>();
+	const passkeyProblems: Record<string, string> = {
+		unsupported: 'This browser can’t use passkeys. Log in with your email instead.',
+		cancelled: 'Passkey sign-in was cancelled or timed out. Nothing has changed on your account.',
+		refused: 'That passkey didn’t work here. Log in with your email instead.'
+	};
+
+	async function usePasskey() {
+		usingPasskey = true;
+		passkeyProblem = undefined;
+		const result = await signInWithPasskey();
+		if (result.ok) {
+			// A full page load, so every part of the app sees the new session.
+			window.location.assign(data.next);
+			return;
+		}
+		usingPasskey = false;
+		passkeyProblem = passkeyProblems[result.reason] ?? passkeyProblems.refused;
+	}
 
 	// svelte-ignore state_referenced_locally
 	let email = $state(form?.email ?? '');
@@ -131,13 +153,30 @@
 			</Stack>
 		</form>
 	{:else}
+		<Stack gap="large">
+			<Stack gap="small">
+				<Heading>Welcome back</Heading>
+				<Text variant="lead">Log in to manage your events and tickets.</Text>
+			</Stack>
+
+			{#if passkeyProblem}
+				<Alert variant="danger" title="Passkey sign-in didn’t finish">{passkeyProblem}</Alert>
+			{/if}
+
+			<Stack gap="small">
+				<Button size="large" fullWidth loading={usingPasskey} onclick={usePasskey}>
+					Continue with passkey
+				</Button>
+				<Text variant="footnote">
+					Fastest and most secure — fingerprint, face or a security key. Nothing to type.
+				</Text>
+			</Stack>
+		</Stack>
+
+		<Divider label="or use your email" />
+
 		<form method="POST" action="?/email" novalidate use:enhance={submit}>
 			<Stack gap="large">
-				<Stack gap="small">
-					<Heading>Welcome back</Heading>
-					<Text variant="lead">Log in to manage your events and tickets.</Text>
-				</Stack>
-
 				{#if data.notice === 'deletion-scheduled'}
 					<Alert variant="info" title="Your account is scheduled for deletion">
 						You’ve been signed out everywhere. Log in within 30 days to keep the account; otherwise
@@ -161,7 +200,7 @@
 						: undefined}
 				/>
 
-				<Button type="submit" size="large" fullWidth loading={submitting}>
+				<Button type="submit" variant="outline" fullWidth loading={submitting}>
 					Continue with email
 				</Button>
 			</Stack>

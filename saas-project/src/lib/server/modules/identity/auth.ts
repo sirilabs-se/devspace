@@ -2,6 +2,7 @@ import { betterAuth } from 'better-auth';
 import { createAuthMiddleware } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { username } from 'better-auth/plugins';
+import { passkey } from '@better-auth/passkey';
 import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
 import { recordAuditEvent } from './audit';
@@ -13,7 +14,7 @@ import {
 } from './emails';
 import { linkTokenPayload } from './link-token';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from './password';
-import { accounts, sessions, users, verifications } from './schema';
+import { accounts, passkeys, sessions, users, verifications } from './schema';
 import { toUserId } from './user-id';
 import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH, usernameFormatProblem } from './username';
 
@@ -62,7 +63,7 @@ function createAuth() {
 		database: drizzleAdapter(db, {
 			provider: 'pg',
 			usePlural: true,
-			schema: { users, accounts, sessions, verifications }
+			schema: { users, accounts, sessions, verifications, passkeys }
 		}),
 		emailAndPassword: {
 			enabled: true,
@@ -90,7 +91,14 @@ function createAuth() {
 			// email matches. The person signs in first and links the provider from settings.
 			// Linking is only ever done on purpose, by someone already signed in, so the
 			// provider account may use a different email from the app account.
-			accountLinking: { enabled: true, disableImplicitLinking: true, allowDifferentEmails: true }
+			// Whether a sign-in method is the last one is decided by this module, which also
+			// counts passkeys; the library only counts provider and password accounts.
+			accountLinking: {
+				enabled: true,
+				disableImplicitLinking: true,
+				allowDifferentEmails: true,
+				allowUnlinkingAll: true
+			}
 		},
 		databaseHooks: {
 			session: {
@@ -117,13 +125,25 @@ function createAuth() {
 		hooks: {
 			// Records sign-ins that come back from Google or Facebook.
 			after: createAuthMiddleware(async (ctx) => {
+				const userAgent = ctx.request?.headers.get('user-agent') ?? null;
+
+				// Sign-ins that the library completes itself: a provider's return, or a passkey.
 				const created = ctx.context.newSession;
-				if (!ctx.path?.startsWith('/callback/') || !created) return;
-				const userId = toUserId(created.user.id);
-				await recordAuditEvent(userId, 'login', userId, {
-					userAgent: ctx.request?.headers.get('user-agent') ?? null,
-					details: { method: String(ctx.params?.id ?? 'provider') }
-				});
+				const method = ctx.path?.startsWith('/callback/')
+					? String(ctx.params?.id ?? 'provider')
+					: ctx.path === '/passkey/verify-authentication'
+						? 'passkey'
+						: null;
+				if (created && method) {
+					const userId = toUserId(created.user.id);
+					await recordAuditEvent(userId, 'login', userId, { userAgent, details: { method } });
+				}
+
+				if (ctx.path === '/passkey/verify-registration' && ctx.context.session) {
+					const failed = ctx.context.returned instanceof Error;
+					const userId = toUserId(ctx.context.session.user.id);
+					if (!failed) await recordAuditEvent(userId, 'passkey_added', userId, { userAgent });
+				}
 			})
 		},
 		emailVerification: {
@@ -141,6 +161,11 @@ function createAuth() {
 			}
 		},
 		plugins: [
+			passkey({
+				rpID: new URL(appOrigin()).hostname,
+				rpName: 'SaaS',
+				origin: appOrigin()
+			}),
 			username({
 				minUsernameLength: USERNAME_MIN_LENGTH,
 				maxUsernameLength: USERNAME_MAX_LENGTH,

@@ -11,6 +11,7 @@
 		fullWidth = false,
 		disabled = false,
 		loading = false,
+		onclick,
 		children
 	}: {
 		type?: 'button' | 'submit';
@@ -22,6 +23,8 @@
 		disabled?: boolean;
 		/** Shows a spinner and blocks further presses. */
 		loading?: boolean;
+		/** Called when the button is pressed. Not used for links. */
+		onclick?: () => void;
 		children: Snippet;
 	} = $props();
 </script>
@@ -36,6 +39,7 @@
 		class:full={fullWidth}
 		class:loading
 		{type}
+		{onclick}
 		disabled={disabled || loading}
 		aria-busy={loading ? 'true' : undefined}
 	>

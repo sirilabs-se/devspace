@@ -18,6 +18,8 @@ export const load: PageServerLoad = ({ locals, url }) => {
 	if (locals.user) redirect(303, safeNextPath(url.searchParams.get('next')));
 	return {
 		providers: socialProviders(),
+		// Where to go after a passkey sign-in, which finishes in the browser.
+		next: safeNextPath(url.searchParams.get('next')),
 		// Set when Google or Facebook sent the person back with a problem.
 		socialError: url.searchParams.get('error'),
 		// Set after asking to delete an account.

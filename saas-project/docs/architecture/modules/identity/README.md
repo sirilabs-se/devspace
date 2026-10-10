@@ -90,6 +90,7 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `canUndoEmailChange(token)` / `undoEmailChange(token, context)` | Checks and uses the undo link sent to the old address | `/undo-email-change` |
 | `requestAccountDeletion(user, headers, cookies, input, context)` | Schedules the acting user's account for deletion in 30 days and signs them out everywhere | `/settings/account` |
 | `runDailyJob()` | The daily clean-up: permanent deletions, expired holds and links, old audit entries | `/api/jobs/daily` |
+| `listPasskeys(userId)` / `renamePasskey(userId, id, name)` / `removePasskey(userId, id, context)` | Lists, names and removes the acting user's own passkeys. The last way to sign in can't be removed | `/settings/security` |
 | `listSecurityActivity(userId)` | Lists the acting user's own recent security events, newest first | `/settings/security` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
@@ -123,7 +124,7 @@ Pages use form actions, following the shared conventions in the system doc.
 | `/admin/users` | Finds users | Admin |
 | `/admin/users/[id]` | Suspends, reinstates and impersonates a user | Admin |
 | `/admin/audit` | Views and exports the audit log | Admin |
-| `/api/auth/*` | Only the addresses on a short allowed list reach the login library: the Google and Facebook return addresses (`/api/auth/callback/google` and `/facebook`), and later the passkey exchange. Every other address under it answers "not found" | Anyone |
+| `/api/auth/*` | Only the addresses on a short allowed list reach the login library: the Google and Facebook return addresses (`/api/auth/callback/google` and `/facebook`), and the four addresses of the passkey exchange under `/api/auth/passkey/` (start and finish adding a passkey, start and finish signing in with one). Every other address under it answers "not found" | Anyone |
 | `GET /api/username-available` | Says whether a username is free; rate limited | Anyone |
 | `GET /files/avatars/[file]` | Serves a profile picture. Added in task 10 for local-disk storage; not yet confirmed by the owner | Anyone |
 | `POST /api/jobs/daily` | Runs the daily clean-up. Needs `Authorization: Bearer <DAILY_JOB_SECRET>`; with no secret set it can't be run at all | The scheduler, with a secret |
@@ -290,7 +291,8 @@ sequenceDiagram
 - Connecting a provider is always done on purpose by someone already signed in, so the provider account may have a different email from the app account. A provider account that is already connected to another person is refused.
 - Someone who has only signed in with a provider can set a first password from account settings. That form does nothing for people who already have a password; they must give their current one to change it.
 - The login library's own web addresses are closed to the outside, apart from the provider return addresses, so nobody can go around the app's rules (limits, lockout, consents, the password rule) by calling the library directly.
-- A passkey signs a person in on its own, with no password and no second step.
+- A passkey signs a person in on its own, with no password and no second step. Adding one is an exchange between the browser and the login library, and is only allowed within a day of logging in.
+- A passkey counts as a way to sign in, alongside a password and each connected provider. Whichever is the last one can't be removed.
 - Trusted devices skip the second step for 30 days.
 - A username is optional. When set: 3 to 30 characters (letters, numbers, dots, hyphens, underscores), starting and ending with a letter or number, compared without regard to case, checked against a reserved list kept in code. Setting a first username is always allowed; replacing or removing one is allowed once every 30 days. The old name is held for 30 days, during which only its previous owner can take it back. Changing only the capital letters is not a change. A deleted account's name is held permanently.
 - Sign-up has one checkbox covering the terms, the privacy policy and being 18 or older. Each is still saved as its own consent record.

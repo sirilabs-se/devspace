@@ -482,3 +482,44 @@ Without credentials, nothing new is visible: the buttons only appear for a provi
 **Status:** Blocked, not started. You chose to skip it for now.
 
 No notification types exist until another module defines one, so the page would have nothing to show. Nothing was built for this task: no table, page or function. It is ready to be picked up when the first module that sends notifications arrives; that module should say which types exist.
+
+## Task 17: Passkeys
+
+**Status:** Done. `npm run verify` passes (291 logic tests, 23 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/passkeys.ts`: list, rename and remove passkeys.
+- `identity/schema.ts` and `migrations/0004_passkeys.sql`: the `passkeys` table.
+- `identity/auth.ts`: the passkey add-on, and audit entries for passkey sign-ins and new passkeys.
+- `identity/social.ts`: the four passkey addresses on the allowed list.
+- `identity/connections.ts`: passkeys count as a way to sign in.
+- `src/lib/shared/passkey-browser.ts`: the browser's side of the exchange.
+- `src/routes/settings/security/`: a Passkeys card.
+- `src/routes/login/`: "Continue with passkey".
+- `src/lib/ui/Button.svelte` and `Icon.svelte`: a click handler and a fingerprint icon.
+- `tests/e2e/base.ts`: shared set-up for browser tests.
+- `package.json`: `@better-auth/passkey`.
+- Tests beside each, plus `tests/e2e/passkeys.test.ts`.
+
+**Try it**
+
+1. Run `npm install` and `npm run db:migrate`.
+2. Log in, open Settings then "Security", give the passkey a name and press "Add a passkey". Your browser or device asks for a fingerprint, face, PIN or security key.
+3. Log out. On the login page press "Continue with passkey": you are signed in with nothing typed.
+4. Back on "Security", press "Remove" beside the passkey.
+
+Passkeys need `localhost` or an HTTPS address; they won't work if you open the app by IP address.
+
+**Decisions**
+
+- The browser side uses the browser's own passkey features, with no extra library.
+- One extra column, `aaguid`, because the add-on needs it.
+- This module alone decides what the last way to sign in is.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- A rename control on the page.
+- Lengthening the one-day window for adding a passkey, if it proves annoying.

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './base';
 
 test('a link that cannot be used says so and offers a new one', async ({ page }) => {
 	await page.goto('/verify-email?token=not-a-real-token');

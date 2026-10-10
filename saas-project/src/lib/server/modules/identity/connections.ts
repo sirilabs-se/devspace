@@ -7,7 +7,7 @@ import { appOrigin, getAuth, SOCIAL_PROVIDERS, type SocialProvider } from './aut
 import { sendPasswordChangedEmail } from './emails';
 import { passwordProblem } from './password';
 import type { RequestContext } from './request-context';
-import { accounts } from './schema';
+import { accounts, passkeys } from './schema';
 import {
 	applySessionCookies,
 	assertSessionBelongsTo,
@@ -42,13 +42,17 @@ export async function listConnections(userId: UserId): Promise<Connections> {
 	};
 }
 
-/** How many ways the user has to sign in. The last one can never be removed. */
-async function signInMethodCount(userId: UserId): Promise<number> {
-	const rows = await db
+/** How many ways the user has to sign in: a password, providers and passkeys. The last one can never be removed. */
+export async function signInMethodCount(userId: UserId): Promise<number> {
+	const accountRows = await db
 		.select({ id: accounts.id })
 		.from(accounts)
 		.where(eq(accounts.userId, userId));
-	return rows.length;
+	const passkeyRows = await db
+		.select({ id: passkeys.id })
+		.from(passkeys)
+		.where(eq(passkeys.userId, userId));
+	return accountRows.length + passkeyRows.length;
 }
 
 const asProvider = (value: unknown) => SOCIAL_PROVIDERS.find((provider) => provider === value);

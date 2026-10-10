@@ -103,6 +103,29 @@ export const verifications = pgTable(
 	(table) => [index('verifications_identifier_idx').on(table.identifier)]
 );
 
+// Registered passkeys. Shaped by the login library's passkey add-on.
+export const passkeys = pgTable(
+	'passkeys',
+	{
+		id: text('id').primaryKey(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		name: varchar('name'),
+		publicKey: text('public_key').notNull(),
+		credentialID: varchar('credential_id').notNull().unique(),
+		counter: integer('counter').notNull().default(0),
+		deviceType: varchar('device_type').notNull(),
+		backedUp: boolean('backed_up').notNull().default(false),
+		transports: varchar('transports'),
+		/** Identifies the make of authenticator, when it says. */
+		aaguid: varchar('aaguid'),
+		createdAt: createdAt(),
+		updatedAt: updatedAt()
+	},
+	(table) => [index('passkeys_user_id_idx').on(table.userId)]
+);
+
 // Usernames nobody else can take: a changed name for 30 days, a deleted account's name for good.
 export const usernameHolds = pgTable('username_holds', {
 	id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),

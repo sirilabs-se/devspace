@@ -36,6 +36,13 @@ export {
 } from './deletion';
 export { logIn, logOut, type LogInResult } from './log-in';
 export {
+	listPasskeys,
+	removePasskey,
+	renamePasskey,
+	type PasskeySummary,
+	type RemovePasskeyResult
+} from './passkeys';
+export {
 	requestPasswordReset,
 	resetPassword,
 	resetPasswordLinkState,

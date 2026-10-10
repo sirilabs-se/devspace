@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './base';
 
 test('a new person can sign up and is told to check their inbox', async ({ page }) => {
 	const unique = Date.now().toString(36);
