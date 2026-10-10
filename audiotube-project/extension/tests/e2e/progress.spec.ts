@@ -132,7 +132,7 @@ test('a live stream shows Live and no times', async ({ context, extensionId }) =
 	});
 	const card = panel.getByRole('region', { name: 'Now playing' });
 	await expect(card.getByText('Live', { exact: true })).toBeVisible();
-	await expect(card.getByRole('slider')).toHaveCount(0);
+	await expect(card.getByRole('slider', { name: 'Seek' })).toHaveCount(0);
 	await expect(card).not.toContainText(/\d:\d\d/);
 });
 

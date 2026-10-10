@@ -1,6 +1,11 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import type { AudioOnlyController, CoverStatusController, NowPlayingController } from '../core';
+	import type {
+		AudioOnlyController,
+		CoverStatusController,
+		NowPlayingController,
+		VolumeController
+	} from '../core';
 	import AudioOnlyCard from './AudioOnlyCard.svelte';
 	import Logo from './Logo.svelte';
 	import NowPlayingCard from './NowPlayingCard.svelte';
@@ -8,11 +13,13 @@
 	let {
 		audioOnly,
 		coverStatus,
-		nowPlaying
+		nowPlaying,
+		volume
 	}: {
 		audioOnly: AudioOnlyController;
 		coverStatus: CoverStatusController;
 		nowPlaying: NowPlayingController;
+		volume: VolumeController;
 	} = $props();
 
 	let view = $state(untrack(() => audioOnly.get()));
@@ -20,6 +27,9 @@
 
 	let cover = $state(untrack(() => coverStatus.get()));
 	$effect(() => coverStatus.subscribe((next) => (cover = next)));
+
+	let volumeView = $state(untrack(() => volume.get()));
+	$effect(() => volume.subscribe((next) => (volumeView = next)));
 
 	let playing = $state(untrack(() => nowPlaying.get()));
 	$effect(() => nowPlaying.subscribe((next) => (playing = next)));
@@ -50,6 +60,9 @@
 			onResume={nowPlaying.resume}
 			onPreviewSeek={nowPlaying.previewSeek}
 			onCommitSeek={nowPlaying.commitSeek}
+			volume={volumeView}
+			onSetVolume={volume.setLevel}
+			onToggleMute={volume.toggleMute}
 		/>
 		{#if cover.coverFailed}
 			<p role="status" class="m-0 rounded-card bg-card px-3.5 py-2.5 text-xs text-muted">

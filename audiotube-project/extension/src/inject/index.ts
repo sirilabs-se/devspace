@@ -23,6 +23,11 @@ interface YouTubePlayer extends PlayerApi {
 	getCurrentTime?: () => unknown;
 	getPlayerState?: () => unknown;
 	getPlaybackRate?: () => unknown;
+	getVolume?: () => unknown;
+	isMuted?: () => unknown;
+	setVolume?: (level: number) => void;
+	mute?: () => void;
+	unMute?: () => void;
 	playVideo?: () => void;
 	pauseVideo?: () => void;
 }
@@ -109,8 +114,14 @@ function readSnapshot(): PlayerSnapshot | null {
 			(player as unknown as HTMLElement).querySelector?.('video')?.playbackRate ??
 				player.getPlaybackRate?.()
 		);
+		const element = (player as unknown as HTMLElement).querySelector?.('video');
+		const apiVolume = Number(player.getVolume?.());
+		const volume = Number.isFinite(apiVolume) ? apiVolume : (element?.volume ?? 1) * 100;
+		const muted = player.isMuted ? player.isMuted() === true : element?.muted === true;
 		return {
 			...details,
+			volume: Math.min(100, Math.max(0, Math.round(volume))),
+			muted,
 			rate: Number.isFinite(rate) && rate > 0 ? rate : 1,
 			state: currentState(player),
 			// One decimal: the side panel counts forward from this, so a whole second would show as a lag.
@@ -149,7 +160,21 @@ function seekTo(positionSec: number) {
 	}
 }
 
+/** Sets YouTube's volume and mute, the way its own control does. */
+function setVolume(level: number, muted: boolean) {
+	const player = document.querySelector(PLAYER_SELECTOR) as unknown as YouTubePlayer | null;
+	if (!player) return;
+	try {
+		player.setVolume?.(level);
+		if (muted) player.mute?.();
+		else player.unMute?.();
+	} catch {
+		// The player is YouTube's to control; if it refuses, nothing else should break.
+	}
+}
+
 const stopListening = onMessageToPage((message) => {
+	if (message.type === 'player/set-volume') return setVolume(message.level, message.muted);
 	if (message.type === 'player/seek') return seekTo(message.positionSec);
 	if (message.type === 'player/toggle-playback') return setPlayback();
 	if (message.type === 'player/command') return setPlayback(message.command === 'play');
@@ -177,7 +202,8 @@ const VIDEO_EVENTS = [
 	'ended',
 	'loadedmetadata',
 	'seeked',
-	'ratechange'
+	'ratechange',
+	'volumechange'
 ];
 // A seek and a rate change are reported even if the state is the same: the panel counts from the new place.
 const FORCING = ['seeked', 'ratechange'];

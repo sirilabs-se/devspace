@@ -1,7 +1,8 @@
 <script lang="ts">
-	import type { NowPlayingView } from '../core';
+	import type { NowPlayingView, VolumeView } from '../core';
 	import Icon from './Icon.svelte';
 	import { PAUSE, PLAY } from './icons';
+	import VolumeControls from './VolumeControls.svelte';
 
 	let {
 		view,
@@ -9,8 +10,14 @@
 		onGoToVideo,
 		onResume,
 		onPreviewSeek,
-		onCommitSeek
+		onCommitSeek,
+		volume,
+		onSetVolume,
+		onToggleMute
 	}: {
+		volume: VolumeView;
+		onSetVolume: (level: number) => void;
+		onToggleMute: () => void;
 		view: NowPlayingView;
 		onTogglePlayPause: () => void;
 		onGoToVideo: () => void;
@@ -109,6 +116,7 @@
 				Go to video
 			</button>
 		</div>
+		<VolumeControls view={volume} onSetLevel={onSetVolume} {onToggleMute} />
 		{#if view.waitingToStart}
 			<p role="status" class="m-0 text-xs text-muted">
 				Waiting to start. Show the tab to begin playback.

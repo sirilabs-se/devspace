@@ -2,7 +2,8 @@ import { mount } from 'svelte';
 import {
 	createAudioOnlyController,
 	createCoverStatusController,
-	createNowPlayingController
+	createNowPlayingController,
+	createVolumeController
 } from './core';
 import { App } from './ui';
 
@@ -11,6 +12,7 @@ mount(App, {
 	props: {
 		audioOnly: createAudioOnlyController(),
 		coverStatus: createCoverStatusController(),
-		nowPlaying: createNowPlayingController()
+		nowPlaying: createNowPlayingController(),
+		volume: createVolumeController()
 	}
 });

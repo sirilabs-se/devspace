@@ -176,6 +176,30 @@ describe('listenForRequests', () => {
 		).toBe(false);
 	});
 
+	it('answers a volume change from the side panel, and refuses one from a YouTube tab', async () => {
+		const sendResponse = vi.fn();
+		expect(
+			handler(
+				{ type: 'player/set-volume', level: 30, muted: false },
+				{ id: 'our-extension', url: 'chrome-extension://our-extension/src/sidepanel/index.html' },
+				sendResponse
+			)
+		).toBe(true);
+		await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+
+		expect(
+			handler(
+				{ type: 'player/set-volume', level: 30, muted: false },
+				{
+					id: 'our-extension',
+					url: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
+					tab: { id: 8, windowId: 3 }
+				} as never,
+				vi.fn()
+			)
+		).toBe(false);
+	});
+
 	it('ignores messages it does not know', () => {
 		const keepOpen = handler({ type: 'nope' }, { id: 'our-extension' }, vi.fn());
 		expect(keepOpen).toBe(false);

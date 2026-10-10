@@ -140,6 +140,23 @@
 					};
 				};
 				player.getDuration = () => window.__duration ?? 212;
+				// A player volume of its own, announced as a real one is.
+				window.__volume ??= 100;
+				window.__muted ??= false;
+				player.getVolume = () => window.__volume;
+				player.isMuted = () => window.__muted;
+				player.setVolume = (level) => {
+					window.__volume = level;
+					video.dispatchEvent(new Event('volumechange'));
+				};
+				player.mute = () => {
+					window.__muted = true;
+					video.dispatchEvent(new Event('volumechange'));
+				};
+				player.unMute = () => {
+					window.__muted = false;
+					video.dispatchEvent(new Event('volumechange'));
+				};
 				window.__seekCalls = [];
 				player.seekTo = (seconds) => {
 					window.__seekCalls.push(seconds);

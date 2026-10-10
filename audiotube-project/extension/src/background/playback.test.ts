@@ -286,6 +286,84 @@ async function playing(tab = TAB_A, position = 90) {
 	);
 }
 
+const volume = (level: number, muted = false): PlayerReport => ({
+	type: 'player/volume',
+	level,
+	muted
+});
+
+describe('volume', () => {
+	it("stores the playback tab's volume and mute", async () => {
+		await playing();
+		await handlePlayerReport(volume(35, true), TAB_A, NOW + 5000);
+		expect(local.get('volume')).toEqual({ level: 35, muted: true });
+	});
+
+	it('ignores the volume of a tab that is not the playback tab', async () => {
+		await playing();
+		await handlePlayerReport(volume(10), TAB_B, NOW + 5000);
+		expect(local.has('volume')).toBe(false);
+	});
+
+	it('gives a tab that becomes the playback tab the volume that was remembered', async () => {
+		local.set('volume', { level: 40, muted: false });
+		await handlePlayerReport(video(), TAB_A, NOW);
+		await handlePlayerReport(state('playing', 0), TAB_A, NOW + 100);
+		expect(sendMessage).toHaveBeenCalledWith(1, {
+			type: 'player/set-volume',
+			level: 40,
+			muted: false
+		});
+	});
+
+	it("ignores the new tab's own volume report right after, so it does not replace the remembered one", async () => {
+		local.set('volume', { level: 40, muted: false });
+		await handlePlayerReport(video(), TAB_A, NOW);
+		await handlePlayerReport(state('playing', 0), TAB_A, NOW + 100);
+		await handlePlayerReport(volume(90), TAB_A, NOW + 300);
+		expect(local.get('volume')).toEqual({ level: 40, muted: false });
+		// Later changes, after the settling time, are the user's.
+		await handlePlayerReport(volume(55), TAB_A, NOW + 5000);
+		expect(local.get('volume')).toEqual({ level: 55, muted: false });
+	});
+
+	it('sends nothing when no volume is remembered yet', async () => {
+		await playing();
+		expect(sendMessage).not.toHaveBeenCalledWith(
+			1,
+			expect.objectContaining({ type: 'player/set-volume' })
+		);
+	});
+
+	it("learns the first tab's volume when none is remembered", async () => {
+		await playing();
+		await handlePlayerReport(volume(65), TAB_A, NOW + 5000);
+		expect(local.get('volume')).toEqual({ level: 65, muted: false });
+	});
+
+	it('gives the volume to the tab Resume opened once its page reports', async () => {
+		local.set('volume', { level: 25, muted: true });
+		local.set('nowPlaying', {
+			videoId: 'aqz-KE-bpKQ',
+			title: 'x',
+			channel: 'y',
+			durationSec: 100,
+			isLive: false,
+			positionSec: 10,
+			positionSavedAt: NOW,
+			updatedAt: NOW
+		});
+		await resumePlayback(NOW);
+		sendMessage.mockClear();
+		await handlePlayerReport(video(), { tabId: 50, windowId: 12 }, NOW + 800);
+		expect(sendMessage).toHaveBeenCalledWith(50, {
+			type: 'player/set-volume',
+			level: 25,
+			muted: true
+		});
+	});
+});
+
 describe('losing the playback tab', () => {
 	beforeEach(() => {
 		watchPlaybackTabLoss();

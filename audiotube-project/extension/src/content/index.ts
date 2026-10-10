@@ -50,9 +50,13 @@ if (!scope[GUARD]) {
 	const onCommand = (message: unknown, sender: chrome.runtime.MessageSender) => {
 		if (sender.id !== chrome.runtime.id || sender.tab !== undefined) return;
 		if (!isTabCommand(message)) return;
-		if (message.type === 'player/seek')
+		if (message.type === 'player/seek') {
 			sendToPage({ type: 'player/seek', positionSec: message.positionSec });
-		else sendToPage({ type: 'player/command', command: message.command });
+		} else if (message.type === 'player/set-volume') {
+			sendToPage({ type: 'player/set-volume', level: message.level, muted: message.muted });
+		} else {
+			sendToPage({ type: 'player/command', command: message.command });
+		}
 	};
 	chrome.runtime.onMessage.addListener(onCommand);
 	stops.push(() => chrome.runtime.onMessage.removeListener(onCommand));

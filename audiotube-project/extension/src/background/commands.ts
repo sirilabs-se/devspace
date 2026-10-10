@@ -1,10 +1,37 @@
 import { checkPlaybackTab, resumePlayback } from './playback';
 import {
+	isVolumeLevel,
 	readPlaybackTab,
+	VOLUME_KEY,
 	type PlayerCommandRequest,
 	type PlayerCommandResponse,
 	type TabCommand
 } from '../shared';
+
+/**
+ * Remembers the volume (the side panel is where it is usually changed, and it must be there for the next
+ * playback tab even when there is none now) and applies it to the playback tab.
+ */
+export async function handleSetVolume(
+	level: number,
+	muted: boolean
+): Promise<PlayerCommandResponse> {
+	if (!isVolumeLevel(level) || typeof muted !== 'boolean') return { ok: false, error: 'failed' };
+	try {
+		await chrome.storage.local.set({ [VOLUME_KEY]: { level, muted } });
+	} catch {
+		return { ok: false, error: 'failed' };
+	}
+	const tab = await readPlaybackTab();
+	if (!tab) return { ok: true };
+	try {
+		const command: TabCommand = { type: 'player/set-volume', level, muted };
+		await chrome.tabs.sendMessage(tab.tabId, command);
+	} catch {
+		// The tab is gone or slow; the volume is remembered and the next playback tab gets it.
+	}
+	return { ok: true };
+}
 
 /** Moves the playback tab's player to a position. It changes nothing else: Now Playing is the same video. */
 export async function handleSeek(positionSec: number): Promise<PlayerCommandResponse> {

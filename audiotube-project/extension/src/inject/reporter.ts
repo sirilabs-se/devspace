@@ -10,6 +10,9 @@ export interface PlayerSnapshot extends PlayerVideoDetails {
 	positionSec: number;
 	/** The playback rate; 1 is normal speed. */
 	rate: number;
+	/** The player's volume, 0 to 100, and whether it is muted. */
+	volume: number;
+	muted: boolean;
 	adPlaying: boolean;
 }
 
@@ -39,6 +42,7 @@ export function createReporter(deps: ReporterDeps) {
 	let rate = 1;
 	let lastPositionSec = 0;
 	let missingSince: number | null = null;
+	let volumeKey: string | null = null;
 
 	return {
 		/** `force` sends the state even if nothing seems to have changed: after a seek, or a rate change. */
@@ -52,12 +56,21 @@ export function createReporter(deps: ReporterDeps) {
 					deps.send({ type: 'player/gone', positionSec: lastPositionSec });
 					videoKey = null;
 					state = null;
+					volumeKey = null;
 					missingSince = null;
 				}
 				return;
 			}
 			missingSince = null;
 			if (!snapshot.adPlaying) lastPositionSec = snapshot.positionSec;
+
+			// Volume and mute are reported when they change, and when a player is first seen, after the rest.
+			const sendVolume = () => {
+				const volumeNow = `${snapshot.volume}:${snapshot.muted}`;
+				if (volumeNow === volumeKey) return;
+				volumeKey = volumeNow;
+				deps.send({ type: 'player/volume', level: snapshot.volume, muted: snapshot.muted });
+			};
 			const key = JSON.stringify([
 				snapshot.videoId,
 				snapshot.title,
@@ -96,6 +109,7 @@ export function createReporter(deps: ReporterDeps) {
 					positionSec,
 					rate: snapshot.rate
 				});
+				sendVolume();
 				return;
 			}
 			if (
@@ -106,6 +120,7 @@ export function createReporter(deps: ReporterDeps) {
 				positionSentAt = now;
 				deps.send({ type: 'player/position', positionSec });
 			}
+			sendVolume();
 		}
 	};
 }

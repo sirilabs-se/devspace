@@ -63,12 +63,18 @@ Table playback_tab {
   Note: 'chrome.storage.session, so a browser restart clears it (PLY-054). From phase 4 the state, position, rate and stateAt are written together, as one snapshot the side panel counts forward from'
 }
 
-// ---------- Volume (local) — Phase 4 ----------
+// ---------- Volume (local) — built in phase 4 ----------
 
 Table volume {
   level integer [not null, note: 'Key: volume. 0 to 100. Absent until the first playback tab reports its volume or the user sets it. PLY-061 to PLY-063']
   muted boolean [not null, default: false]
   Note: 'chrome.storage.local. Applied to a tab when it becomes the playback tab; updated when the playback tab or the side panel changes it'
+}
+
+Table volume_sync {
+  tabId integer [not null, note: 'Key: volumeSync']
+  until bigint [not null, note: 'epoch ms. Volume reports from this tab are ignored until then, so the remembered volume is not replaced by the tab\'s own']
+  Note: 'chrome.storage.session'
 }
 
 Table pending_resume {
@@ -104,6 +110,7 @@ TableGroup playback {
   now_playing
   playback_tab
   pending_resume
+  volume_sync
   tab_video
   overlay_status
 }

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft |
+| **Status** | Tasks 22 to 25 done |
 | **Last updated** | 2026-10-11 |
 | **Design** | [Requirements](audiotube_requirements.md), [System design](architecture.md), [Decisions](architecture/decisions/README.md), [Stored data](architecture/storage.dbml) |
 | **Earlier phases** | [build-plan-01.md](build-plan-01.md): audio-only mode, tasks 1 to 7 · [build-plan-02.md](build-plan-02.md): the rest of the overlay, tasks 8 to 14 · [build-plan-03.md](build-plan-03.md): where audio plays from, tasks 15 to 21 |
@@ -38,7 +38,7 @@ These apply to this phase only and do not change the requirements document.
 | 22 | Fixes from the phase 3 review | GLB-012, PLY-053 | 21 | Done |
 | 23 | Progress, elapsed and remaining time | PLY-059, PLY-064, PLY-067; ADR 0007 | 22 | Done |
 | 24 | Seeking from the side panel | PLY-060, PLY-065, GLB-005 | 23 | Done |
-| 25 | Volume and mute | PLY-061, PLY-062, PLY-063, PLY-131 (volume) | 22 | In progress |
+| 25 | Volume and mute | PLY-061, PLY-062, PLY-063, PLY-131 (volume) | 22 | Done |
 
 Statuses: **To do**, **In progress**, **Done**, **Blocked** (say why in the task's notes).
 
@@ -178,9 +178,20 @@ Task 22 comes first. Task 24 follows task 23; task 25 can be done before or afte
 
 **Done when:**
 
-- [ ] Moving the slider changes YouTube's volume on the test page within 1 second; the mute button mutes and unmutes
-- [ ] Changing the volume or muting on the page moves the side panel's controls within 1 second
-- [ ] After a browser restart, the side panel shows the remembered volume, and the next playback tab gets it
-- [ ] A volume change in a YouTube tab that is not the playback tab changes nothing
-- [ ] Controls are keyboard operable and labelled for screen readers; usable from 320 to 600 px wide
-- [ ] Logic tests cover the background's volume handling and `sidepanel/core/`
+- [x] Moving the slider changes YouTube's volume on the test page within 1 second; the mute button mutes and unmutes
+- [x] Changing the volume or muting on the page moves the side panel's controls within 1 second
+- [x] After a browser restart, the side panel shows the remembered volume, and the next playback tab gets it
+- [x] A volume change in a YouTube tab that is not the playback tab changes nothing
+- [x] Controls are keyboard operable and labelled for screen readers; usable from 320 to 600 px wide
+- [x] Logic tests cover the background's volume handling and `sidepanel/core/`
+
+**Notes:**
+
+- Decision taken from the "decide" item (the suggested one): the **remembered volume wins** when a tab becomes the playback tab (take-over, or the tab Resume opened once its page reports). After that, a change on either side updates both. PLY-063 asks for the same volume from one video to the next; this is how.
+- Stored `volume` (`level`, `muted`) in local storage, written only by the background, absent until first known; read helpers in `shared/storage/volume.ts` validate it (level a whole number 0 to 100; anything else reads as not known).
+- Page script: reads the player's volume and mute (`getVolume`, `isMuted`, falling back to the video element) and the reporter sends `player/volume` when they change and when a player is first seen; video `volumechange` events trigger it. `setVolume` and `mute`/`unMute` are applied the way YouTube's own control does.
+- Background: a `player/volume` report is stored only if it comes from the playback tab. The remembered volume goes to a new playback tab as `player/set-volume`; so that the tab's own volume report, which can be on its way, does not replace the remembered one, volume reports from that tab are ignored for 2 seconds after (`volumeSync` in session storage). The side panel's `player/set-volume` is accepted only from an extension page, validated, stored, and sent on to the playback tab if there is one; with no playback tab it is still remembered.
+- Panel: a mute button (labelled Mute / Unmute, pressed state) and a 0 to 100 slider (named "Volume", with a value like "30 percent" or "Muted") in the Now Playing card. A change shows at once and is sent at most every 80 ms during a drag, always ending with the last value; the stored value replaces it when it arrives, or after 1.5 seconds, or at once if the save fails. Moving the slider above 0 unmutes; unmuting a volume of 0 brings it to 50.
+- Real YouTube (headless, signed out): panel to 30 → YouTube volume 30 and stored; Mute → YouTube muted, button "Unmute"; unmute and set 65 on the page → panel 65, button "Mute", stored 65.
+- Left out, as planned: ads' own volume rules (`PLY-100`, section 4.7).
+

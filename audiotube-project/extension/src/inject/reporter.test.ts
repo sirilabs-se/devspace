@@ -16,6 +16,8 @@ const base: PlayerSnapshot = {
 	state: 'paused',
 	positionSec: 0,
 	rate: 1,
+	volume: 80,
+	muted: false,
 	adPlaying: false
 };
 
@@ -54,7 +56,7 @@ describe('createReporter', () => {
 	it('reports the video, then its state, when it first sees a player', () => {
 		const t = setup();
 		t.check();
-		expect(t.sent.map((r) => r.type)).toEqual(['player/video', 'player/state']);
+		expect(t.sent.map((r) => r.type)).toEqual(['player/video', 'player/state', 'player/volume']);
 		expect(t.sent[0]).toMatchObject({
 			videoId: 'aqz-KE-bpKQ',
 			title: 'Big Buck Bunny',
@@ -172,7 +174,7 @@ describe('createReporter', () => {
 		t.sent.length = 0;
 		t.set(base);
 		t.check();
-		expect(t.sent.map((r) => r.type)).toEqual(['player/video', 'player/state']);
+		expect(t.sent.map((r) => r.type)).toEqual(['player/video', 'player/state', 'player/volume']);
 	});
 
 	it('does not use ad time as the last position', () => {
@@ -187,6 +189,24 @@ describe('createReporter', () => {
 		t.advance(GONE_AFTER_MS + 1);
 		t.check();
 		expect(t.sent).toEqual([{ type: 'player/gone', positionSec: 100 }]);
+	});
+
+	it('reports the volume when it is first seen, and again only when it or mute changes', () => {
+		const t = setup();
+		t.check();
+		expect(t.sent.filter((r) => r.type === 'player/volume')).toEqual([
+			{ type: 'player/volume', level: 80, muted: false }
+		]);
+		t.sent.length = 0;
+		t.check();
+		expect(t.sent).toEqual([]);
+		t.set({ volume: 35 });
+		t.check();
+		expect(t.sent).toEqual([{ type: 'player/volume', level: 35, muted: false }]);
+		t.sent.length = 0;
+		t.set({ muted: true });
+		t.check();
+		expect(t.sent).toEqual([{ type: 'player/volume', level: 35, muted: true }]);
 	});
 
 	it('reports nothing with no player', () => {

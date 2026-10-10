@@ -1,0 +1,41 @@
+<script lang="ts">
+	import type { VolumeView } from '../core';
+	import Icon from './Icon.svelte';
+	import { MUTE, VOLUME } from './icons';
+
+	let {
+		view,
+		onSetLevel,
+		onToggleMute
+	}: {
+		view: VolumeView;
+		onSetLevel: (level: number) => void;
+		onToggleMute: () => void;
+	} = $props();
+
+	const shownLevel = $derived(view.muted ? 0 : view.level);
+</script>
+
+<div class="flex items-center gap-2">
+	<button
+		type="button"
+		onclick={onToggleMute}
+		aria-pressed={view.muted}
+		aria-label={view.muted ? 'Unmute' : 'Mute'}
+		class="grid size-9 flex-none cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+	>
+		<Icon path={view.muted || view.level === 0 ? MUTE : VOLUME} size={20} />
+	</button>
+	<input
+		type="range"
+		class="seek"
+		aria-label="Volume"
+		min={0}
+		max={100}
+		step={1}
+		value={shownLevel}
+		aria-valuetext={view.muted ? 'Muted' : `${view.level} percent`}
+		style:--p="{shownLevel}%"
+		oninput={(event) => onSetLevel(Number(event.currentTarget.value))}
+	/>
+</div>

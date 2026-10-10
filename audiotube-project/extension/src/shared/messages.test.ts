@@ -59,6 +59,25 @@ describe('isBackgroundRequest', () => {
 	});
 });
 
+describe('volume messages', () => {
+	it('accepts a volume report and a set-volume request and command', () => {
+		expect(isPlayerReport({ type: 'player/volume', level: 40, muted: false })).toBe(true);
+		expect(isBackgroundRequest({ type: 'player/set-volume', level: 40, muted: true })).toBe(true);
+		expect(isTabCommand({ type: 'player/set-volume', level: 0, muted: false })).toBe(true);
+		expect(isBackgroundRequest({ type: 'player/volume', level: 40, muted: false })).toBe(true);
+	});
+
+	it('rejects a level that is not a whole number from 0 to 100, or a mute that is not a boolean', () => {
+		for (const level of [-1, 101, 50.5, '50', undefined, NaN]) {
+			expect(isPlayerReport({ type: 'player/volume', level, muted: false })).toBe(false);
+			expect(isBackgroundRequest({ type: 'player/set-volume', level, muted: false })).toBe(false);
+			expect(isTabCommand({ type: 'player/set-volume', level, muted: false })).toBe(false);
+		}
+		expect(isPlayerReport({ type: 'player/volume', level: 10, muted: 'yes' })).toBe(false);
+		expect(isBackgroundRequest({ type: 'player/set-volume', level: 10 })).toBe(false);
+	});
+});
+
 describe('seek messages', () => {
 	it('accepts a seek request with a position, from the panel and to a tab', () => {
 		expect(isBackgroundRequest({ type: 'player/seek', positionSec: 90 })).toBe(true);

@@ -12,7 +12,8 @@ export type ContentToPage =
 	| { type: 'quality/set'; mode: QualityMode }
 	| { type: 'player/toggle-playback' }
 	| { type: 'player/command'; command: PlayCommand }
-	| { type: 'player/seek'; positionSec: number };
+	| { type: 'player/seek'; positionSec: number }
+	| { type: 'player/set-volume'; level: number; muted: boolean };
 
 /** The details of the video in a player. */
 export interface PlayerVideoDetails {
@@ -29,6 +30,8 @@ export type PlayerReport =
 	| ({ type: 'player/video' } & PlayerVideoDetails)
 	| { type: 'player/state'; state: PlayState; positionSec: number; rate: number }
 	| { type: 'player/position'; positionSec: number }
+	/** The main player's volume or mute changed (or is seen for the first time). */
+	| { type: 'player/volume'; level: number; muted: boolean }
 	/** The main player has been gone for a moment, for example after leaving the watch page without a mini-player. */
 	| { type: 'player/gone'; positionSec: number };
 

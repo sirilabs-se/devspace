@@ -21,6 +21,7 @@ export {
 	reportPlayer,
 	requestPlayerCommand,
 	requestSeek,
+	requestSetVolume,
 	reportOverlayStatus,
 	requestSetAudioOnly,
 	type BackgroundRequest,
@@ -28,6 +29,7 @@ export {
 	type PlayerCommandError,
 	type PlayerCommandRequest,
 	type PlayerSeekRequest,
+	type SetVolumeRequest,
 	type PlayerCommandResponse,
 	type TabCommand,
 	type SetAudioOnlyRequest,
@@ -74,3 +76,11 @@ export {
 	watchPendingResume,
 	type PendingResume
 } from './storage/resume';
+export {
+	isVolumeLevel,
+	parseVolume,
+	readVolume,
+	VOLUME_KEY,
+	watchVolume,
+	type Volume
+} from './storage/volume';

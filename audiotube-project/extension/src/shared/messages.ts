@@ -2,6 +2,7 @@ import type { PlayCommand, PlayerReport } from './page-messages';
 import type { OverlayStatus } from './storage/overlay-status';
 import { isVideoId } from './storage/now-playing';
 import { isPlayState } from './storage/playback-tab';
+import { isVolumeLevel } from './storage/volume';
 
 export type SettingsError = 'invalid-value' | 'storage-failed' | 'background-unavailable';
 
@@ -17,6 +18,13 @@ export type SetAudioOnlyResponse =
 export interface PlayerSeekRequest {
 	type: 'player/seek';
 	positionSec: number;
+}
+
+/** Side panel → background: remember this volume, and apply it to the playback tab if there is one. */
+export interface SetVolumeRequest {
+	type: 'player/set-volume';
+	level: number;
+	muted: boolean;
 }
 
 /** Side panel → background: do this with the playback tab. */
@@ -40,6 +48,7 @@ export type BackgroundRequest =
 	| OverlayStatusReport
 	| PlayerCommandRequest
 	| PlayerSeekRequest
+	| SetVolumeRequest
 	| PlayerReport;
 
 const MAX_RAW_TEXT = 2000;
@@ -71,6 +80,8 @@ export function isPlayerReport(message: unknown): message is PlayerReport {
 		case 'player/position':
 		case 'player/gone':
 			return isSeconds(m.positionSec);
+		case 'player/volume':
+			return isVolumeLevel(m.level) && typeof m.muted === 'boolean';
 		default:
 			return false;
 	}
@@ -83,6 +94,10 @@ export function isBackgroundRequest(message: unknown): message is BackgroundRequ
 	if (type === 'overlay/status') return status === 'failed' || status === 'ok';
 	if (type === 'player/command') return isPlayerCommandRequest(message);
 	if (type === 'player/seek') return isSeconds((message as { positionSec?: unknown }).positionSec);
+	if (type === 'player/set-volume') {
+		const { level, muted } = message as { level?: unknown; muted?: unknown };
+		return isVolumeLevel(level) && typeof muted === 'boolean';
+	}
 	return isPlayerReport(message);
 }
 
@@ -95,6 +110,19 @@ function isPlayerCommandRequest(message: unknown): message is PlayerCommandReque
 		command === 'resume' ||
 		command === 'check'
 	);
+}
+
+/** Asks the background to remember a volume and apply it to the playback tab. */
+export async function requestSetVolume(
+	level: number,
+	muted: boolean
+): Promise<PlayerCommandResponse> {
+	const request: SetVolumeRequest = { type: 'player/set-volume', level, muted };
+	try {
+		return (await chrome.runtime.sendMessage(request)) as PlayerCommandResponse;
+	} catch {
+		return { ok: false, error: 'failed' };
+	}
 }
 
 /** Asks the background to seek the playback tab's player. */
@@ -149,15 +177,20 @@ export async function requestSetAudioOnly(value: boolean): Promise<SetAudioOnlyR
 
 /** Background → one tab's content script: do this to the tab's player. */
 export type TabCommand =
-	{ type: 'player/command'; command: PlayCommand } | { type: 'player/seek'; positionSec: number };
+	| { type: 'player/command'; command: PlayCommand }
+	| { type: 'player/seek'; positionSec: number }
+	| { type: 'player/set-volume'; level: number; muted: boolean };
 
 export function isTabCommand(message: unknown): message is TabCommand {
 	if (typeof message !== 'object' || message === null) return false;
-	const { type, command, positionSec } = message as {
+	const { type, command, positionSec, level, muted } = message as {
 		type?: unknown;
 		command?: unknown;
 		positionSec?: unknown;
+		level?: unknown;
+		muted?: unknown;
 	};
 	if (type === 'player/seek') return isSeconds(positionSec);
+	if (type === 'player/set-volume') return isVolumeLevel(level) && typeof muted === 'boolean';
 	return type === 'player/command' && (command === 'play' || command === 'pause');
 }

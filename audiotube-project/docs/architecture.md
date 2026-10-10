@@ -132,7 +132,8 @@ The background is the only writer of stored state ([ADR 0001](architecture/decis
 | Playback tab | session | `playbackTab` | background | side panel | Tab lost; browser restart. From phase 4 it also holds the position and rate at its last state change, which the side panel counts forward from ([ADR 0007](architecture/decisions/0007-side-panel-counts-progress-forward.md)) |
 | Pending Resume | session | `resume` | background | side panel | The resumed tab plays, or is lost; browser restart |
 | Last video seen in a tab | session | `tabVideo:<tabId>` | background | background | Tab closes or is replaced; browser restart |
-| **Phase 4:** Volume and mute | local | `volume` | background | side panel | Changed by the user, in the side panel or on YouTube (`PLY-063`) |
+| Volume and mute | local | `volume` | background | side panel | Changed by the user, in the side panel or on YouTube (`PLY-063`) |
+| Volume settling | session | `volumeSync` | background | background | 2 seconds after the remembered volume is sent to a new playback tab |
 
 The quality the user had before is the one value kept outside `chrome.storage`. The page script owns it because only the page can read YouTube's own preference, and it must survive a page reload ([spike](spikes/save-bandwidth.md)).
 
@@ -222,9 +223,9 @@ The shared video record of `PLS-073` to `PLS-081` is not built in phase 3: Now P
 | `player/gone` | page → content → background | The main player has been missing for a moment (left the watch page, no mini-player), with the last position | Built (phase 3) |
 | `player/command` | side panel → background | Play, pause, go to video, resume, check (look at the playback tab). Accepted only from an extension page | Built (phase 3) |
 | `player/command` | background → content → page | Play or pause this tab's player | Built (phase 3) |
-| `player/state` (rate) | page → content → background | Also carries the playback rate, and is sent on a seek and a rate change too ([ADR 0007](architecture/decisions/0007-side-panel-counts-progress-forward.md)) | Phase 4 |
-| `player/volume` | page → content → background | The main player's volume or mute changed | Phase 4 |
-| `player/command` seek, set-volume | side panel → background → content → page | Seek to a position; set the volume or mute. A seek is ignored while an ad is showing (`GLB-005`) | Phase 4 |
+| `player/state` (rate) | page → content → background | Also carries the playback rate, and is sent on a seek and a rate change too ([ADR 0007](architecture/decisions/0007-side-panel-counts-progress-forward.md)) | Built (phase 4) |
+| `player/volume` | page → content → background | The main player's volume or mute changed, or was first seen | Built (phase 4) |
+| `player/seek`, `player/set-volume` | side panel → background → content → page | Seek to a position; set the volume or mute. A seek is ignored while an ad is showing (`GLB-005`). Accepted only from an extension page | Built (phase 4) |
 
 ### Turning audio-only off (built)
 

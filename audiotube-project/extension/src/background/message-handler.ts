@@ -1,5 +1,5 @@
 import { isBackgroundRequest } from '../shared';
-import { handlePanelCommand, handleSeek } from './commands';
+import { handlePanelCommand, handleSeek, handleSetVolume } from './commands';
 import { handlePlayerReport } from './playback';
 import { recordOverlayStatus } from './overlay-status';
 import { setAudioOnly } from './settings-store';
@@ -11,6 +11,12 @@ export function listenForRequests(): void {
 
 		if (message.type === 'settings/set-audio-only') {
 			void setAudioOnly(message.value).then((response) => sendResponse(response));
+			return true;
+		}
+
+		if (message.type === 'player/set-volume') {
+			if (!sender.url?.startsWith(chrome.runtime.getURL(''))) return false;
+			void handleSetVolume(message.level, message.muted).then((response) => sendResponse(response));
 			return true;
 		}
 

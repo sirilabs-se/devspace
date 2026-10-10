@@ -6,8 +6,10 @@ import {
 	readNowPlaying,
 	readPendingResume,
 	readPlaybackTab,
+	readVolume,
 	RESUME_KEY,
 	TITLE_MAX,
+	VOLUME_KEY,
 	type NowPlaying,
 	type PlayerReport,
 	type PlayerVideoDetails,
@@ -17,6 +19,13 @@ import {
 
 const TAB_VIDEO_PREFIX = 'tabVideo:';
 const tabVideoKey = (tabId: number) => `${TAB_VIDEO_PREFIX}${tabId}`;
+
+/**
+ * After the remembered volume is sent to a tab that has just become the playback tab, its own volume reports
+ * (which may have been sent before the command arrived) are ignored for this long.
+ */
+const VOLUME_SETTLE_MS = 2000;
+const VOLUME_SYNC_KEY = 'volumeSync';
 
 /** A page load right after Resume opened the tab is that tab starting up, not the playback tab being lost. */
 const RESUME_GRACE_MS = 20_000;
@@ -77,13 +86,48 @@ async function savePosition(positionSec: number, now: number): Promise<void> {
 	});
 }
 
+/** Gives a tab that is becoming the playback tab the volume the extension remembers (`PLY-063`). */
+async function applyRememberedVolume(tabId: number, now: number): Promise<void> {
+	const volume = await readVolume();
+	if (!volume) return;
+	await chrome.storage.session.set({ [VOLUME_SYNC_KEY]: { tabId, until: now + VOLUME_SETTLE_MS } });
+	const command: TabCommand = {
+		type: 'player/set-volume',
+		level: volume.level,
+		muted: volume.muted
+	};
+	// Not waited for: the tab may be slow, and everything behind this in the queue must not wait for it.
+	void chrome.tabs.sendMessage(tabId, command).catch(() => {});
+}
+
 async function apply(report: PlayerReport, tab: ReportingTab, now: number): Promise<void> {
+	if (report.type === 'player/volume') {
+		const [playbackTab, syncItems] = [
+			await readPlaybackTab(),
+			await chrome.storage.session.get(VOLUME_SYNC_KEY)
+		];
+		if (playbackTab?.tabId !== tab.tabId) return;
+		const sync = syncItems[VOLUME_SYNC_KEY] as { tabId: number; until: number } | undefined;
+		if (sync?.tabId === tab.tabId && now < sync.until) return;
+		const current = await readVolume();
+		if (current?.level === report.level && current.muted === report.muted) return;
+		await chrome.storage.local.set({
+			[VOLUME_KEY]: { level: report.level, muted: report.muted }
+		});
+		return;
+	}
+
 	if (report.type === 'player/video') {
 		const { type: _type, ...video } = report;
 		void _type;
 		await chrome.storage.session.set({ [tabVideoKey(tab.tabId)]: video });
 		// A different video in the playback tab replaces Now Playing (PLY-045).
 		const playbackTab = await readPlaybackTab();
+		// The tab Resume opened is the playback tab already; its page has just come up, so it gets the volume now.
+		const resume = await readPendingResume();
+		if (resume?.tabId === tab.tabId && playbackTab?.tabId === tab.tabId) {
+			await applyRememberedVolume(tab.tabId, now);
+		}
 		if (playbackTab?.tabId === tab.tabId) {
 			const current = await readNowPlaying();
 			if (current?.videoId === video.videoId) {
@@ -177,6 +221,7 @@ async function takeOver(
 	await chrome.storage.session.remove(RESUME_KEY);
 	// Chrome must not discard the one tab that is making the sound (PLY-050).
 	await chrome.tabs.update(tab.tabId, { autoDiscardable: false }).catch(() => {});
+	await applyRememberedVolume(tab.tabId, now);
 
 	// There is one playback tab (GLB-001): the old one is paused, never closed (PLY-040).
 	if (previous && previous.tabId !== tab.tabId) {
