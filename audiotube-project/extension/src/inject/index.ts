@@ -22,6 +22,7 @@ interface YouTubePlayer extends PlayerApi {
 	getDuration?: () => unknown;
 	getCurrentTime?: () => unknown;
 	getPlayerState?: () => unknown;
+	getPlaybackRate?: () => unknown;
 	playVideo?: () => void;
 	pauseVideo?: () => void;
 }
@@ -104,10 +105,16 @@ function readSnapshot(): PlayerSnapshot | null {
 				!isLive && Number.isFinite(duration) && duration > 0 ? Math.floor(duration) : null,
 			isLive
 		};
+		const rate = Number(
+			(player as unknown as HTMLElement).querySelector?.('video')?.playbackRate ??
+				player.getPlaybackRate?.()
+		);
 		return {
 			...details,
+			rate: Number.isFinite(rate) && rate > 0 ? rate : 1,
 			state: currentState(player),
-			positionSec: Number.isFinite(position) && position > 0 ? Math.floor(position) : 0,
+			// One decimal: the side panel counts forward from this, so a whole second would show as a lag.
+			positionSec: Number.isFinite(position) && position > 0 ? Math.round(position * 10) / 10 : 0,
 			adPlaying: (player as unknown as HTMLElement).classList?.contains('ad-showing') === true
 		};
 	} catch {
@@ -136,9 +143,21 @@ document.addEventListener('yt-navigate-finish', onNavigate);
 
 // The video's own events report a pause or play at once. They are listened for on the document, in the
 // capture phase (media events do not bubble), so a video element YouTube swaps for another is still heard.
-const VIDEO_EVENTS = ['play', 'playing', 'pause', 'waiting', 'ended', 'loadedmetadata', 'seeked'];
+const VIDEO_EVENTS = [
+	'play',
+	'playing',
+	'pause',
+	'waiting',
+	'ended',
+	'loadedmetadata',
+	'seeked',
+	'ratechange'
+];
+// A seek and a rate change are reported even if the state is the same: the panel counts from the new place.
+const FORCING = ['seeked', 'ratechange'];
 const onVideoEvent = (event: Event) => {
-	if (event.target instanceof HTMLVideoElement) reporter.check();
+	if (event.target instanceof HTMLVideoElement)
+		reporter.check({ force: FORCING.includes(event.type) });
 };
 for (const name of VIDEO_EVENTS) document.addEventListener(name, onVideoEvent, true);
 

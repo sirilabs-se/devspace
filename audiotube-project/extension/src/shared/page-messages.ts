@@ -26,7 +26,7 @@ export interface PlayerVideoDetails {
 /** What the page script reports about YouTube's main player. */
 export type PlayerReport =
 	| ({ type: 'player/video' } & PlayerVideoDetails)
-	| { type: 'player/state'; state: PlayState; positionSec: number }
+	| { type: 'player/state'; state: PlayState; positionSec: number; rate: number }
 	| { type: 'player/position'; positionSec: number }
 	/** The main player has been gone for a moment, for example after leaving the watch page without a mini-player. */
 	| { type: 'player/gone'; positionSec: number };

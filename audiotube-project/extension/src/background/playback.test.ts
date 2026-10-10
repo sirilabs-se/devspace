@@ -73,10 +73,15 @@ const video = (
 	isLive: false,
 	...patch
 });
-const state = (s: 'playing' | 'paused' | 'buffering' | 'ended', positionSec = 0): PlayerReport => ({
+const state = (
+	s: 'playing' | 'paused' | 'buffering' | 'ended',
+	positionSec = 0,
+	rate = 1
+): PlayerReport => ({
 	type: 'player/state',
 	state: s,
-	positionSec
+	positionSec,
+	rate
 });
 const position = (positionSec: number): PlayerReport => ({ type: 'player/position', positionSec });
 
@@ -98,7 +103,9 @@ describe('handlePlayerReport', () => {
 			tabId: 1,
 			windowId: 10,
 			state: 'playing',
-			stateAt: NOW + 1000
+			stateAt: NOW + 1000,
+			positionSec: 7,
+			rate: 1
 		});
 		expect(update).toHaveBeenCalledWith(1, { autoDiscardable: false });
 	});
@@ -231,6 +238,30 @@ describe('handlePlayerReport', () => {
 		await handlePlayerReport(video({ videoId: 'jNQXAC9IVRw' }), TAB_B, NOW + 1000);
 		await handlePlayerReport(state('playing', 0), TAB_B, NOW + 2000);
 		expect(session.get('playbackTab')).toMatchObject({ tabId: 2 });
+	});
+
+	it('keeps state, position, rate and time together as one snapshot', async () => {
+		await handlePlayerReport(video(), TAB_A, NOW);
+		await handlePlayerReport(state('playing', 10, 2), TAB_A, NOW + 1000);
+		expect(session.get('playbackTab')).toMatchObject({
+			state: 'playing',
+			positionSec: 10,
+			rate: 2,
+			stateAt: NOW + 1000
+		});
+		await handlePlayerReport(position(20), TAB_A, NOW + 6000);
+		expect(session.get('playbackTab')).toMatchObject({
+			state: 'playing',
+			positionSec: 20,
+			rate: 2,
+			stateAt: NOW + 6000
+		});
+		await handlePlayerReport(state('paused', 25, 2), TAB_A, NOW + 9000);
+		expect(session.get('playbackTab')).toMatchObject({
+			state: 'paused',
+			positionSec: 25,
+			stateAt: NOW + 9000
+		});
 	});
 
 	it('applies reports one after another', async () => {
@@ -434,7 +465,9 @@ describe('resumePlayback', () => {
 			tabId: 50,
 			windowId: 12,
 			state: 'paused',
-			stateAt: NOW + 5000
+			stateAt: NOW + 5000,
+			positionSec: 750,
+			rate: 1
 		});
 		expect(session.get('resume')).toEqual({ tabId: 50, startedAt: NOW + 5000 });
 		expect(update).toHaveBeenCalledWith(50, { autoDiscardable: false });

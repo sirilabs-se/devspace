@@ -8,8 +8,12 @@ export interface PlaybackTab {
 	tabId: number;
 	windowId: number;
 	state: PlayState;
-	/** Epoch milliseconds. */
+	/** Epoch milliseconds: when the state, position and rate below were true. */
 	stateAt: number;
+	/** Where the video was at `stateAt`, in seconds. The side panel counts forward from it (ADR 0007). */
+	positionSec: number;
+	/** The playback rate at `stateAt`. */
+	rate: number;
 }
 
 export function isPlayState(value: unknown): value is PlayState {
@@ -27,7 +31,15 @@ export function parsePlaybackTab(raw: unknown): PlaybackTab | null {
 	const windowId = wholeNumber(v.windowId);
 	const stateAt = wholeNumber(v.stateAt);
 	if (tabId === null || windowId === null || stateAt === null || !isPlayState(v.state)) return null;
-	return { tabId, windowId, state: v.state, stateAt };
+	const positionSec =
+		typeof v.positionSec === 'number' && Number.isFinite(v.positionSec) && v.positionSec >= 0
+			? v.positionSec
+			: 0;
+	const rate =
+		typeof v.rate === 'number' && Number.isFinite(v.rate) && v.rate > 0 && v.rate <= 16
+			? v.rate
+			: 1;
+	return { tabId, windowId, state: v.state, stateAt, positionSec, rate };
 }
 
 export async function readPlaybackTab(): Promise<PlaybackTab | null> {

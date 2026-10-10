@@ -8,6 +8,8 @@ export const GONE_AFTER_MS = 1500;
 export interface PlayerSnapshot extends PlayerVideoDetails {
 	state: PlayState;
 	positionSec: number;
+	/** The playback rate; 1 is normal speed. */
+	rate: number;
 	adPlaying: boolean;
 }
 
@@ -34,11 +36,13 @@ export function createReporter(deps: ReporterDeps) {
 	let videoKey: string | null = null;
 	let state: PlayState | null = null;
 	let positionSentAt = 0;
+	let rate = 1;
 	let lastPositionSec = 0;
 	let missingSince: number | null = null;
 
 	return {
-		check() {
+		/** `force` sends the state even if nothing seems to have changed: after a seek, or a rate change. */
+		check(options: { force?: boolean } = {}) {
 			const snapshot = deps.read();
 			const now = deps.now();
 			if (!snapshot) {
@@ -77,10 +81,21 @@ export function createReporter(deps: ReporterDeps) {
 
 			// Ad time is not the video's position, so it is never reported as one.
 			const positionSec = snapshot.adPlaying ? 0 : snapshot.positionSec;
-			if (videoChanged || snapshot.state !== state) {
+			if (
+				videoChanged ||
+				snapshot.state !== state ||
+				snapshot.rate !== rate ||
+				options.force === true
+			) {
 				state = snapshot.state;
+				rate = snapshot.rate;
 				positionSentAt = now;
-				deps.send({ type: 'player/state', state: snapshot.state, positionSec });
+				deps.send({
+					type: 'player/state',
+					state: snapshot.state,
+					positionSec,
+					rate: snapshot.rate
+				});
 				return;
 			}
 			if (

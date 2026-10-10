@@ -13,7 +13,9 @@ const video = {
 describe('isPlayerReport', () => {
 	it('accepts the three report shapes', () => {
 		expect(isPlayerReport(video)).toBe(true);
-		expect(isPlayerReport({ type: 'player/state', state: 'playing', positionSec: 3 })).toBe(true);
+		expect(
+			isPlayerReport({ type: 'player/state', state: 'playing', positionSec: 3, rate: 1.5 })
+		).toBe(true);
 		expect(isPlayerReport({ type: 'player/position', positionSec: 8 })).toBe(true);
 		expect(isPlayerReport({ type: 'player/gone', positionSec: 8 })).toBe(true);
 		expect(isPlayerReport({ ...video, durationSec: null, isLive: true })).toBe(true);
@@ -24,7 +26,16 @@ describe('isPlayerReport', () => {
 		expect(isPlayerReport({ ...video, title: 5 })).toBe(false);
 		expect(isPlayerReport({ ...video, title: 'x'.repeat(5000) })).toBe(false);
 		expect(isPlayerReport({ ...video, isLive: 'yes' })).toBe(false);
-		expect(isPlayerReport({ type: 'player/state', state: 'dancing', positionSec: 1 })).toBe(false);
+		expect(
+			isPlayerReport({ type: 'player/state', state: 'dancing', positionSec: 1, rate: 1 })
+		).toBe(false);
+		expect(isPlayerReport({ type: 'player/state', state: 'playing', positionSec: 1 })).toBe(false);
+		expect(
+			isPlayerReport({ type: 'player/state', state: 'playing', positionSec: 1, rate: 0 })
+		).toBe(false);
+		expect(
+			isPlayerReport({ type: 'player/state', state: 'playing', positionSec: 1, rate: 99 })
+		).toBe(false);
 		expect(isPlayerReport({ type: 'player/position', positionSec: -1 })).toBe(false);
 		expect(isPlayerReport({ type: 'player/position', positionSec: Infinity })).toBe(false);
 		expect(isPlayerReport({ type: 'player/other' })).toBe(false);
@@ -41,7 +52,9 @@ describe('isBackgroundRequest', () => {
 
 	it('rejects anything else', () => {
 		expect(isBackgroundRequest({ type: 'overlay/status', status: 'meh' })).toBe(false);
-		expect(isBackgroundRequest({ type: 'player/state', state: 'x', positionSec: 1 })).toBe(false);
+		expect(isBackgroundRequest({ type: 'player/state', state: 'x', positionSec: 1, rate: 1 })).toBe(
+			false
+		);
 		expect(isBackgroundRequest('hello')).toBe(false);
 	});
 });

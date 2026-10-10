@@ -104,7 +104,10 @@
 			// A clock for the fake player: one second of position per second of playing.
 			setInterval(() => {
 				const video = document.querySelector('#movie_player video');
-				if (video && !video.paused) window.__position = (window.__position ?? 0) + 1;
+				if (video && !video.paused) {
+					const next = (window.__position ?? 0) + video.playbackRate;
+					window.__position = Math.min(next, window.__duration ?? 212);
+				}
 			}, 1000);
 			window.__playbackCalls = [];
 			window.__keys = [];
@@ -142,6 +145,17 @@
 				// YouTube's own state can trail the video element by a moment; window.__stateLagMs imitates that.
 				let shown = null;
 				const video = player.querySelector('video');
+				// window.__buffering imitates a video that has run out of data.
+				Object.defineProperty(video, 'readyState', { get: () => (window.__buffering ? 1 : 4) });
+				// A stream-backed video ignores playbackRate, so the rate is kept here and announced as a real one is.
+				let rate = 1;
+				Object.defineProperty(video, 'playbackRate', {
+					get: () => rate,
+					set: (value) => {
+						rate = value;
+						video.dispatchEvent(new Event('ratechange'));
+					}
+				});
 				for (const name of ['play', 'pause']) {
 					video.addEventListener(name, () => {
 						const actual = video.paused ? 2 : 1;

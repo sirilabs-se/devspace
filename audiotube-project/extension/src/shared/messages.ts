@@ -40,6 +40,9 @@ const isText = (value: unknown): value is string =>
 const isSeconds = (value: unknown): value is number =>
 	typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= MAX_SECONDS;
 
+const isRate = (value: unknown): value is number =>
+	typeof value === 'number' && Number.isFinite(value) && value > 0 && value <= 16;
+
 /** Checks the shape of a player report. The page can forge messages, so the content script checks before forwarding. */
 export function isPlayerReport(message: unknown): message is PlayerReport {
 	if (typeof message !== 'object' || message === null) return false;
@@ -54,7 +57,7 @@ export function isPlayerReport(message: unknown): message is PlayerReport {
 				typeof m.isLive === 'boolean'
 			);
 		case 'player/state':
-			return isPlayState(m.state) && isSeconds(m.positionSec);
+			return isPlayState(m.state) && isSeconds(m.positionSec) && isRate(m.rate);
 		case 'player/position':
 		case 'player/gone':
 			return isSeconds(m.positionSec);

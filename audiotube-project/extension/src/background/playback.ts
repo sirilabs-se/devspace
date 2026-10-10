@@ -107,7 +107,13 @@ async function apply(report: PlayerReport, tab: ReportingTab, now: number): Prom
 	const isPlaybackTab = playbackTab?.tabId === tab.tabId;
 
 	if (report.type === 'player/position') {
-		if (isPlaybackTab) await savePosition(report.positionSec, now);
+		if (isPlaybackTab) {
+			// The snapshot the side panel counts forward from gets the newer position, in one write.
+			await chrome.storage.session.set({
+				[PLAYBACK_TAB_KEY]: { ...playbackTab, positionSec: report.positionSec, stateAt: now }
+			});
+			await savePosition(report.positionSec, now);
+		}
 		return;
 	}
 
@@ -123,11 +129,18 @@ async function apply(report: PlayerReport, tab: ReportingTab, now: number): Prom
 
 	// player/state
 	if (report.state === 'playing' && !isPlaybackTab) {
-		await takeOver(tab, report.positionSec, now);
+		await takeOver(tab, report.positionSec, report.rate, now);
 		return;
 	}
 	if (!isPlaybackTab) return;
-	const next: PlaybackTab = { ...playbackTab, state: report.state, stateAt: now };
+	// State, position, rate and time are one snapshot, written together (ADR 0007).
+	const next: PlaybackTab = {
+		...playbackTab,
+		state: report.state,
+		stateAt: now,
+		positionSec: report.positionSec,
+		rate: report.rate
+	};
 	await chrome.storage.session.set({ [PLAYBACK_TAB_KEY]: next });
 	if (report.state === 'playing') await chrome.storage.session.remove(RESUME_KEY);
 	// A video that is only loading reports position 0; that must not overwrite the saved position.
@@ -137,7 +150,12 @@ async function apply(report: PlayerReport, tab: ReportingTab, now: number): Prom
 }
 
 /** The tab that starts playing becomes the playback tab, and its video Now Playing. */
-async function takeOver(tab: ReportingTab, positionSec: number, now: number): Promise<void> {
+async function takeOver(
+	tab: ReportingTab,
+	positionSec: number,
+	rate: number,
+	now: number
+): Promise<void> {
 	const video = await readTabVideo(tab.tabId);
 	if (!video) return;
 	const current = await readNowPlaying();
@@ -151,7 +169,9 @@ async function takeOver(tab: ReportingTab, positionSec: number, now: number): Pr
 		tabId: tab.tabId,
 		windowId: tab.windowId,
 		state: 'playing',
-		stateAt: now
+		stateAt: now,
+		positionSec,
+		rate
 	};
 	await chrome.storage.session.set({ [PLAYBACK_TAB_KEY]: playbackTab });
 	await chrome.storage.session.remove(RESUME_KEY);
@@ -225,7 +245,9 @@ export function resumePlayback(
 			tabId: tab.id,
 			windowId: tab.windowId,
 			state: 'paused',
-			stateAt: now
+			stateAt: now,
+			positionSec: nowPlaying.positionSec,
+			rate: 1
 		};
 		await chrome.storage.session.set({
 			[PLAYBACK_TAB_KEY]: playbackTab,

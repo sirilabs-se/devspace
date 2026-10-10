@@ -15,6 +15,7 @@ const base: PlayerSnapshot = {
 	isLive: false,
 	state: 'paused',
 	positionSec: 0,
+	rate: 1,
 	adPlaying: false
 };
 
@@ -76,7 +77,7 @@ describe('createReporter', () => {
 		t.sent.length = 0;
 		t.set({ state: 'playing', positionSec: 12 });
 		t.check();
-		expect(t.sent).toEqual([{ type: 'player/state', state: 'playing', positionSec: 12 }]);
+		expect(t.sent).toEqual([{ type: 'player/state', state: 'playing', positionSec: 12, rate: 1 }]);
 	});
 
 	it('reports the position every 5 seconds while playing, not before', () => {

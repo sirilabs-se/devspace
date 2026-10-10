@@ -1,3 +1,4 @@
+import { computeProgress, type Progress } from './progress';
 import {
 	readNowPlaying,
 	readPendingResume,
@@ -35,6 +36,8 @@ export interface NowPlayingView {
 	canResume: boolean;
 	/** Resume opened a tab, and it has not started playing after a while. */
 	waitingToStart: boolean;
+	/** Elapsed and remaining time, counted forward while playing; null with no video. */
+	progress: Progress | null;
 }
 
 export interface NowPlayingController {
@@ -73,6 +76,8 @@ const defaultDeps: NowPlayingDeps = {
 export const OPTIMISTIC_MS = 4000;
 /** How long a resumed tab may take to start before the panel says it is waiting. */
 export const WAITING_AFTER_MS = 10_000;
+/** How often the position is looked at while playing. */
+export const TICK_MS = 250;
 /** How often an open panel asks the background to check that the playback tab is still there. */
 export const CHECK_EVERY_MS = 15_000;
 
@@ -102,8 +107,10 @@ export function createNowPlayingController(
 		playing: false,
 		canControl: false,
 		canResume: false,
-		waitingToStart: false
+		waitingToStart: false,
+		progress: null
 	};
+	let tickTimer: ReturnType<typeof setInterval> | undefined;
 	let waitTimer: ReturnType<typeof setTimeout> | undefined;
 	// What the user just asked for, shown at once; cleared when the real state arrives or after a while.
 	let asked: boolean | null = null;
@@ -139,8 +146,17 @@ export function createNowPlayingController(
 				asked ?? (playbackTab !== null && ['playing', 'buffering'].includes(playbackTab.state)),
 			canControl: nowPlaying !== null && playbackTab !== null,
 			canResume: nowPlaying !== null && playbackTab === null,
-			waitingToStart: waiting && elapsed >= WAITING_AFTER_MS
+			waitingToStart: waiting && elapsed >= WAITING_AFTER_MS,
+			progress: nowPlaying ? computeProgress(nowPlaying, playbackTab, deps.now()) : null
 		};
+		// The time is counted forward while it is moving. Looking four times a second keeps the shown whole
+		// second within a quarter of a second of the real one; the view only changes when the second does.
+		const moving = playbackTab?.state === 'playing' && nowPlaying !== null;
+		if (moving && tickTimer === undefined) tickTimer = setInterval(publish, TICK_MS);
+		if (!moving && tickTimer !== undefined) {
+			clearInterval(tickTimer);
+			tickTimer = undefined;
+		}
 		if (JSON.stringify(next) === JSON.stringify(view)) return;
 		view = next;
 		for (const listener of listeners) listener(view);
@@ -210,6 +226,7 @@ export function createNowPlayingController(
 		dispose() {
 			for (const stop of stops) stop();
 			clearInterval(checker);
+			clearInterval(tickTimer);
 			clearTimeout(waitTimer);
 			clearTimeout(askedTimer);
 			listeners.clear();

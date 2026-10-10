@@ -36,8 +36,8 @@ These apply to this phase only and do not change the requirements document.
 | # | Task | Requirements | Depends on | Status |
 |---|---|---|---|---|
 | 22 | Fixes from the phase 3 review | GLB-012, PLY-053 | 21 | Done |
-| 23 | Progress, elapsed and remaining time | PLY-059, PLY-064, PLY-067; ADR 0007 | 22 | In progress |
-| 24 | Seeking from the side panel | PLY-060, PLY-065, GLB-005 | 23 | To do |
+| 23 | Progress, elapsed and remaining time | PLY-059, PLY-064, PLY-067; ADR 0007 | 22 | Done |
+| 24 | Seeking from the side panel | PLY-060, PLY-065, GLB-005 | 23 | In progress |
 | 25 | Volume and mute | PLY-061, PLY-062, PLY-063, PLY-131 (volume) | 22 | To do |
 
 Statuses: **To do**, **In progress**, **Done**, **Blocked** (say why in the task's notes).
@@ -102,13 +102,23 @@ Task 22 comes first. Task 24 follows task 23; task 25 can be done before or afte
 
 **Done when:**
 
-- [ ] On the test page, while playing, elapsed time goes up by one each second and the bar moves; on pause, both stop within 1 second
-- [ ] A seek made on the page (arrow key) shows in the panel within 1 second
-- [ ] At double speed set on the page, elapsed time goes up by two each second
-- [ ] The count never goes past the duration, and the remaining time never below 0:00
-- [ ] A live stream shows "Live" and no times; buffering shows "Buffering"
-- [ ] With the YouTube tab in the background, the bar still moves every second
-- [ ] Logic tests cover the counting (playing, paused, buffering, rate, clamping, live) without importing any `.svelte` file
+- [x] On the test page, while playing, elapsed time goes up by one each second and the bar moves; on pause, both stop within 1 second
+- [x] A seek made on the page (arrow key) shows in the panel within 1 second
+- [x] At double speed set on the page, elapsed time goes up by two each second
+- [x] The count never goes past the duration, and the remaining time never below 0:00
+- [x] A live stream shows "Live" and no times; buffering shows "Buffering"
+- [x] With the YouTube tab in the background, the bar still moves every second
+- [x] Logic tests cover the counting (playing, paused, buffering, rate, clamping, live) without importing any `.svelte` file
+
+**Notes:**
+
+- ADR 0007 is Accepted (the suggested answer to the first "decide" item).
+- Page script: `player/state` carries the rate, and is also sent after a seek and a rate change (the video's `seeked` and `ratechange` events force a report). The state is read from the `<video>` element, as in the button fix; the position is sent with one decimal, so the side panel's count does not start up to a second behind.
+- Background: `playbackTab` now holds the state, the position, the rate and the time as one record, written in one write on every state and position report. A tab record without them reads as position 0, rate 1. `nowPlaying.positionSec` keeps its own whole-second, 5-second rule (`PLY-130`).
+- Panel: `sidepanel/core/progress.ts` is a pure function (`computeProgress`): position plus (now − time) × rate while playing, otherwise the snapshot; clamped between 0 and the duration; live has no times; with no playback tab it is the saved position and does not move. `now-playing.ts` looks at it four times a second while playing, and the view changes only when the whole second does. The card shows a bar with elapsed on the left and remaining (`-m:ss`) on the right, "Live" for a live stream and "Buffering" while buffering. The bar is a progress bar for now; task 24 makes it a slider.
+- A stream-backed `<video>` ignores `playbackRate`, so the test page keeps the rate itself and announces it; the browser tests use it for the speed case.
+- Real YouTube (headless, signed out): the panel's whole second stayed within about a second of YouTube's time while playing and after a seek; after `setPlaybackRate(2)` it counted at twice the speed (the report carried rate 2 four milliseconds after the change). Live streams still did not start in this environment, so "Live" is covered on the test page only.
+
 
 ### 24. Seeking from the side panel
 

@@ -21,7 +21,9 @@ const tab = (state: PlaybackTab['state']): PlaybackTab => ({
 	tabId: 3,
 	windowId: 1,
 	state,
-	stateAt: 1
+	stateAt: 1,
+	positionSec: 12,
+	rate: 1
 });
 
 function setup(
@@ -77,7 +79,8 @@ describe('createNowPlayingController', () => {
 			playing: false,
 			canControl: false,
 			canResume: false,
-			waitingToStart: false
+			waitingToStart: false,
+			progress: null
 		});
 	});
 
@@ -236,6 +239,34 @@ describe('createNowPlayingController', () => {
 		await vi.advanceTimersByTimeAsync(15_000);
 		expect(command).toHaveBeenCalledWith('check');
 		vi.useRealTimers();
+	});
+
+	it('counts the position forward every second while playing, and stops when paused', async () => {
+		vi.useFakeTimers();
+		const { controller, setTab, advance, now } = setup({
+			now: nowPlaying,
+			tab: { ...tab('playing'), stateAt: 1_000_000, positionSec: 100 }
+		});
+		await vi.advanceTimersByTimeAsync(0);
+		expect(controller.get().progress?.elapsedSec).toBe(100);
+		advance(1000);
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(controller.get().progress?.elapsedSec).toBe(101);
+		advance(1000);
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(controller.get().progress?.elapsedSec).toBe(102);
+
+		setTab({ ...tab('paused'), stateAt: now(), positionSec: 102.4 });
+		advance(5000);
+		await vi.advanceTimersByTimeAsync(5000);
+		expect(controller.get().progress?.elapsedSec).toBe(102);
+		vi.useRealTimers();
+	});
+
+	it('shows no progress without a video', async () => {
+		const { controller } = setup();
+		await settle();
+		expect(controller.get().progress).toBeNull();
 	});
 
 	it('stops listening when disposed', () => {

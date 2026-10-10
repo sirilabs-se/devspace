@@ -32,6 +32,40 @@
 				{/if}
 			</div>
 		</div>
+		{#if view.progress}
+			<div class="flex flex-col gap-1.5">
+				{#if view.progress.live}
+					<div class="flex items-center justify-between text-xs">
+						<span class="font-medium text-accent">Live</span>
+						{#if view.progress.buffering}<span class="text-muted">Buffering</span>{/if}
+					</div>
+				{:else}
+					<div
+						role="progressbar"
+						aria-label="Progress"
+						aria-valuemin={0}
+						aria-valuemax={view.progress.durationSec ?? 0}
+						aria-valuenow={view.progress.elapsedSec}
+						aria-valuetext={view.progress.remainingText === null
+							? view.progress.elapsedText
+							: `${view.progress.elapsedText}, ${view.progress.remainingText} left`}
+						class="h-1 w-full overflow-hidden rounded-full bg-track"
+					>
+						<div
+							class="h-full bg-accent"
+							style:width="{(view.progress.fraction ?? 0) * 100}%"
+						></div>
+					</div>
+					<div class="flex items-center justify-between text-xs text-muted">
+						<span>{view.progress.elapsedText}</span>
+						{#if view.progress.buffering}<span>Buffering</span>{/if}
+						<span
+							>{view.progress.remainingText === null ? '' : '-' + view.progress.remainingText}</span
+						>
+					</div>
+				{/if}
+			</div>
+		{/if}
 		<div class="flex items-center gap-3">
 			{#if view.canResume}
 				<button

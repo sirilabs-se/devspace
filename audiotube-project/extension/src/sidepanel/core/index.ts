@@ -20,3 +20,4 @@ export {
 	type NowPlayingVideo,
 	type NowPlayingView
 } from './now-playing';
+export { computeProgress, formatClock, type Progress as ProgressView } from './progress';
