@@ -433,3 +433,46 @@ Without credentials, nothing new is visible: the buttons only appear for a provi
 **Left for later**
 
 - Also included in this commit: one line missing from the Identity doc for task 13's undo page.
+
+## Task 15: Delete account
+
+**Status:** Done. `npm run verify` passes (277 logic tests, 21 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/deletion.ts`: `requestAccountDeletion`, `onUserDeleted`, `runDailyJob`.
+- `identity/deletion-cancel.ts`: cancels a pending deletion when a session starts.
+- `identity/auth.ts`: calls that on every sign-in.
+- `identity/emails.ts`: the scheduled, cancelled and deleted emails.
+- `src/routes/api/jobs/daily/+server.ts`: the protected endpoint.
+- `src/routes/settings/account/`: a "Delete account" card.
+- `src/routes/login/`: a notice after asking to delete.
+- `.env.example` and `tests/setup/test-env.js`: `DAILY_JOB_SECRET`.
+- Tests beside each, and two browser tests.
+
+**Try it**
+
+1. Open "Account settings", scroll to "Delete account", enter your password, tick the box and press "Delete my account".
+2. You are signed out and see "Your account is scheduled for deletion". An email says when.
+3. Log in again: the account is back, and an email confirms the deletion was cancelled.
+4. To see the permanent deletion without waiting 30 days, ask to delete again, then move the date back and run the job:
+
+   ```
+   docker exec saas-project-db-1 psql -U saas -d saas -c "update users set deletion_requested_at = now() - interval '31 days' where deletion_requested_at is not null"
+   curl -X POST -H "Authorization: Bearer $(grep DAILY_JOB_SECRET .env | cut -d= -f2)" http://localhost:5173/api/jobs/daily
+   ```
+
+   The answer lists what was removed. The account can no longer log in, and its username can't be registered.
+5. Run the `curl` line without the header: it is refused.
+
+**Decisions**
+
+- Asking to delete needs the password and a ticked box.
+- One card, not the prototype's five-step flow.
+- The job also clears stale attempt counters.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- Scheduling the job once a day in production (task 27).

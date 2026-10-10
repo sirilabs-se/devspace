@@ -51,7 +51,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 12 | Connected accounts | Identity | 11 | Blocked |
 | 13 | Change email | Identity | 7 | Done |
 | 14 | Security activity page | Identity | 4 | Done |
-| 15 | Delete account | Identity | 7, 9 | To do |
+| 15 | Delete account | Identity | 7, 9 | Done |
 | 16 | Notification preferences | Identity | 8 | To do |
 | 17 | Passkeys | Identity | 4 | To do |
 | 18 | Authenticator app and backup codes | Identity | 4 | To do |
@@ -692,13 +692,23 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 
 **Done when:**
 
-- [ ] A person asks to delete their account and is signed out everywhere
-- [ ] Signing in within 30 days restores the account
-- [ ] After 30 days the daily job removes the user and their rows, and the username can't be registered again
-- [ ] The job refuses to run without its secret
-- [ ] Tests cover the above
+- [x] A person asks to delete their account and is signed out everywhere
+- [x] Signing in within 30 days restores the account
+- [x] After 30 days the daily job removes the user and their rows, and the username can't be registered again
+- [x] The job refuses to run without its secret
+- [x] Tests cover the above
 
-**Notes:** —
+**Notes:**
+
+- Asking to delete needs the person's password (if they have one) and a ticked confirmation box. The design doesn't ask for the password; it stops someone at an unlocked browser from starting a deletion.
+- Signing in by any method during the 30 days cancels the deletion. The person is told by email when the deletion is scheduled, when it is cancelled, and when it has finally happened.
+- The prototype's deletion flow has five steps (blocked, review, confirm, grace, done). This is one card on the account page plus a notice on the login page. The "blocked while you own an organization" step doesn't apply, since there are no organizations.
+- On permanent deletion: other modules' clean-up handlers run first, the username is held for good, the picture file is deleted, outstanding reset and undo links are removed, and the person's audit entries stay but with no user link, network address or device. One entry with no user link records that a deletion happened.
+- The daily job also clears attempt counters untouched for two days. That wasn't in the task, but they would otherwise pile up for ever.
+- The job is safe to run twice, and reports how many of each thing it did.
+- The endpoint takes the secret as `Authorization: Bearer <DAILY_JOB_SECRET>`. With no secret set, it refuses everyone.
+- Audit retention relies on two guards agreeing: the job asks to delete entries older than 12 months, and the database refuses to delete anything younger.
+- For task 27: the scheduler has to call the endpoint once a day with the secret.
 
 ### 16. Notification preferences
 

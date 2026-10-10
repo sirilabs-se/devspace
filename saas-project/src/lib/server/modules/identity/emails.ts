@@ -109,3 +109,54 @@ export async function sendEmailChangeUndoneEmail(to: string, origin: string): Pr
 		].join('\n')
 	});
 }
+
+const longDate = (date: Date) =>
+	date.toLocaleDateString('en-GB', {
+		day: '2-digit',
+		month: 'long',
+		year: 'numeric',
+		timeZone: 'UTC'
+	});
+
+export async function sendDeletionScheduledEmail(
+	to: string,
+	deleteAt: Date,
+	origin: string
+): Promise<void> {
+	await sendEmail({
+		to,
+		subject: `Your ${APP_NAME} account is scheduled for deletion`,
+		text: [
+			`You asked to delete your ${APP_NAME} account. Every device has been signed out.`,
+			'',
+			`The account and its data will be permanently removed on ${longDate(deleteAt)}.`,
+			`Changed your mind? Log in before then and the deletion is cancelled: ${origin}/login`,
+			'',
+			`If it wasn't you, log in now and change your password.`
+		].join('\n')
+	});
+}
+
+export async function sendDeletionCancelledEmail(to: string): Promise<void> {
+	await sendEmail({
+		to,
+		subject: `Your ${APP_NAME} account will not be deleted`,
+		text: [
+			`You signed in to ${APP_NAME}, so the deletion of your account was cancelled. Nothing was removed.`,
+			'',
+			'If you still want to delete it, you can ask again from your account settings.'
+		].join('\n')
+	});
+}
+
+export async function sendAccountDeletedEmail(to: string): Promise<void> {
+	await sendEmail({
+		to,
+		subject: `Your ${APP_NAME} account has been deleted`,
+		text: [
+			`Your ${APP_NAME} account and its data have now been permanently removed, as you asked.`,
+			'',
+			'This is the last email you will receive about it.'
+		].join('\n')
+	});
+}

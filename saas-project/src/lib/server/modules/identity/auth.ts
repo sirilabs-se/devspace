@@ -5,6 +5,7 @@ import { username } from 'better-auth/plugins';
 import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
 import { recordAuditEvent } from './audit';
+import { cancelPendingDeletion } from './deletion-cancel';
 import {
 	sendEmailChangeVerificationEmail,
 	sendPasswordResetEmail,
@@ -92,6 +93,14 @@ function createAuth() {
 			accountLinking: { enabled: true, disableImplicitLinking: true, allowDifferentEmails: true }
 		},
 		databaseHooks: {
+			session: {
+				create: {
+					// Signing in, by any method, cancels a pending account deletion.
+					after: async (session) => {
+						await cancelPendingDeletion(toUserId(session.userId));
+					}
+				}
+			},
 			account: {
 				create: {
 					// Records every Google or Facebook account connected to a user.

@@ -33,6 +33,7 @@ export function testEnvironment(env, origin) {
 		DATABASE_URL: testDatabaseUrl(env),
 		ORIGIN: origin,
 		BETTER_AUTH_SECRET: 'test-only-secret-not-used-anywhere-else',
+		DAILY_JOB_SECRET: 'test-only-daily-job-secret',
 		EMAIL_TRANSPORT: 'console',
 		// Made-up credentials, so the Google and Facebook buttons appear under test.
 		GOOGLE_CLIENT_ID: 'test-google-client',

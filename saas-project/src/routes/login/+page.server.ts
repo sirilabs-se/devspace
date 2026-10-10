@@ -19,7 +19,9 @@ export const load: PageServerLoad = ({ locals, url }) => {
 	return {
 		providers: socialProviders(),
 		// Set when Google or Facebook sent the person back with a problem.
-		socialError: url.searchParams.get('error')
+		socialError: url.searchParams.get('error'),
+		// Set after asking to delete an account.
+		notice: url.searchParams.get('notice')
 	};
 };
 

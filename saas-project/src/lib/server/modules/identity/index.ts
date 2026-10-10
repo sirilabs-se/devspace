@@ -26,6 +26,14 @@ export {
 	type SetFirstPasswordResult,
 	type UnlinkProviderResult
 } from './connections';
+export {
+	DELETION_GRACE_DAYS,
+	onUserDeleted,
+	requestAccountDeletion,
+	runDailyJob,
+	type DailyJobResult,
+	type RequestDeletionResult
+} from './deletion';
 export { logIn, logOut, type LogInResult } from './log-in';
 export {
 	requestPasswordReset,

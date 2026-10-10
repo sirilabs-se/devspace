@@ -138,6 +138,12 @@
 					<Text variant="lead">Log in to manage your events and tickets.</Text>
 				</Stack>
 
+				{#if data.notice === 'deletion-scheduled'}
+					<Alert variant="info" title="Your account is scheduled for deletion">
+						You’ve been signed out everywhere. Log in within 30 days to keep the account; otherwise
+						it is removed for good.
+					</Alert>
+				{/if}
 				{#if socialError}
 					<Alert variant="danger" title={socialError.title}>{socialError.text}</Alert>
 				{/if}

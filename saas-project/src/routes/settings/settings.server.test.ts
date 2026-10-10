@@ -100,6 +100,41 @@ describe('account settings', () => {
 	});
 });
 
+describe('deleting the account', () => {
+	it('schedules the deletion, signs the person out and sends them to the login page', async () => {
+		const before = jar.headers();
+
+		const { thrown } = await outcome(() =>
+			accountActions.deleteAccount(
+				event('/settings/account', { deletePassword: 'Correct-Horse-42', confirmDelete: 'on' })
+			)
+		);
+
+		expect(thrown).toMatchObject({ status: 303, location: '/login?notice=deletion-scheduled' });
+		expect(await getSessionUser(before)).toBeNull();
+	});
+
+	it('explains a wrong password or a missing confirmation, and changes nothing', async () => {
+		const wrong = await outcome(() =>
+			accountActions.deleteAccount(
+				event('/settings/account', { deletePassword: 'Wrong-Horse-42', confirmDelete: 'on' })
+			)
+		);
+		const unticked = await outcome(() =>
+			accountActions.deleteAccount(
+				event('/settings/account', { deletePassword: 'Correct-Horse-42' })
+			)
+		);
+
+		expect(wrong.result).toMatchObject({
+			status: 400,
+			data: { deleteError: 'current_password_wrong' }
+		});
+		expect(unticked.result).toMatchObject({ status: 400, data: { deleteError: 'not_confirmed' } });
+		expect(await getSessionUser(jar.headers())).not.toBeNull();
+	});
+});
+
 describe('security settings', () => {
 	it('lists the signed-in person’s own security activity, and nobody else’s', async () => {
 		await createSignedInUser('bo@example.com', 'Bo Lind');

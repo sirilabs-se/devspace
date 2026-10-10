@@ -1,7 +1,8 @@
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import {
 	changePassword,
 	listConnections,
+	requestAccountDeletion,
 	requestEmailChange,
 	requireUser,
 	setFirstPassword
@@ -14,6 +15,25 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
+	deleteAccount: async ({ request, cookies, locals, getClientAddress }) => {
+		const user = requireUser(locals);
+		const form = await request.formData();
+
+		const result = await requestAccountDeletion(
+			user,
+			request.headers,
+			cookies,
+			{
+				currentPassword: form.get('deletePassword'),
+				confirmed: form.get('confirmDelete') === 'on'
+			},
+			{ ipAddress: getClientAddress(), userAgent: request.headers.get('user-agent') }
+		);
+
+		if (result.status !== 'scheduled') return fail(400, { deleteError: result.status });
+		redirect(303, `/login?notice=deletion-scheduled`);
+	},
+
 	changeEmail: async ({ request, locals, getClientAddress }) => {
 		const user = requireUser(locals);
 		const form = await request.formData();

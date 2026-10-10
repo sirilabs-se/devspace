@@ -5,6 +5,7 @@
 		Alert,
 		Button,
 		Card,
+		CheckboxField,
 		Countdown,
 		Heading,
 		PageHeader,
@@ -25,6 +26,9 @@
 	let newEmail = $state(form?.newEmail ?? '');
 	let emailPassword = $state('');
 	let sendingEmail = $state(false);
+
+	let deletePassword = $state('');
+	let deleting = $state(false);
 
 	const guide = $derived(describePassword(password));
 </script>
@@ -206,6 +210,63 @@
 
 				<div>
 					<Button type="submit" loading={submitting}>Save password</Button>
+				</div>
+			</Stack>
+		</form>
+	</Card>
+	<Card>
+		<form
+			method="POST"
+			action="?/deleteAccount"
+			novalidate
+			use:enhance={() => {
+				deleting = true;
+				return async ({ update }) => {
+					await update({ reset: false });
+					deleting = false;
+					deletePassword = '';
+				};
+			}}
+		>
+			<Stack gap="large">
+				<Stack gap="small">
+					<Heading level={2}>Delete account</Heading>
+					<Text variant="lead">
+						Permanently removes your profile, sign-in methods and personal data.
+					</Text>
+				</Stack>
+
+				<Alert variant="warning" title="You have 30 days to change your mind">
+					Every device is signed out straight away. If you log in again within 30 days, the deletion
+					is cancelled. After that it can’t be undone, and your username can never be used again.
+				</Alert>
+
+				<Stack gap="fields">
+					{#if data.hasPassword}
+						<TextField
+							label="Your password"
+							name="deletePassword"
+							type="password"
+							autocomplete="current-password"
+							required
+							hint="To confirm it’s you."
+							bind:value={deletePassword}
+							error={form?.deleteError === 'current_password_wrong'
+								? 'That’s not your password.'
+								: undefined}
+						/>
+					{/if}
+					<CheckboxField
+						name="confirmDelete"
+						required
+						error={form?.deleteError === 'not_confirmed' ? 'Tick this box to confirm.' : undefined}
+					>
+						I understand that my account will be deleted.
+					</CheckboxField>
+				</Stack>
+
+				<div>
+					<Button type="submit" variant="danger" loading={deleting}>Delete my account</Button>
 				</div>
 			</Stack>
 		</form>

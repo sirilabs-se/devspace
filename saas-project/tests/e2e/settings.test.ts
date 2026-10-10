@@ -136,3 +136,32 @@ test('a person can upload a profile picture and remove it again', async ({ page 
 	await expect(page.getByText('Photo removed')).toBeVisible();
 	await expect(picture).toHaveCount(0);
 });
+
+test('a person can delete their account and get it back by logging in again', async ({ page }) => {
+	const email = `e2e-delete-${Date.now().toString(36)}@example.com`;
+	await signUpAndVerify(page, email);
+	await page.goto('/settings/account');
+
+	await page.getByRole('button', { name: 'Delete my account' }).click();
+	await expect(page.getByText('Tick this box to confirm.')).toBeVisible();
+
+	await page.getByLabel('Your password').last().fill(password);
+	await page.getByLabel('I understand that my account will be deleted.').check();
+	await page.getByRole('button', { name: 'Delete my account' }).click();
+
+	await expect(page).toHaveURL('/login?notice=deletion-scheduled');
+	await expect(page.getByText('Your account is scheduled for deletion')).toBeVisible();
+
+	await page.getByLabel('Email').fill(email);
+	await page.getByRole('button', { name: 'Continue with email' }).click();
+	await page.getByLabel('Password', { exact: true }).fill(password);
+	await page.getByRole('button', { name: 'Log in' }).click();
+	await expect(page.getByRole('heading', { name: 'Welcome, Maya Okafor' })).toBeVisible();
+});
+
+test('the daily job cannot be run without its secret', async ({ request }) => {
+	expect((await request.post('/api/jobs/daily')).status()).toBe(401);
+	expect(
+		(await request.post('/api/jobs/daily', { headers: { authorization: 'Bearer nope' } })).status()
+	).toBe(401);
+});

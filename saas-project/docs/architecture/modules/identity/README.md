@@ -88,6 +88,8 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `setFirstPassword(user, headers, input, context)` | Gives a password to someone who has only signed in with a provider | `/settings/account` |
 | `requestEmailChange(user, headers, input, context)` | Starts a change of email; nothing changes until the link sent to the new address is opened | `/settings/account` |
 | `canUndoEmailChange(token)` / `undoEmailChange(token, context)` | Checks and uses the undo link sent to the old address | `/undo-email-change` |
+| `requestAccountDeletion(user, headers, cookies, input, context)` | Schedules the acting user's account for deletion in 30 days and signs them out everywhere | `/settings/account` |
+| `runDailyJob()` | The daily clean-up: permanent deletions, expired holds and links, old audit entries | `/api/jobs/daily` |
 | `listSecurityActivity(userId)` | Lists the acting user's own recent security events, newest first | `/settings/security` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
@@ -124,7 +126,7 @@ Pages use form actions, following the shared conventions in the system doc.
 | `/api/auth/*` | Only the addresses on a short allowed list reach the login library: the Google and Facebook return addresses (`/api/auth/callback/google` and `/facebook`), and later the passkey exchange. Every other address under it answers "not found" | Anyone |
 | `GET /api/username-available` | Says whether a username is free; rate limited | Anyone |
 | `GET /files/avatars/[file]` | Serves a profile picture. Added in task 10 for local-disk storage; not yet confirmed by the owner | Anyone |
-| `POST /api/jobs/daily` | Runs the daily clean-up | The scheduler, with a secret |
+| `POST /api/jobs/daily` | Runs the daily clean-up. Needs `Authorization: Bearer <DAILY_JOB_SECRET>`; with no secret set it can't be run at all | The scheduler, with a secret |
 
 ### Events
 
