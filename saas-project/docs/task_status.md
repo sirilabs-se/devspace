@@ -4,6 +4,67 @@ One section per build-plan task, added when the task is finished. Each says what
 
 **To try anything below:** in `saas-project/`, run `npm install`, `npm run db:up`, `npm run db:migrate` and `npm run dev`. The app is at http://localhost:5173 and the local inbox, where every email the app sends appears, is at http://localhost:8025.
 
+## Summary of tasks 3 to 26
+
+| # | Task | Result |
+|---|---|---|
+| 3 | Verify email and start a session | Done |
+| 4 | Log in and log out | Done |
+| 5 | Rate limits and login lockout | Done |
+| 6 | Forgot and reset password | Done |
+| 7 | Change password and sign out everywhere | Done |
+| 8 | Profile basics | Done |
+| 9 | Change username | Done |
+| 10 | Avatar upload | Done |
+| 11 | Google and Facebook sign-in | Blocked: built and tested against stand-ins; needs your credentials to confirm |
+| 12 | Connected accounts | Blocked: same reason as 11 |
+| 13 | Change email | Done |
+| 14 | Security activity page | Done |
+| 15 | Delete account | Done |
+| 16 | Notification preferences | Blocked: skipped at your choice; nothing built |
+| 17 | Passkeys | Done |
+| 18 | Authenticator app and backup codes | Done |
+| 19 | Email code and trusted devices | Done |
+| 20 | Active sessions | Done |
+| 21 | New-device alerts | Done |
+| 22 | Admin user search | Done |
+| 23 | Suspend and reinstate | Done |
+| 24 | Impersonation | Done |
+| 25 | Admin audit log | Done |
+| 26 | Download my data | Done |
+
+At the end of the run `npm run verify` passes with 420 logic tests and 32 browser tests. Everything is committed on the branch `tasks-3-to-26`, one commit per task; nothing is pushed, so CI has not run on it.
+
+### Waiting for you
+
+**To unblock**
+
+- Tasks 11 and 12: Google and Facebook developer credentials, then a try with the real services.
+- Task 16: the first notification types, when a module that sends notifications exists.
+
+**Pages and endpoints I added that the design did not list.** Each was needed for its task to work; please confirm or tell me to change them.
+
+- `GET /files/avatars/[file]` (task 10): serves profile pictures while files are on local disk.
+- `/undo-email-change` (task 13): the undo link sent to the old address.
+- `/stop-impersonating` (task 24): the way back from viewing the app as a user.
+- `GET /admin/audit/export` (task 25) and `GET /settings/privacy/export` (task 26): the two file downloads.
+
+**Values I chose where the design gave none.** All are easy to change.
+
+- Sessions: 1 day, or 30 days with "remember me", and never more than 90 days (task 4).
+- A password reset clears a login lockout (task 6).
+- The old address can undo a change of email for 7 days (task 13).
+- Long lists show 25 to a page (task 22).
+- Request limits, such as 10 sign-ups an hour per network address and 30 login attempts per 15 minutes (task 5 and later tasks). The full set is in `src/lib/server/modules/identity/request-limits.ts`.
+
+**Known gaps**
+
+- The terms and privacy policy have no pages yet, so the consent checkbox has no links.
+- Profile pictures are stored on the app's own disk and are not resized. Choose object storage before going live (task 27).
+- Things an admin does while viewing the app as a user are recorded as done by that user, bracketed by "impersonation started" and "stopped" entries (task 24).
+- Behind a proxy in production, the app must be told which header carries the visitor's real address, and the upload size limit must be raised (task 27).
+- `npm audit` still reports known issues in development tools only.
+
 ## Task 3: Verify email and start a session
 
 **Status:** Done. `npm run verify` passes (88 logic tests, 7 browser tests).
