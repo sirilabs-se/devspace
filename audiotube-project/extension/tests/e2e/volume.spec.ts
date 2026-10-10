@@ -81,6 +81,33 @@ test('shows the volume as a number beside the slider, and Muted while muted', as
 	await expect(text).toHaveText('37%');
 });
 
+test('the speaker icon shows more sound waves as the volume goes up, fewer as it goes down, and a cross when muted', async ({
+	context,
+	extensionId
+}) => {
+	const panel = await openPanel(context, extensionId);
+	await play(context);
+	const icon = panel.getByRole('button', { name: /mute/i }).locator('svg');
+	const steps: [string, string][] = [
+		['100', '3'],
+		['80', '3'],
+		['50', '2'],
+		['20', '1'],
+		['0', '0'],
+		['30', '1'],
+		['60', '2'],
+		['90', '3']
+	];
+	for (const [level, waves] of steps) {
+		await slider(panel).fill(level);
+		await expect(icon).toHaveAttribute('data-waves', waves);
+	}
+	await panel.getByRole('button', { name: 'Mute' }).click();
+	await expect(icon).toHaveAttribute('data-waves', 'muted');
+	await panel.getByRole('button', { name: 'Unmute' }).click();
+	await expect(icon).toHaveAttribute('data-waves', '3');
+});
+
 test('a change on the page moves the side panel controls within a second', async ({
 	context,
 	extensionId

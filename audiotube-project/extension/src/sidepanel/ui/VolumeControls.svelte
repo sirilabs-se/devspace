@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { VolumeView } from '../core';
-	import Icon from './Icon.svelte';
-	import { MUTE, VOLUME } from './icons';
+	import VolumeIcon from './VolumeIcon.svelte';
 
 	let {
 		view,
@@ -24,7 +23,7 @@
 		aria-label={view.muted ? 'Unmute' : 'Mute'}
 		class="grid size-9 flex-none cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
 	>
-		<Icon path={view.muted || view.level === 0 ? MUTE : VOLUME} size={20} />
+		<VolumeIcon level={view.level} muted={view.muted} />
 	</button>
 	<input
 		type="range"
