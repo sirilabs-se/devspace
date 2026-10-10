@@ -8,6 +8,7 @@ import {
 import { startControlButtonController } from './control-button-controller';
 import { isExtensionAlive, removeLeftovers } from './lifecycle';
 import { startOverlayController } from './overlay-controller';
+import { startPipController } from './pip-controller';
 import { startQualityController } from './quality-controller';
 import { startVisibilityFlag } from './visibility';
 
@@ -45,6 +46,7 @@ if (!scope[GUARD]) {
 			watch: watchSettings,
 			requestShowVideo: request(false)
 		}),
+		startPipController({ read: readSettings, watch: watchSettings }),
 		startControlButtonController({
 			read: readSettings,
 			watch: watchSettings,

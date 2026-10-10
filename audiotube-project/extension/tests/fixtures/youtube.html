@@ -71,6 +71,7 @@
 				Fullscreen
 			</button>
 			<button id="error" onclick="window.__showError()">Error screen</button>
+			<button id="pip" onclick="window.__tryPip()">Picture in picture</button>
 		</div>
 		<ytd-app>
 			<div id="slot"></div>
@@ -125,6 +126,34 @@
 				document.getElementById('play')?.addEventListener('click', () => window.__playClicks++);
 			}
 			// Mimics YouTube's in-page navigation: the URL changes and an event is fired, with no reload.
+			// Gives the player a real picture, so picture-in-picture can be tried for real.
+			window.__startVideo = async () => {
+				const canvas = document.createElement('canvas');
+				canvas.width = canvas.height = 64;
+				const context = canvas.getContext('2d');
+				setInterval(() => {
+					context.fillStyle =
+						'#' +
+						Math.floor(Math.random() * 0xffffff)
+							.toString(16)
+							.padStart(6, '0');
+					context.fillRect(0, 0, 64, 64);
+				}, 50);
+				const video = document.querySelector('video');
+				video.muted = true;
+				video.srcObject = canvas.captureStream(20);
+				await video.play();
+			};
+			window.__pipResult = null;
+			window.__tryPip = () => {
+				document
+					.querySelector('video')
+					.requestPictureInPicture()
+					.then(
+						() => (window.__pipResult = 'started'),
+						(error) => (window.__pipResult = error.name)
+					);
+			};
 			window.__showError = () => {
 				const player = document.getElementById('movie_player');
 				const error = document.createElement('div');

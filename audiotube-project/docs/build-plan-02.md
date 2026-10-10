@@ -37,8 +37,8 @@ These apply to this phase only and do not change the requirements document.
 | 8 | Fixes from the phase 1 review | GLB-009, decision f | 7 | Done |
 | 9 | Overlay stays in place: theater, fullscreen, resize, error screen | PLY-013, PLY-020 | 8 | Done |
 | 10 | No flash on load, no ambient glow | PLY-015, PLY-017 | 8 | Done |
-| 11 | Picture-in-picture off while audio-only is on | PLY-016 | 8 | In progress |
-| 12 | Click to pause, and YouTube's shortcuts keep working | PLY-018, PLY-019 | 8 | To do |
+| 11 | Picture-in-picture off while audio-only is on | PLY-016 | 8 | Done |
+| 12 | Click to pause, and YouTube's shortcuts keep working | PLY-018, PLY-019 | 8 | In progress |
 | 13 | Overlay on YouTube's mini-player | PLY-014, PLY-022 | 9 | To do |
 | 14 | "Couldn't cover YouTube's player" message | PLY-021 | 8 | To do |
 
@@ -168,9 +168,17 @@ Task 8 comes first; tasks 9 to 12 and 14 can then be done in any order, and task
 
 **Done when:**
 
-- [ ] On the test page, picture-in-picture can't be started while audio-only is on, and can again after it turns off
-- [ ] On the test page, an open picture-in-picture window closes when audio-only turns on
-- [ ] Manual check on real YouTube passes, including the right-click menu and YouTube's own button
+- [x] On the test page, picture-in-picture can't be started while audio-only is on, and can again after it turns off
+- [x] On the test page, an open picture-in-picture window closes when audio-only turns on
+- [x] Manual check on real YouTube passes, including the right-click menu and YouTube's own button
+
+**Notes:**
+
+- `content/pip-controller.ts` sets `disablePictureInPicture` on every video inside the player while audio-only is on (remembering what each had), puts it back when off, and calls `document.exitPictureInPicture()` when audio-only turns on. A second observer watches the attribute, so a video whose attribute YouTube switches back is put right again, and new videos after an in-page move are covered by the page-change observer.
+- It only assigns when the value differs. Assigning the same value still raises a change record, which with the attribute observer made the first version loop and hang the page; the browser tests caught it.
+- The test page can give its video a real picture (a canvas stream), so picture-in-picture is really started or refused in Chromium. Three browser tests cover refusal while on, starting after off, closing an open window, and a re-enabled or new video.
+- Real YouTube (headless, signed out): while on, the video has the attribute set, `requestPictureInPicture()` is refused with `InvalidStateError`, and YouTube's own PiP button does nothing; after turning audio-only off it works again. The browser's right-click menu entry is Chrome's own UI and was not exercised; it follows the same attribute.
+
 
 ### 12. Click to pause, and YouTube's shortcuts keep working
 
