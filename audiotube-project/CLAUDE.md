@@ -8,7 +8,7 @@ The design docs are the source of truth. Read the ones that apply before changin
 
 | Doc | Read when |
 |---|---|
-| `requirements/audiotube_requirements.md` | Always: the functional requirements (`GLB-`/`PLY-`/`QUE-`/`PLS-`/`SET-`/`OQ-`/`NG-` IDs) every feature must satisfy |
+| `docs/audiotube_requirements.md` | Always: the functional requirements (`GLB-`/`PLY-`/`QUE-`/`PLS-`/`SET-`/`OQ-`/`NG-` IDs) every feature must satisfy |
 | `docs/tech-stack.md` | Always: the chosen stack and why |
 | `docs/architecture.md` | Before structuring code: module boundaries, state ownership, the messaging protocol between contexts (not yet written) |
 | `docs/build-plan.md` | Picking up or finishing a task (not yet written) |
@@ -122,7 +122,7 @@ The app's look (colours, components, layout) must be replaceable with a new desi
 ### Ask before you
 
 - Add a new dependency (library or service).
-- Do anything that contradicts `requirements/audiotube_requirements.md`, `docs/tech-stack.md`, or `docs/architecture.md`. Stop and explain the conflict instead.
+- Do anything that contradicts `docs/audiotube_requirements.md`, `docs/tech-stack.md`, or `docs/architecture.md`. Stop and explain the conflict instead.
 - Change the manifest's permissions or host permissions, CI, `.claude/settings.json`, `.claude/rules/` or `.githooks/`.
 
 ### Never
