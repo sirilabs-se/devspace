@@ -38,6 +38,18 @@
 				width: 100vw;
 				height: 100vh;
 			}
+			ytd-miniplayer.mini {
+				position: fixed;
+				right: 16px;
+				bottom: 16px;
+				display: block;
+				width: 400px;
+				height: 225px;
+			}
+			ytd-miniplayer.mini #movie_player {
+				width: 100%;
+				height: 100%;
+			}
 			.ytp-error {
 				position: absolute;
 				inset: 0;
@@ -165,6 +177,34 @@
 						() => (window.__pipResult = 'started'),
 						(error) => (window.__pipResult = error.name)
 					);
+			};
+			// YouTube's mini-player: the same player element is moved into a small corner container.
+			const pageChanged = () => document.dispatchEvent(new CustomEvent('yt-navigate-finish'));
+			window.__miniplayer = () => {
+				const player = document.getElementById('movie_player');
+				const mini = document.createElement('ytd-miniplayer');
+				mini.className = 'mini';
+				mini.append(player);
+				document.body.append(mini);
+				history.pushState({}, '', '/');
+				document.getElementById('slot').innerHTML = '<p>Home page</p>';
+				pageChanged();
+			};
+			window.__expand = () => {
+				const player = document.getElementById('movie_player');
+				history.pushState({}, '', '/watch?v=test1');
+				document.getElementById('slot').innerHTML =
+					'<ytd-watch-flexy><div id="player"></div></ytd-watch-flexy>';
+				document.getElementById('player').append(player);
+				document.querySelector('ytd-miniplayer')?.remove();
+				pageChanged();
+			};
+			window.__closeMini = () => {
+				document.querySelector('ytd-miniplayer')?.remove();
+				pageChanged();
+			};
+			window.__hideMini = () => {
+				document.querySelector('ytd-miniplayer').style.display = 'none';
 			};
 			window.__showError = () => {
 				const player = document.getElementById('movie_player');

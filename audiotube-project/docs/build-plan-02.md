@@ -39,8 +39,8 @@ These apply to this phase only and do not change the requirements document.
 | 10 | No flash on load, no ambient glow | PLY-015, PLY-017 | 8 | Done |
 | 11 | Picture-in-picture off while audio-only is on | PLY-016 | 8 | Done |
 | 12 | Click to pause, and YouTube's shortcuts keep working | PLY-018, PLY-019 | 8 | Done |
-| 13 | Overlay on YouTube's mini-player | PLY-014, PLY-022 | 9 | In progress |
-| 14 | "Couldn't cover YouTube's player" message | PLY-021 | 8 | To do |
+| 13 | Overlay on YouTube's mini-player | PLY-014, PLY-022 | 9 | Done |
+| 14 | "Couldn't cover YouTube's player" message | PLY-021 | 8 | In progress |
 
 Statuses: **To do**, **In progress**, **Done**, **Blocked** (say why in the task's notes).
 
@@ -229,9 +229,19 @@ Task 8 comes first; tasks 9 to 12 and 14 can then be done in any order, and task
 
 **Done when:**
 
-- [ ] On the test page, the mini-player is covered while audio-only is on and uncovered when it turns off
-- [ ] On the test page, the overlay follows the mini-player when it closes and when it expands back
-- [ ] Manual check on real YouTube passes: open a video, go to the home page so the mini-player appears, check it is covered; expand it back
+- [x] On the test page, the mini-player is covered while audio-only is on and uncovered when it turns off
+- [x] On the test page, the overlay follows the mini-player when it closes and when it expands back
+- [x] Manual check on real YouTube passes: open a video, go to the home page so the mini-player appears, check it is covered; expand it back
+
+**Notes:**
+
+- What real YouTube does (checked first, as the plan asked): the mini-player is the **same `#movie_player` element** moved under `ytd-miniplayer` (inside `ytd-miniplayer-player-container`), about 400 × 225 px at the bottom right, while the page is `/` or any other page. When it is closed the element stays but its box is 0 × 0. So the overlay, being a child of the player, moves with it for free.
+- Detection (`content/watch-page.ts`): the player to cover is the watch page's, or any `#movie_player` inside `ytd-miniplayer` that has a non-zero width. A `ResizeObserver` on the player re-checks when the mini-player opens, closes or is hidden without the page changing; the page-change observer still handles moves between pages.
+- Compact cover: a container query on the overlay hides the label and shrinks the logo and button when the player is 420 px wide or less, or 240 px high or less. Chrome 116 supports it, and the manifest requires 116.
+- The overlay covers the video area of the mini-player; its own title bar below, with expand and close, is outside the player element and stays usable. YouTube's overlay controls that appear on hover inside the video are covered, as the requirement says.
+- Real YouTube (headless, signed out): `I` opened the mini-player; the overlay matched its 400 × 225 box and was on top; turning audio-only off removed it and on restored it; expanding back to the watch page kept exactly one overlay. Closing the mini-player on real YouTube was not exercised by hand; the test page covers closing and hiding.
+- The test page gained a mini-player (the same element re-parented into a `ytd-miniplayer`), with open, expand, close and hide controls.
+
 
 ### 14. "Couldn't cover YouTube's player" message
 

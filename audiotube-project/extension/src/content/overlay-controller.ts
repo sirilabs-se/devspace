@@ -1,7 +1,7 @@
 import type { Settings } from '../shared';
 import { createOverlay, type Overlay } from './overlay';
 import { onPageChange } from './page-changes';
-import { findPlayer, isWatchPath } from './watch-page';
+import { findPlayer, findPlayerToCover } from './watch-page';
 
 export interface OverlayControllerDeps {
 	read: () => Promise<Settings>;
@@ -22,8 +22,18 @@ export function startOverlayController(deps: OverlayControllerDeps): () => void 
 		overlayPlayer = null;
 	}
 
+	// The mini-player opens, closes and moves without the page changing, so the player's size is watched too.
+	const resizes = new ResizeObserver(() => reconcile());
+	let observed: HTMLElement | null = null;
+
 	function reconcile() {
-		const player = audioOnly && isWatchPath(location.pathname) ? findPlayer(document) : null;
+		const current = findPlayer(document);
+		if (current !== observed) {
+			resizes.disconnect();
+			observed = current;
+			if (current) resizes.observe(current);
+		}
+		const player = audioOnly ? findPlayerToCover(document, location.pathname) : null;
 		if (!player) return remove();
 		if (overlay && overlayPlayer === player && player.contains(overlay.host)) return;
 		remove();
@@ -47,6 +57,7 @@ export function startOverlayController(deps: OverlayControllerDeps): () => void 
 	return () => {
 		stopWatching();
 		stopObserving();
+		resizes.disconnect();
 		remove();
 	};
 }
