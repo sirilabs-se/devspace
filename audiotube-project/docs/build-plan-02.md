@@ -142,14 +142,11 @@ Task 8 comes first; tasks 9 to 12 and 14 can then be done in any order, and task
 
 **Notes:** The early CSS stays in a page once Chrome has added it. Make sure turning audio-only off in an already-open page still shows the picture (for example, key the CSS on an attribute the content script removes).
 
-**Notes:**
-
 - The background registers `early.css` as a CSS-only content script at `document_start` while audio-only is on and removes it when it turns off (`background/early-css.ts`). It follows the saved value at service worker start and on every change, one change after another. Registered scripts persist across browser sessions.
 - The CSS hides `#movie_player`'s video, video container, cued thumbnail and storyboard preview, and `#cinematics`, unless `<html>` carries `data-audiotube-visible`. The content script sets that attribute while audio-only is off (`content/visibility.ts`), so an open page shows the picture again at once. A page that finds the attribute absent before the script has read the saved value stays hidden, which is the safe side.
 - The overlay also hides `#cinematics` itself with a stylesheet it adds to the document while it is present, so the glow is hidden even on a page opened before the early CSS was registered.
 - Test: a frame-by-frame recorder on the test page finds no frame with the picture visible and no overlay, on load and on an in-page move. As a control, with the early CSS unregistered the same recorder sees 2 such frames on load.
 - Real YouTube: 0 such frames on first load, reload and an in-page move; turning audio-only off shows the picture. The ambient glow could not be seen in this environment: YouTube's `#cinematics` is already `display: none` for a signed-out headless profile with or without the extension, so the hide rule was only verified on the test page.
-
 
 ### 11. Picture-in-picture off while audio-only is on
 

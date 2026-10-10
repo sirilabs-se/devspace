@@ -44,7 +44,11 @@ if (!scope[GUARD]) {
 	};
 
 	stops.push(
-		startVisibilityFlag({ read: readSettings, watch: watchSettings }, document.documentElement),
+		startVisibilityFlag(
+			{ read: readSettings, watch: watchSettings },
+			document.documentElement,
+			crypto.randomUUID()
+		),
 		startOverlayController({
 			read: readSettings,
 			watch: watchSettings,

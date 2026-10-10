@@ -10,7 +10,7 @@ The design docs are the source of truth. Read the ones that apply before changin
 |---|---|
 | `docs/audiotube_requirements.md` | Always: the functional requirements (`GLB-`/`PLY-`/`QUE-`/`PLS-`/`SET-`/`OQ-`/`NG-` IDs) every feature must satisfy |
 | `docs/tech-stack.md` | Always: the chosen stack and why |
-| `docs/architecture.md` | Before structuring code: module boundaries, state ownership, the messaging protocol between contexts (not yet written) |
+| `docs/architecture.md` | Before structuring code: module boundaries, state ownership, the messaging protocol between contexts |
 | `docs/build-plan-01.md`, `docs/build-plan-02.md` | Picking up or finishing a task (one file per phase) |
 
 ## Tech stack
@@ -39,7 +39,7 @@ npm run verify         # run every check: lint, types, architecture rules, tests
 
 ## Folder structure
 
-Proposed — confirm against `docs/architecture.md` once it exists.
+See `docs/architecture.md` for the modules and what each context does.
 
 ```text
 extension/

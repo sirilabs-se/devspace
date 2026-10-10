@@ -6,14 +6,14 @@ export {
 	SETTING_KEYS,
 	type SettingKey,
 	type Settings
-} from './settings/schema';
-export { readSettings, watchSettings } from './settings/read';
+} from './storage/schema';
+export { readSettings, watchSettings } from './storage/read';
 export {
 	overlayStatusKey,
 	readOverlayStatuses,
 	watchOverlayStatuses,
 	type OverlayStatus
-} from './settings/overlay-status';
+} from './storage/overlay-status';
 export {
 	isBackgroundRequest,
 	reportOverlayStatus,

@@ -1,4 +1,4 @@
-import type { OverlayStatus } from './settings/overlay-status';
+import type { OverlayStatus } from './storage/overlay-status';
 
 export type SettingsError = 'invalid-value' | 'storage-failed' | 'background-unavailable';
 

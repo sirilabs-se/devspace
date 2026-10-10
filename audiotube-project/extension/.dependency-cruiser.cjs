@@ -62,6 +62,14 @@ module.exports = {
 			to: { circular: true }
 		},
 		{
+			name: 'contexts-never-import-each-other',
+			comment:
+				'background, content and inject run in different contexts and talk only through messages and storage.',
+			severity: 'error',
+			from: { path: '^src/(background|content|inject)/' },
+			to: { path: '^src/(?!$1/)(background|content|inject)/' }
+		},
+		{
 			name: 'core-never-imports-ui',
 			comment: 'sidepanel/core must not import sidepanel/ui or any .svelte file.',
 			severity: 'error',
