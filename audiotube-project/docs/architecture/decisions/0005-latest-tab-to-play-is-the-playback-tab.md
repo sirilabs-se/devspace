@@ -18,7 +18,9 @@ The background decides which tab is the playback tab. Each tab's content script 
 - Only the main player counts: `#movie_player` on a watch page or inside YouTube's mini-player. Hover previews, Shorts and embeds MUST NOT become Now Playing.
 - The background MUST take the tab from the message's sender, never from its body.
 - Only the playback tab's reports MAY change Now Playing, except a `playing` report, which makes its tab the playback tab first.
-- The playback tab MUST be kept in `chrome.storage.session` (ADR 0003), with the tab marked as not discardable while it is the playback tab (`PLY-050`).
+- The playback tab MUST be kept in `chrome.storage.session` (ADR 0003), with the tab marked as not discardable while it is the playback tab (`PLY-050`). `autoDiscardable: false` stops only automatic discarding; an explicit discard still works ([spike](../../spikes/playback-tab.md)).
+- A tab is lost when it is closed, starts a full page load, is discarded, or is found `unloaded` when checked. A crash raises no event, so a late position report triggers a check ([spike](../../spikes/playback-tab.md)).
+- A page that is not a watch page and has no mini-player has no main player, even though `#movie_player` may still be in its DOM.
 
 ## Alternatives Considered
 

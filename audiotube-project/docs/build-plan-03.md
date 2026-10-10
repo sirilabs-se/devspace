@@ -39,8 +39,8 @@ These apply to this phase only and do not change the requirements document.
 | # | Task | Requirements | Depends on | Status |
 |---|---|---|---|---|
 | 15 | Fixes from the phase 2 review, and the new architecture checks | GLB-009, ADR 0001, ADR 0004 | 14 | Done |
-| 16 | Spike: the playback tab | PLY-041, PLY-043, PLY-044, PLY-050, PLY-053, OQ-001 | 15 | In progress |
-| 17 | Now Playing from YouTube's player | PLY-037, PLY-038, PLY-048, PLY-130 | 16 | To do |
+| 16 | Spike: the playback tab | PLY-041, PLY-043, PLY-044, PLY-050, PLY-053, OQ-001 | 15 | Done |
+| 17 | Now Playing from YouTube's player | PLY-037, PLY-038, PLY-048, PLY-130 | 16 | In progress |
 | 18 | One playback tab across all windows | GLB-001, PLY-039, PLY-040, PLY-045 | 17 | To do |
 | 19 | Now Playing in the side panel | PLY-036, PLY-051, PLY-055, PLY-056, PLY-057, PLY-115, PLY-119 | 17 | To do |
 | 20 | Playback tab lost, and Resume | PLY-049, PLY-050, PLY-052, PLY-053, PLY-054 | 18, 19 | To do |
@@ -112,8 +112,16 @@ Task 15 comes first, then the spike. Tasks 18 and 19 can be done in either order
 
 **Done when:**
 
-- [ ] Findings in `docs/spikes/playback-tab.md`: what works, what doesn't, how reliable, and a recommendation for tasks 17, 20 and 21
-- [ ] [ADR 0005](architecture/decisions/0005-latest-tab-to-play-is-the-playback-tab.md) updated if the findings change it (it is still Proposed, so it can be edited)
+- [x] Findings in `docs/spikes/playback-tab.md`: what works, what doesn't, how reliable, and a recommendation for tasks 17, 20 and 21
+- [x] [ADR 0005](architecture/decisions/0005-latest-tab-to-play-is-the-playback-tab.md) updated if the findings change it (it is still Proposed, so it can be edited)
+
+**Notes:**
+
+- Findings and recommendations are in `docs/spikes/playback-tab.md`. Headline: a background tab started playing by itself within seconds and at the saved position; the spike environment could not make a tab truly hidden, so that and real discarding need a manual check in a headed Chrome (listed in the spike).
+- **Decision for task 20 (Resume):** open in the background, record the new tab as the playback tab at once with state `paused`, and if it has not reported `playing` within about 10 seconds say so in the side panel with Go to video.
+- **Decision for task 21 (`PLY-044`):** YouTube stopped the video when the page was left by a normal link, and showed the mini-player only on request (`I` key or button). The extension will not force it. A move that stops the player leaves Now Playing and the playback tab in place as paused; Play then reloads the video at its position. `PLY-044` is met only when the user opens the mini-player.
+- ADR 0005 is still Proposed; it gained the tab-lost rules and the `autoDiscardable` fact. It becomes Accepted in task 18.
+
 
 ### 17. Now Playing from YouTube's player
 
