@@ -38,8 +38,8 @@ These apply to this phase only and do not change the requirements document.
 | 9 | Overlay stays in place: theater, fullscreen, resize, error screen | PLY-013, PLY-020 | 8 | Done |
 | 10 | No flash on load, no ambient glow | PLY-015, PLY-017 | 8 | Done |
 | 11 | Picture-in-picture off while audio-only is on | PLY-016 | 8 | Done |
-| 12 | Click to pause, and YouTube's shortcuts keep working | PLY-018, PLY-019 | 8 | In progress |
-| 13 | Overlay on YouTube's mini-player | PLY-014, PLY-022 | 9 | To do |
+| 12 | Click to pause, and YouTube's shortcuts keep working | PLY-018, PLY-019 | 8 | Done |
+| 13 | Overlay on YouTube's mini-player | PLY-014, PLY-022 | 9 | In progress |
 | 14 | "Couldn't cover YouTube's player" message | PLY-021 | 8 | To do |
 
 Statuses: **To do**, **In progress**, **Done**, **Blocked** (say why in the task's notes).
@@ -198,9 +198,17 @@ Task 8 comes first; tasks 9 to 12 and 14 can then be done in any order, and task
 
 **Done when:**
 
-- [ ] On the test page, clicking the overlay pauses a playing video and plays a paused one; clicking Show video does neither
-- [ ] On the test page, after clicking the overlay, pressing space, K, the arrow keys and M reach the page's own key handler
-- [ ] Manual check on real YouTube passes
+- [x] On the test page, clicking the overlay pauses a playing video and plays a paused one; clicking Show video does neither
+- [x] On the test page, after clicking the overlay, pressing space, K, the arrow keys and M reach the page's own key handler
+- [x] Manual check on real YouTube passes
+
+**Notes:**
+
+- A click on the cover sends a new typed message, `player/toggle-playback`, to the page script (decision l). The page script uses the player's own `getPlayerState` (playing or buffering → `pauseVideo`, anything else → `playVideo`) and falls back to the `<video>` element if the player methods are missing. The click stops there, so YouTube's own click handler does not also toggle (checked on real YouTube: one click, one change).
+- Focus: a mouse press on the overlay is cancelled at `mousedown`, so focus never moves onto the overlay, and a mouse click on Show video blurs the button. Keyboard focus still reaches Show video by Tab, and Space or Enter then press it, as suggested in the decision list.
+- Real YouTube (headless, signed out): clicking the overlay paused, then played; `K` paused and played; the right arrow seeked 5 seconds; `M` muted. All with the overlay in place.
+- The test page's player now has `getPlayerState`, `playVideo` and `pauseVideo` over a real streaming video, and records key presses, so the tests check the real effects.
+
 
 ### 13. Overlay on YouTube's mini-player
 

@@ -26,9 +26,34 @@ function sync(attempt = 0) {
 	}
 }
 
+/** Pauses a playing video and plays a paused one, as a click on YouTube's own picture does. */
+function togglePlayback() {
+	const player = document.querySelector(PLAYER_SELECTOR) as unknown as {
+		getPlayerState?: () => number;
+		playVideo?: () => void;
+		pauseVideo?: () => void;
+	} | null;
+	try {
+		if (player?.getPlayerState && player.playVideo && player.pauseVideo) {
+			// 1 playing, 3 buffering: both are on their way to being heard.
+			const playing = [1, 3].includes(player.getPlayerState());
+			if (playing) player.pauseVideo();
+			else player.playVideo();
+			return;
+		}
+		const video = document.querySelector<HTMLVideoElement>(`${PLAYER_SELECTOR} video`);
+		if (!video) return;
+		if (video.paused) void video.play().catch(() => {});
+		else video.pause();
+	} catch {
+		// The player is YouTube's to control; if it refuses, nothing else should break.
+	}
+}
+
 const stopListening = onMessageToPage((message) => {
+	if (message.type === 'player/toggle-playback') return togglePlayback();
 	// The content script repeats the mode when this script starts; the same mode needs no second request.
-	if (message.type !== 'quality/set' || message.mode === mode) return;
+	if (message.mode === mode) return;
 	mode = message.mode;
 	sync();
 });

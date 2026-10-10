@@ -1,7 +1,10 @@
 const SOURCE = 'audiotube';
 
+export type QualityMode = 'lowest' | 'normal';
+
 /** Content script → page script. */
-export type ContentToPage = { type: 'quality/set'; mode: 'lowest' | 'normal' };
+export type ContentToPage =
+	{ type: 'quality/set'; mode: QualityMode } | { type: 'player/toggle-playback' };
 
 /** Page script → content script. */
 export type PageToContent = { type: 'quality/ready' };

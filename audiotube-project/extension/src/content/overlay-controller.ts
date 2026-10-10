@@ -7,6 +7,7 @@ export interface OverlayControllerDeps {
 	read: () => Promise<Settings>;
 	watch: (listener: (settings: Settings) => void) => () => void;
 	requestShowVideo: () => Promise<boolean>;
+	togglePlayback: () => void;
 }
 
 /** Keeps the overlay present exactly when audio-only is on and a watch-page player is present. */
@@ -26,7 +27,7 @@ export function startOverlayController(deps: OverlayControllerDeps): () => void 
 		if (!player) return remove();
 		if (overlay && overlayPlayer === player && player.contains(overlay.host)) return;
 		remove();
-		overlay = createOverlay(player, deps.requestShowVideo);
+		overlay = createOverlay(player, deps.requestShowVideo, deps.togglePlayback);
 		overlayPlayer = player;
 	}
 

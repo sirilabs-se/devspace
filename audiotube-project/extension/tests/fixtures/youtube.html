@@ -89,6 +89,9 @@
 			// A stand-in for YouTube's player API, recording what it is asked for.
 			window.__levels = ['hd1080', 'hd720', 'large', 'medium', 'small', 'tiny', 'auto'];
 			window.__qualityCalls = [];
+			window.__playbackCalls = [];
+			window.__keys = [];
+			document.addEventListener('keydown', (event) => window.__keys.push(event.key));
 			window.__failQuality ??= false;
 			window.__noApi ??= false;
 			window.__noControlBar ??= false;
@@ -104,6 +107,15 @@
 					hd1080: 1080
 				};
 				player.getAvailableQualityLevels = () => window.__levels;
+				player.getPlayerState = () => (player.querySelector('video').paused ? 2 : 1);
+				player.playVideo = () => {
+					window.__playbackCalls.push('play');
+					player.querySelector('video').play();
+				};
+				player.pauseVideo = () => {
+					window.__playbackCalls.push('pause');
+					player.querySelector('video').pause();
+				};
 				player.setPlaybackQualityRange = (min, max) => {
 					window.__qualityCalls.push([min, max ?? null]);
 					if (window.__failQuality) throw new Error('player refused');

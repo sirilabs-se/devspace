@@ -22,6 +22,7 @@ export {
 	sendToContent,
 	sendToPage,
 	type ContentToPage,
-	type PageToContent
+	type PageToContent,
+	type QualityMode
 } from './page-messages';
 export { PLAYER_SELECTOR } from './youtube';

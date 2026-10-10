@@ -1,4 +1,4 @@
-import type { ContentToPage, Settings } from '../shared';
+import type { ContentToPage, QualityMode, Settings } from '../shared';
 
 export interface QualityControllerDeps {
 	read: () => Promise<Settings>;
@@ -9,7 +9,7 @@ export interface QualityControllerDeps {
 
 /** Tells the page script whether to request the lowest quality: audio-only and Save bandwidth both on. */
 export function startQualityController(deps: QualityControllerDeps): () => void {
-	let mode: ContentToPage['mode'] | null = null;
+	let mode: QualityMode | null = null;
 	let known = false;
 
 	function apply(settings: Settings) {

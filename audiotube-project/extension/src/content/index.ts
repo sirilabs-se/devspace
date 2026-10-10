@@ -44,7 +44,8 @@ if (!scope[GUARD]) {
 		startOverlayController({
 			read: readSettings,
 			watch: watchSettings,
-			requestShowVideo: request(false)
+			requestShowVideo: request(false),
+			togglePlayback: () => sendToPage({ type: 'player/toggle-playback' })
 		}),
 		startPipController({ read: readSettings, watch: watchSettings }),
 		startControlButtonController({

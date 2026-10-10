@@ -12,7 +12,11 @@ export interface Overlay {
 const MESSAGE_VISIBLE_MS = 6000;
 
 /** `onShowVideo` resolves to whether the change was saved. */
-export function createOverlay(player: HTMLElement, onShowVideo: () => Promise<boolean>): Overlay {
+export function createOverlay(
+	player: HTMLElement,
+	onShowVideo: () => Promise<boolean>,
+	onTogglePlayback: () => void
+): Overlay {
 	const host = document.createElement('audiotube-overlay');
 	const root = host.attachShadow({ mode: 'open' });
 
@@ -41,8 +45,18 @@ export function createOverlay(player: HTMLElement, onShowVideo: () => Promise<bo
 	message.textContent = "Couldn't change the setting. Try again.";
 
 	let hideMessage: ReturnType<typeof setTimeout> | undefined;
+	// A mouse press must not move keyboard focus onto the overlay, so YouTube's shortcuts keep working.
+	cover.addEventListener('mousedown', (event) => event.preventDefault());
+
+	// Clicking the picture area plays or pauses, as clicking YouTube's video does.
+	cover.addEventListener('click', (event) => {
+		event.stopPropagation();
+		onTogglePlayback();
+	});
+
 	button.addEventListener('click', async (event) => {
 		event.stopPropagation();
+		if (event.detail > 0) button.blur();
 		clearTimeout(hideMessage);
 		message.hidden = true;
 		if (await onShowVideo()) return;
