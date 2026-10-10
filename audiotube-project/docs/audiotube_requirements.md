@@ -1,6 +1,6 @@
 # AudioTube — Requirements
 
-**Version:** 1.2 · **Status:** Draft · **Last updated:** 2026-10-09
+**Version:** 1.3 · **Status:** Draft · **Last updated:** 2026-10-11
 
 In this document, "shall" means required for v1, "should" means intended for v1 but may slip, and
 "may" means optional. Every requirement has a stable ID made of an area prefix and a number: GLB
@@ -230,8 +230,8 @@ tab), **playback controls**, **playback options** (the Playback options panel), 
   user pauses with a keyboard shortcut or by clicking the overlay, the sidebar shall update within 1
   second.
 - **PLY-058** Next and Previous shall behave as section 5.4 defines.
-- **PLY-059** The sidebar shall show elapsed time, remaining time, and a progress bar that updates
-  at least once per second while playing.
+- **PLY-059** The sidebar shall show elapsed time, the length of the video, and a progress bar that
+  updates at least once per second while playing.
 - **PLY-060** The user shall be able to seek by clicking or dragging the progress bar, and with the
   keyboard (arrow keys move by 5 seconds when the bar has focus). Seeking shall not change what is
   Now Playing.
@@ -379,10 +379,10 @@ tab), **playback controls**, **playback options** (the Playback options panel), 
 **Player tab**
 
 - **PLY-115** The Player tab shall show: the Now Playing thumbnail, title, channel, and "views ·
-  published"; elapsed time, remaining time, and progress (or the Ad, Live, and Buffering states);
-  previous, play/pause, next; volume and mute; the Audio only switch; a Save control for the Now
-  Playing video; Go to video; the Playback options panel (which includes Stop), with its active
-  chips; and Up next.
+  published"; elapsed time, the length of the video, and progress (or the Ad, Live, and Buffering
+  states); previous, play/pause, next; volume and mute; the Audio only switch; a Save control for
+  the Now Playing video; Go to video; the Playback options panel (which includes Stop), with its
+  active chips; and Up next.
 - **PLY-116** Up next shall show up to 3 waiting videos from the Queue (fewer when the panel is
   short), each with thumbnail, title, channel, and duration, with a link to the Queue tab.
 - **PLY-117** Tapping a video in Up next shall play it, as tapping a Queue row does (see QUE-043).
@@ -1709,4 +1709,4 @@ Storage is full and the user changes the accent → the user is told; the accent
 | 2026-10-08 | Version 1.1. Split bundled bullets so each requirement states one rule. Turned duplicated rules into one-line references by ID: added shared rules to Global Rules (failed saves, data stays on the device, several windows, Undo, independence) and pointed the Player, Queue, Playlists and Settings sections at them; replaced the restated rules in every Invariants list with references; replaced repeated image, cover, Stop, Add all, Save, width and autoplay rules with references. Unified the custom image formats (JPEG, PNG or WebP). Requirement IDs were reassigned in this pass, before any external use, and are frozen from this version. |
 | 2026-10-08 | Made the Save bandwidth wording match its Should priority: the Purpose now says the extension asks YouTube for the lowest available quality where it can, to reduce bandwidth, and the Settings description now says "Asks YouTube for the lowest video quality while you listen." Neither promises a result until the technical spike confirms it. |
 | 2026-10-09 | Version 1.2. Aligned with prototype v5 and v6. Cover: v1 has one fixed plain cover; the cover options, custom image rules and quick switch moved to Future Scope. Loop now has three modes (Off, One, Queue) and the mode stays until the user changes it; repeating the whole Queue is no longer out of scope. The default playlist starts as "Listen later". Panel width is 420 px by default, range 320 to 600 px. The panel mini-player gains Previous. Up next shows up to 3 videos and its empty hint says what happens next. "More panel" is now "Playback options". The autoplay setting lives only in Playback options (removed from Settings), with a shorter description. Settings: Playback section removed, Save bandwidth moved under Audio-only, Skip sponsor segments, Show chapters, Density, Default speed, Default volume, and Export and Import settings moved to Future Scope, accent options are Red, Orange, Teal and Custom with Red as the default. Added Alt + ↑ / ↓ keyboard reordering (Should). Future Scope bullets now have IDs (FS). New IDs: FS-001 to FS-055, PLS-151, PLY-141 to PLY-151, QUE-137 to QUE-138. Retired IDs, never reused: PLY-023 to PLY-035, PLY-086, SET-006, SET-014 to SET-022, SET-025 to SET-028, SET-065 to SET-066; retired examples: SET-EX-C, SET-EX-D, SET-EX-G. |
-
+| 2026-10-11 | Version 1.3. `PLY-059` and `PLY-115`: the second time shown with the elapsed time is the length of the video, not the time remaining. No IDs added, retired or renumbered. |

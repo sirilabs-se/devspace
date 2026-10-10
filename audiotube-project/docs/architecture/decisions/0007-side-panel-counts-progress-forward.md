@@ -9,7 +9,7 @@
 
 ## Context
 
-The side panel must show elapsed time, remaining time and a progress bar that update at least once a second while playing (`PLY-059`). Today the playback tab reports its position every 5 seconds and on every state change, and the background stores it (ADR 0003). Reporting and storing the position every second instead would wake the service worker and write storage once a second for as long as anything plays. A hidden YouTube tab's timers are also slowed down by Chrome, so a once-a-second report from the page would not arrive once a second anyway.
+The side panel must show elapsed time, the length of the video and a progress bar that update at least once a second while playing (`PLY-059`). Today the playback tab reports its position every 5 seconds and on every state change, and the background stores it (ADR 0003). Reporting and storing the position every second instead would wake the service worker and write storage once a second for as long as anything plays. A hidden YouTube tab's timers are also slowed down by Chrome, so a once-a-second report from the page would not arrive once a second anyway.
 
 ## Decision
 
