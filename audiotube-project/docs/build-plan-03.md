@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft |
+| **Status** | Tasks 15 to 21 done |
 | **Last updated** | 2026-10-10 |
 | **Design** | [Requirements](audiotube_requirements.md), [System design](architecture.md), [Decisions](architecture/decisions/README.md), [Stored data](architecture/storage.dbml) |
 | **Earlier phases** | [build-plan-01.md](build-plan-01.md): audio-only mode, tasks 1 to 7 · [build-plan-02.md](build-plan-02.md): the rest of the overlay, tasks 8 to 14 |
@@ -44,7 +44,7 @@ These apply to this phase only and do not change the requirements document.
 | 18 | One playback tab across all windows | GLB-001, PLY-039, PLY-040, PLY-045 | 17 | Done |
 | 19 | Now Playing in the side panel | PLY-036, PLY-051, PLY-055, PLY-056, PLY-057, PLY-115, PLY-119 | 17 | Done |
 | 20 | Playback tab lost, and Resume | PLY-049, PLY-050, PLY-052, PLY-053, PLY-054 | 18, 19 | Done |
-| 21 | Moving around in the playback tab | PLY-044, PLY-045 | 18 | In progress |
+| 21 | Moving around in the playback tab | PLY-044, PLY-045 | 18 | Done |
 
 Statuses: **To do**, **In progress**, **Done**, **Blocked** (say why in the task's notes).
 
@@ -296,6 +296,17 @@ Task 15 comes first, then the spike. Tasks 18 and 19 can be done in either order
 
 **Done when:**
 
-- [ ] On the test page: playing, then an in-page move to the home page → still the playback tab, same Now Playing, still playing, mini-player covered
-- [ ] Opening another video in the same tab replaces Now Playing
-- [ ] Manual check on real YouTube passes
+- [x] On the test page: playing, then an in-page move to the home page → still the playback tab, same Now Playing, still playing, mini-player covered
+- [x] Opening another video in the same tab replaces Now Playing
+- [x] Manual check on real YouTube passes
+
+**Notes:**
+
+- What the spike and a second look on real YouTube showed: leaving a watch page by a normal link (logo, search) **stops the video** (state 5, player 0 × 0), and a stopped hidden player cannot be started again from there (`loadVideoById` left it at state -1). The mini-player appears only when the user asks for it, and then the same player element moves into it and keeps playing.
+- So the extension follows the user's own choice. In the mini-player (opened with `I` or the button): the playback tab, Now Playing and the sound stay, and the mini-player stays covered (task 13). Without it: the page script sees the main player missing for 1.5 seconds and reports `player/gone` with the last position (never an ad's); the background saves it, forgets the playback tab and keeps Now Playing, so the side panel shows it paused with Resume (task 20). The gap before it counts is there because the mini-player opens with a moment where the player is 0 × 0.
+- This is how `PLY-044` is met and where it is not: audio keeps playing in the mini-player **only if the user opens it**; the extension does not try to force it (the one try, asking for it on `yt-navigate-start`, did nothing). Worth recording against the requirement.
+- Opening another video in the same tab replaces Now Playing and the tab stays the playback tab, also after the look that follows a page load (covered by browser tests, because YouTube's own in-page moves raise a "loading" update; see task 20's notes).
+- A reload of the YouTube page keeps the tab as the playback tab; it reports again and the state goes to paused while it loads.
+- Test page: the fake player keeps its video when the URL leaves the watch page, as YouTube's does. Browser tests: mini-player move (same tab, same Now Playing, still playing, still covered), leaving with no mini-player (tab forgotten, position kept), another video, and a reload.
+- Real YouTube (headless, signed out): `I` key → tab, Now Playing and playing state kept, overlay inside the mini-player; another video via `loadVideoById` replaced Now Playing; leaving by the logo link → playback tab gone within the wait, Now Playing kept, panel showing "Paused at 4:18" with Resume.
+

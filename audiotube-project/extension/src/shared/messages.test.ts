@@ -15,6 +15,7 @@ describe('isPlayerReport', () => {
 		expect(isPlayerReport(video)).toBe(true);
 		expect(isPlayerReport({ type: 'player/state', state: 'playing', positionSec: 3 })).toBe(true);
 		expect(isPlayerReport({ type: 'player/position', positionSec: 8 })).toBe(true);
+		expect(isPlayerReport({ type: 'player/gone', positionSec: 8 })).toBe(true);
 		expect(isPlayerReport({ ...video, durationSec: null, isLive: true })).toBe(true);
 	});
 

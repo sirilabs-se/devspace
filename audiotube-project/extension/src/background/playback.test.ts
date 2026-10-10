@@ -344,6 +344,22 @@ describe('losing the playback tab', () => {
 	});
 });
 
+describe('the main player going away', () => {
+	it('saves the last position and forgets the playback tab, keeping Now Playing', async () => {
+		await playing();
+		await handlePlayerReport({ type: 'player/gone', positionSec: 800 }, TAB_A, NOW + 9000);
+		expect(session.has('playbackTab')).toBe(false);
+		expect(local.get('nowPlaying')).toMatchObject({ videoId: 'aqz-KE-bpKQ', positionSec: 800 });
+	});
+
+	it('ignores it from a tab that is not the playback tab', async () => {
+		await playing();
+		await handlePlayerReport({ type: 'player/gone', positionSec: 5 }, TAB_B, NOW + 9000);
+		expect(session.get('playbackTab')).toMatchObject({ tabId: 1 });
+		expect(local.get('nowPlaying')).toMatchObject({ positionSec: 750 });
+	});
+});
+
 describe('checkPlaybackTab', () => {
 	it('keeps a tab that is there', async () => {
 		await playing();

@@ -125,7 +125,10 @@
 					hd1080: 1080
 				};
 				player.getVideoData = () => {
-					const id = new URLSearchParams(location.search).get('v') || '';
+					// Like YouTube, the player keeps its video when the page moves off the watch URL.
+					const fromUrl = new URLSearchParams(location.search).get('v');
+					if (fromUrl) window.__lastVideoId = fromUrl;
+					const id = fromUrl || window.__lastVideoId || '';
 					return {
 						video_id: id,
 						title: window.__title ?? 'Test video ' + id,

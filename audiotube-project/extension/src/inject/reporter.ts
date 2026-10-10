@@ -1,6 +1,8 @@
 import type { PlayerReport, PlayerVideoDetails, PlayState } from '../shared';
 
 export const POSITION_EVERY_MS = 5000;
+/** How long the main player may be missing before it counts as gone; opening the mini-player has a gap. */
+export const GONE_AFTER_MS = 1500;
 
 /** What the player shows right now, already reduced to what is reported. */
 export interface PlayerSnapshot extends PlayerVideoDetails {
@@ -32,16 +34,26 @@ export function createReporter(deps: ReporterDeps) {
 	let videoKey: string | null = null;
 	let state: PlayState | null = null;
 	let positionSentAt = 0;
+	let lastPositionSec = 0;
+	let missingSince: number | null = null;
 
 	return {
 		check() {
 			const snapshot = deps.read();
+			const now = deps.now();
 			if (!snapshot) {
-				videoKey = null;
-				state = null;
+				if (videoKey === null) return;
+				missingSince ??= now;
+				if (now - missingSince >= GONE_AFTER_MS) {
+					deps.send({ type: 'player/gone', positionSec: lastPositionSec });
+					videoKey = null;
+					state = null;
+					missingSince = null;
+				}
 				return;
 			}
-			const now = deps.now();
+			missingSince = null;
+			if (!snapshot.adPlaying) lastPositionSec = snapshot.positionSec;
 			const key = JSON.stringify([
 				snapshot.videoId,
 				snapshot.title,

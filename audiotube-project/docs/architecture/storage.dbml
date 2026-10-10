@@ -39,7 +39,7 @@ Table overlay_status {
   Note: 'chrome.storage.session. Removed when the tab closes or loads a new page'
 }
 
-// ---------- Now Playing and the playback tab — Phase 3 ----------
+// ---------- Now Playing and the playback tab — built in phase 3 ----------
 
 Table now_playing {
   videoId varchar(11) [not null, note: 'Key: nowPlaying. Absent means idle']
@@ -61,6 +61,22 @@ Table playback_tab {
   Note: 'chrome.storage.session, so a browser restart clears it (PLY-054)'
 }
 
+Table pending_resume {
+  tabId integer [not null, note: 'Key: resume. Set when Resume opens a tab; removed when that tab plays or is lost']
+  startedAt bigint [not null, note: 'epoch ms. The panel says "waiting" if the tab has not started after 10 s']
+  Note: 'chrome.storage.session'
+}
+
+Table tab_video {
+  tab_id integer [pk, note: 'Part of the key: tabVideo:<tabId>']
+  videoId varchar(11) [not null]
+  title varchar [not null, note: 'As reported by the page; capped when copied into now_playing']
+  channel varchar [not null]
+  durationSec integer
+  isLive boolean [not null]
+  Note: 'chrome.storage.session. The last video a tab reported, so its details are there when it starts playing. Removed when the tab closes or is replaced'
+}
+
 // ---------- Outside chrome.storage — built ----------
 
 Table page_previous_quality {
@@ -76,5 +92,7 @@ TableGroup settings {
 TableGroup playback {
   now_playing
   playback_tab
+  pending_resume
+  tab_video
   overlay_status
 }

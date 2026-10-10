@@ -128,8 +128,10 @@ The background is the only writer of stored state ([ADR 0001](architecture/decis
 | Overlay status per tab | session | `overlayStatus:<tabId>` | background | side panel | Tab closes or loads a new page; browser restart |
 | Quality the user had before | YouTube's page storage | `audiotube.previousQuality` | page script | page script | Audio-only off |
 | Early CSS registration | Chrome's registered scripts | `audiotube-early-css` | background | Chrome | Audio-only off |
-| **Phase 3:** Now Playing | local | `nowPlaying` | background | side panel | Replaced by another video; the user stops (later phase) |
-| **Phase 3:** Playback tab | session | `playbackTab` | background | side panel | Tab lost; browser restart |
+| Now Playing | local | `nowPlaying` | background | side panel | Replaced by another video; the user stops (later phase) |
+| Playback tab | session | `playbackTab` | background | side panel | Tab lost; browser restart |
+| Pending Resume | session | `resume` | background | side panel | The resumed tab plays, or is lost; browser restart |
+| Last video seen in a tab | session | `tabVideo:<tabId>` | background | background | Tab closes or is replaced; browser restart |
 
 The quality the user had before is the one value kept outside `chrome.storage`. The page script owns it because only the page can read YouTube's own preference, and it must survive a page reload ([spike](spikes/save-bandwidth.md)).
 
@@ -207,11 +209,12 @@ The shared video record of `PLS-073` to `PLS-081` is not built in phase 3: Now P
 | `quality/set` | content → page | Request the lowest quality, or put the user's back | Built |
 | `quality/ready` | page → content | The page script has started; resend the mode | Built |
 | `player/toggle-playback` | content → page | Click on the overlay | Built |
-| `player/video` | page → content → background | The main player has a new video: ID, title, channel, duration, live | Phase 3 |
-| `player/state` | page → content → background | Playing, paused, buffering or ended, with the position | Phase 3 |
-| `player/position` | page → content → background | Position every 5 seconds while playing (`PLY-130`) | Phase 3 |
-| `player/command` | side panel → background | Play, pause, go to video, resume | Phase 3 |
-| `player/command` | background → content → page | Play or pause this tab's player | Phase 3 |
+| `player/video` | page → content → background | The main player has a new video: ID, title, channel, duration, live | Built (phase 3) |
+| `player/state` | page → content → background | Playing, paused, buffering or ended, with the position | Built (phase 3) |
+| `player/position` | page → content → background | Position every 5 seconds while playing (`PLY-130`) | Built (phase 3) |
+| `player/gone` | page → content → background | The main player has been missing for a moment (left the watch page, no mini-player), with the last position | Built (phase 3) |
+| `player/command` | side panel → background | Play, pause, go to video, resume, check (look at the playback tab). Accepted only from an extension page | Built (phase 3) |
+| `player/command` | background → content → page | Play or pause this tab's player | Built (phase 3) |
 
 ### Turning audio-only off (built)
 

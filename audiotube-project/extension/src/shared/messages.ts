@@ -56,6 +56,7 @@ export function isPlayerReport(message: unknown): message is PlayerReport {
 		case 'player/state':
 			return isPlayState(m.state) && isSeconds(m.positionSec);
 		case 'player/position':
+		case 'player/gone':
 			return isSeconds(m.positionSec);
 		default:
 			return false;

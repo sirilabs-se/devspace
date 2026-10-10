@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { PlayerReport } from '../shared';
-import { createReporter, playStateFromNumber, type PlayerSnapshot } from './reporter';
+import {
+	createReporter,
+	GONE_AFTER_MS,
+	playStateFromNumber,
+	type PlayerSnapshot
+} from './reporter';
 
 const base: PlayerSnapshot = {
 	videoId: 'aqz-KE-bpKQ',
@@ -122,15 +127,65 @@ describe('createReporter', () => {
 		expect(t.sent).toEqual([]);
 	});
 
-	it('forgets the video when the main player goes away, and reports it again when it returns', () => {
+	it('says the player is gone, with the last position, only after it has been missing a moment', () => {
+		const t = setup();
+		t.set({ state: 'playing', positionSec: 321 });
+		t.check();
+		t.sent.length = 0;
+		t.set(null);
+		t.check();
+		expect(t.sent).toEqual([]);
+		t.advance(GONE_AFTER_MS - 1);
+		t.check();
+		expect(t.sent).toEqual([]);
+		t.advance(2);
+		t.check();
+		expect(t.sent).toEqual([{ type: 'player/gone', positionSec: 321 }]);
+		t.check();
+		expect(t.sent).toHaveLength(1);
+	});
+
+	it('does not say gone when the player is back within the moment', () => {
+		const t = setup();
+		t.set({ state: 'playing', positionSec: 10 });
+		t.check();
+		t.sent.length = 0;
+		t.set(null);
+		t.check();
+		t.advance(800);
+		t.set(base);
+		t.set({ state: 'playing' });
+		t.check();
+		t.advance(2000);
+		t.check();
+		expect(t.sent.some((r) => r.type === 'player/gone')).toBe(false);
+	});
+
+	it('reports the video again when the main player returns after being gone', () => {
 		const t = setup();
 		t.check();
 		t.set(null);
+		t.check();
+		t.advance(GONE_AFTER_MS + 1);
 		t.check();
 		t.sent.length = 0;
 		t.set(base);
 		t.check();
 		expect(t.sent.map((r) => r.type)).toEqual(['player/video', 'player/state']);
+	});
+
+	it('does not use ad time as the last position', () => {
+		const t = setup();
+		t.set({ state: 'playing', positionSec: 100 });
+		t.check();
+		t.set({ positionSec: 4, adPlaying: true });
+		t.check();
+		t.sent.length = 0;
+		t.set(null);
+		t.check();
+		t.advance(GONE_AFTER_MS + 1);
+		t.check();
+		expect(t.sent).toEqual([{ type: 'player/gone', positionSec: 100 }]);
 	});
 
 	it('reports nothing with no player', () => {

@@ -27,7 +27,9 @@ export interface PlayerVideoDetails {
 export type PlayerReport =
 	| ({ type: 'player/video' } & PlayerVideoDetails)
 	| { type: 'player/state'; state: PlayState; positionSec: number }
-	| { type: 'player/position'; positionSec: number };
+	| { type: 'player/position'; positionSec: number }
+	/** The main player has been gone for a moment, for example after leaving the watch page without a mini-player. */
+	| { type: 'player/gone'; positionSec: number };
 
 /** Page script → content script. */
 export type PageToContent = { type: 'quality/ready' } | PlayerReport;

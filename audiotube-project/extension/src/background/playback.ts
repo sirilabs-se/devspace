@@ -111,6 +111,16 @@ async function apply(report: PlayerReport, tab: ReportingTab, now: number): Prom
 		return;
 	}
 
+	if (report.type === 'player/gone') {
+		// The player left the page (and no mini-player took it): the video has stopped, and this tab is not
+		// making the sound any more. Now Playing keeps its place for Resume.
+		if (isPlaybackTab) {
+			if (report.positionSec > 0) await savePosition(report.positionSec, now);
+			await loseTab(tab.tabId);
+		}
+		return;
+	}
+
 	// player/state
 	if (report.state === 'playing' && !isPlaybackTab) {
 		await takeOver(tab, report.positionSec, now);
