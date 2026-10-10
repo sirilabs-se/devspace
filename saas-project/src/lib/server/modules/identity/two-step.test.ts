@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '$lib/server/db';
+import { sendEmail } from '$lib/server/email';
 import {
 	createSignedInUser,
 	TestCookieJar,
@@ -17,6 +18,7 @@ import {
 	hasTwoStepChallenge,
 	isTwoStepOn,
 	regenerateBackupCodes,
+	sendTwoStepEmailCode,
 	startTwoStepSetup,
 	turnOffTwoStep
 } from './two-step';
@@ -195,6 +197,121 @@ describe('logging in with the second step on', () => {
 		expect(
 			await completeTwoStepLogin('app', '000000', fresh.headers(), fresh, oneAddress)
 		).toMatchObject({ status: 'rate_limited' });
+	});
+});
+
+describe('a code by email', () => {
+	const emailedCode = () => {
+		const message = vi
+			.mocked(sendEmail)
+			.mock.calls.map(([sent]) => sent)
+			.filter((sent) => sent.subject.includes('sign-in code'))
+			.at(-1);
+		return message?.text.match(/code is (\d{6})/)?.[1];
+	};
+
+	it('is emailed on request and signs the person in', async () => {
+		await turnOn();
+		const { fresh } = await passwordStep();
+		vi.mocked(sendEmail).mockClear();
+
+		expect(await sendTwoStepEmailCode(fresh.headers(), from())).toEqual({ status: 'sent' });
+		const code = emailedCode()!;
+		expect(code).toMatch(/^\d{6}$/);
+
+		expect(await completeTwoStepLogin('email', code, fresh.headers(), fresh, from())).toEqual({
+			status: 'signed_in'
+		});
+		expect(await getSessionUser(fresh.headers())).toMatchObject({ email });
+		const [event] = (
+			await db
+				.select()
+				.from(auditEvents)
+				.where(eq(auditEvents.action, 'login'))
+				.orderBy(auditEvents.id)
+		).slice(-1);
+		expect(event.details).toMatchObject({ secondStep: 'email_code' });
+		// The code is neither logged nor stored as sent.
+		expect(JSON.stringify(await db.select().from(auditEvents))).not.toContain(code);
+	});
+
+	it('refuses a wrong code', async () => {
+		await turnOn();
+		const { fresh } = await passwordStep();
+		await sendTwoStepEmailCode(fresh.headers(), from());
+		const wrong = emailedCode() === '000000' ? '111111' : '000000';
+
+		expect(await completeTwoStepLogin('email', wrong, fresh.headers(), fresh, from())).toEqual({
+			status: 'code_wrong'
+		});
+		expect(await getSessionUser(fresh.headers())).toBeNull();
+	});
+
+	it('is not sent to someone who has not passed the password step', async () => {
+		await turnOn();
+		vi.mocked(sendEmail).mockClear();
+
+		expect(await sendTwoStepEmailCode(new TestCookieJar().headers(), from())).toEqual({
+			status: 'no_challenge'
+		});
+		expect(sendEmail).not.toHaveBeenCalled();
+	});
+
+	it('can be asked for at most five times in 15 minutes from one network address', async () => {
+		await turnOn();
+		const { fresh } = await passwordStep();
+		const oneAddress = { ...testContext, ipAddress: '203.0.113.77' };
+
+		for (let attempt = 0; attempt < 5; attempt++) {
+			expect(await sendTwoStepEmailCode(fresh.headers(), oneAddress)).toEqual({ status: 'sent' });
+		}
+		expect(await sendTwoStepEmailCode(fresh.headers(), oneAddress)).toMatchObject({
+			status: 'rate_limited'
+		});
+	});
+});
+
+describe('trusting a device', () => {
+	it('remembers the browser for 30 days and then skips the second step there', async () => {
+		const started = await turnOn();
+		const { fresh } = await passwordStep();
+
+		await completeTwoStepLogin(
+			'app',
+			authenticatorCode(started.setupKey),
+			fresh.headers(),
+			fresh,
+			from(),
+			true
+		);
+
+		const trust = [...fresh.options].find(([name]) => name.includes('trust_device'))!;
+		expect(trust[1].maxAge).toBe(30 * 24 * 60 * 60);
+		expect(trust[1].httpOnly).toBe(true);
+
+		// The same browser, logging in again later with just the password.
+		expect(await logIn({ email, password }, fresh, from(), undefined, fresh.headers())).toEqual({
+			status: 'signed_in'
+		});
+		// Any other browser still owes a code.
+		expect((await passwordStep()).result).toEqual({ status: 'second_step' });
+	});
+
+	it('does not let a trusted browser in with a wrong password', async () => {
+		const started = await turnOn();
+		const { fresh } = await passwordStep();
+		await completeTwoStepLogin(
+			'app',
+			authenticatorCode(started.setupKey),
+			fresh.headers(),
+			fresh,
+			from(),
+			true
+		);
+
+		expect(
+			await logIn({ email, password: 'Wrong-Horse-42' }, fresh, from(), undefined, fresh.headers())
+		).toEqual({ status: 'invalid' });
 	});
 });
 

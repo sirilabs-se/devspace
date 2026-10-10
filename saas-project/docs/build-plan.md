@@ -55,7 +55,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 16 | Notification preferences | Identity | 8 | Blocked |
 | 17 | Passkeys | Identity | 4 | Done |
 | 18 | Authenticator app and backup codes | Identity | 4 | Done |
-| 19 | Email code and trusted devices | Identity | 18 | To do |
+| 19 | Email code and trusted devices | Identity | 18 | Done |
 | 20 | Active sessions | Identity | 4 | To do |
 | 21 | New-device alerts | Identity | 20 | To do |
 | 22 | Admin user search | Identity | 4 | To do |
@@ -826,11 +826,20 @@ Blocked: no notification types exist until another module defines one, so there 
 
 **Done when:**
 
-- [ ] A person chooses an email code, receives it and completes login
-- [ ] On a trusted device the second step is skipped for 30 days
-- [ ] Tests cover the above
+- [x] A person chooses an email code, receives it and completes login
+- [x] On a trusted device the second step is skipped for 30 days
+- [x] Tests cover the above
 
-**Notes:** —
+**Notes:**
+
+- An emailed code is offered to everyone who has the second step on, as "Email me a code" under "Other ways to verify". It is sent only on request, to someone who has just entered the right password.
+- The emailed code works for 10 minutes and can be requested 5 times per 15 minutes per network address. Both numbers are mine. Only a scrambled form of the code is stored.
+- The email warns that if the person didn't try to log in, someone else knows their password.
+- "Trust this device for 30 days" is a checkbox on the code page, for all three kinds of code. It uses the login library's own signed cookie, as the design intended, so no table was needed.
+- For a trusted device to be recognised, the password check now receives the browser's cookies. Only the cookies are passed on.
+- A trusted browser still needs the right password; trust only skips the code.
+- Turning the second step off clears the trusted-device mark, through the login library.
+- There is no page yet for seeing or revoking trusted devices one by one. Signing out everywhere does not clear them. Task 20 (active sessions) is the natural place to add that if wanted.
 
 ### 20. Active sessions
 

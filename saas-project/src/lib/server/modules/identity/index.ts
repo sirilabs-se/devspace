@@ -88,10 +88,12 @@ export {
 	hasTwoStepChallenge,
 	isTwoStepOn,
 	regenerateBackupCodes,
+	sendTwoStepEmailCode,
 	startTwoStepSetup,
 	turnOffTwoStep,
 	type CompleteTwoStepLoginResult,
-	type StartTwoStepSetupResult
+	type StartTwoStepSetupResult,
+	type TwoStepMethod
 } from './two-step';
 export type { UserId } from './user-id';
 export {

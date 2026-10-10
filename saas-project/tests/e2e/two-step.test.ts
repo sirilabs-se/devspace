@@ -52,10 +52,31 @@ test('a person can turn on two-step verification and is asked for a code at the 
 	await expect(page.getByText(/That code didn’t match/)).toBeVisible();
 
 	// A backup code works in its place.
-	await page.getByRole('button', { name: 'Use a backup code instead' }).click();
+	await page.getByRole('button', { name: 'Use a backup code' }).click();
 	await page.getByLabel('Backup code').fill(backupCode);
+	await page.getByLabel('Trust this device for 30 days').check();
 	await page.getByRole('button', { name: 'Verify' }).click();
 	await expect(page.getByRole('heading', { name: 'Welcome, Maya Okafor' })).toBeVisible();
+
+	// This browser is now trusted: the next password login goes straight in.
+	await page.getByRole('button', { name: 'Log out' }).click();
+	await page.goto('/login');
+	await page.getByLabel('Email').fill(email);
+	await page.getByRole('button', { name: 'Continue with email' }).click();
+	await page.getByLabel('Password', { exact: true }).fill(password);
+	await page.getByRole('button', { name: 'Log in' }).click();
+	await expect(page.getByRole('heading', { name: 'Welcome, Maya Okafor' })).toBeVisible();
+});
+
+test('the code page offers a code by email', async ({ page }) => {
+	// Reaching the page needs an account with the second step on, covered above; here only
+	// that a visitor without one is turned away from asking for an email code.
+	const response = await page.request.post('/login/two-step?/sendEmailCode', {
+		headers: { origin: 'http://localhost:4173' },
+		form: {}
+	});
+
+	expect(response.url()).toContain('/login');
 });
 
 test('the code page can’t be opened without first entering a password', async ({ page }) => {

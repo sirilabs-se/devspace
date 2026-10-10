@@ -9,7 +9,8 @@ const LIMITS = {
 	'password-reset-by-ip': { limit: 10, windowSeconds: 60 * 60 },
 	'password-reset-by-email': { limit: 3, windowSeconds: 60 * 60 },
 	'email-change-by-user': { limit: 3, windowSeconds: 60 * 60 },
-	'two-step-by-ip': { limit: 10, windowSeconds: 15 * 60 }
+	'two-step-by-ip': { limit: 10, windowSeconds: 15 * 60 },
+	'two-step-email-by-ip': { limit: 5, windowSeconds: 15 * 60 }
 } as const;
 
 export type RequestLimit = keyof typeof LIMITS;

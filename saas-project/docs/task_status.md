@@ -562,3 +562,35 @@ Passkeys need `localhost` or an HTTPS address; they won't work if you open the a
 **Left for later**
 
 - Email codes and "trust this device" are task 19.
+
+## Task 19: Email code and trusted devices
+
+**Status:** Done. `npm run verify` passes (325 logic tests, 26 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/two-step.ts`: `sendTwoStepEmailCode`, and `completeTwoStepLogin` now takes an emailed code and a "trust this device" choice.
+- `identity/auth.ts`: the emailed-code and trusted-device settings.
+- `identity/emails.ts`: the sign-in code email.
+- `identity/log-in.ts`: recognises a trusted device.
+- `src/routes/login/two-step/`: "Email me a code", "Trust this device for 30 days", and switching between the three kinds of code.
+- Tests beside each, and the two-step browser test now covers trusting a device.
+
+**Try it** (with two-step verification on, from task 18)
+
+1. Log out and log in with your password. On the code page press "Email me a code".
+2. Open http://localhost:8025, read the 6-digit code and enter it.
+3. Log out and log in again. This time tick "Trust this device for 30 days" before pressing Verify.
+4. Log out and log in once more in the same browser: your password is enough.
+5. Log in from a different browser, or a private window: you are asked for a code again.
+
+**Decisions**
+
+- Emailed codes last 10 minutes; 5 requests per 15 minutes per network address.
+- The trusted-device mark is the login library's signed cookie, with no extra table.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- A way to see and revoke trusted devices individually.

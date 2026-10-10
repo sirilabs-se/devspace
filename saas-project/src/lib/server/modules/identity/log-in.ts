@@ -35,12 +35,18 @@ const logInSchema = z.object({
 	rememberMe: z.boolean().default(false)
 });
 
-/** Signs a person in with their email and password. */
+/**
+ * Signs a person in with their email and password.
+ *
+ * @param requestHeaders the request's headers, so a browser marked as a trusted
+ *   device can be recognised and spared the second step
+ */
 export async function logIn(
 	input: unknown,
 	cookies: CookieJar,
 	context: RequestContext,
-	now: number = Date.now()
+	now: number = Date.now(),
+	requestHeaders?: Headers
 ): Promise<LogInResult> {
 	const network = await limitRequests('login-by-ip', context.ipAddress, now);
 	if (!network.allowed) {
@@ -64,6 +70,8 @@ export async function logIn(
 	let needsSecondStep: boolean;
 	try {
 		const { headers, response } = await getAuth().api.signInEmail({
+			// Only the cookies are passed on: that is where the trusted-device mark is kept.
+			headers: new Headers({ cookie: requestHeaders?.get('cookie') ?? '' }),
 			body: { email, password, rememberMe },
 			returnHeaders: true
 		});

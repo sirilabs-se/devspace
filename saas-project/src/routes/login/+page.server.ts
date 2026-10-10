@@ -60,7 +60,9 @@ export const actions: Actions = {
 		const result = await logIn(
 			{ email, password: form.get('password'), rememberMe: form.get('rememberMe') === 'on' },
 			cookies,
-			{ ipAddress: getClientAddress(), userAgent: request.headers.get('user-agent') }
+			{ ipAddress: getClientAddress(), userAgent: request.headers.get('user-agent') },
+			undefined,
+			request.headers
 		);
 
 		if (result.status === 'signed_in') redirect(303, safeNextPath(url.searchParams.get('next')));

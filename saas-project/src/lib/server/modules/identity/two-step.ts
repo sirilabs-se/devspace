@@ -169,31 +169,62 @@ export type CompleteTwoStepLoginResult =
 	| { status: 'code_wrong' | 'no_challenge' }
 	| { status: 'rate_limited'; retryAfterSeconds: number };
 
+export type TwoStepMethod = 'app' | 'email' | 'backup';
+
+/** Emails a code to someone part-way through a login, as another way to complete the second step. */
+export async function sendTwoStepEmailCode(
+	headers: Headers,
+	context: RequestContext
+): Promise<
+	{ status: 'sent' | 'no_challenge' } | { status: 'rate_limited'; retryAfterSeconds: number }
+> {
+	if (!hasTwoStepChallenge(headers)) return { status: 'no_challenge' };
+
+	const limit = await limitRequests('two-step-email-by-ip', context.ipAddress);
+	if (!limit.allowed) return { status: 'rate_limited', retryAfterSeconds: limit.retryAfterSeconds };
+
+	try {
+		await getAuth().api.sendTwoFactorOTP({ headers, body: {} });
+	} catch (error) {
+		// The wait for a code has run out.
+		if (error instanceof APIError) return { status: 'no_challenge' };
+		throw error;
+	}
+	return { status: 'sent' };
+}
+
 /**
  * Finishes a login that is waiting for its second step.
  *
- * @param method "app" for a 6-digit authenticator code, "backup" for a backup code
+ * @param method "app" for a 6-digit authenticator code, "email" for a code sent
+ *   by email, "backup" for a backup code
+ * @param trustDevice skip the second step on this browser for the next 30 days
  */
 export async function completeTwoStepLogin(
-	method: 'app' | 'backup',
+	method: TwoStepMethod,
 	code: unknown,
 	headers: Headers,
 	cookies: CookieJar,
-	context: RequestContext
+	context: RequestContext,
+	trustDevice: boolean = false
 ): Promise<CompleteTwoStepLoginResult> {
 	if (!hasTwoStepChallenge(headers)) return { status: 'no_challenge' };
 
 	const limit = await limitRequests('two-step-by-ip', context.ipAddress);
 	if (!limit.allowed) return { status: 'rate_limited', retryAfterSeconds: limit.retryAfterSeconds };
 
-	const cleaned = method === 'app' ? text(code).replace(/\s/g, '') : text(code).trim();
+	const cleaned = method === 'backup' ? text(code).trim() : text(code).replace(/\s/g, '');
+	const body = { code: cleaned, trustDevice };
 	let userId: UserId;
 	try {
 		const api = getAuth().api;
 		const result =
 			method === 'app'
-				? await api.verifyTOTP({ headers, body: { code: cleaned }, returnHeaders: true })
-				: await api.verifyBackupCode({ headers, body: { code: cleaned }, returnHeaders: true });
+				? await api.verifyTOTP({ headers, body, returnHeaders: true })
+				: method === 'email'
+					? await api.verifyTwoFactorOTP({ headers, body, returnHeaders: true })
+					: await api.verifyBackupCode({ headers, body, returnHeaders: true });
+		// The session cookie, and the "trusted device" cookie if that was asked for.
 		applySessionCookies(result.headers, cookies);
 		userId = toUserId(result.response.user.id);
 	} catch (error) {
@@ -202,9 +233,10 @@ export async function completeTwoStepLogin(
 		return { status: 'code_wrong' };
 	}
 
+	const secondStep = { app: 'authenticator', email: 'email_code', backup: 'backup_code' }[method];
 	await recordAuditEvent(userId, 'login', userId, {
 		...context,
-		details: { method: 'password', secondStep: method === 'app' ? 'authenticator' : 'backup_code' }
+		details: { method: 'password', secondStep, trustedDevice: trustDevice }
 	});
 	return { status: 'signed_in' };
 }

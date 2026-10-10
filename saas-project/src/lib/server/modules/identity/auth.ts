@@ -10,6 +10,7 @@ import { cancelPendingDeletion } from './deletion-cancel';
 import {
 	sendEmailChangeVerificationEmail,
 	sendPasswordResetEmail,
+	sendTwoStepCodeEmail,
 	sendVerificationEmail
 } from './emails';
 import { linkTokenPayload } from './link-token';
@@ -19,6 +20,9 @@ import { toUserId } from './user-id';
 import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH, usernameFormatProblem } from './username';
 
 const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+
+/** A second-step code sent by email works for this many minutes. */
+export const TWO_STEP_EMAIL_CODE_MINUTES = 10;
 
 /** Password reset links work for one hour. */
 export const RESET_LINK_SECONDS = 60 * 60;
@@ -162,7 +166,19 @@ function createAuth() {
 		},
 		plugins: [
 			// The optional second step after a password login.
-			twoFactor({ issuer: 'SaaS' }),
+			twoFactor({
+				issuer: 'SaaS',
+				otpOptions: {
+					// A code by email, as another way to complete the second step.
+					period: TWO_STEP_EMAIL_CODE_MINUTES,
+					storeOTP: 'hashed',
+					sendOTP: async ({ user, otp }) => {
+						await sendTwoStepCodeEmail(user.email, otp, TWO_STEP_EMAIL_CODE_MINUTES);
+					}
+				},
+				// "Trust this device" skips the second step on that browser for 30 days.
+				trustDeviceMaxAge: 30 * ONE_DAY_IN_SECONDS
+			}),
 			passkey({
 				rpID: new URL(appOrigin()).hostname,
 				rpName: 'SaaS',

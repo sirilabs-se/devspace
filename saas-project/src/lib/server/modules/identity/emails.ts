@@ -160,3 +160,21 @@ export async function sendAccountDeletedEmail(to: string): Promise<void> {
 		].join('\n')
 	});
 }
+
+export async function sendTwoStepCodeEmail(
+	to: string,
+	code: string,
+	minutes: number
+): Promise<void> {
+	await sendEmail({
+		to,
+		subject: `Your ${APP_NAME} sign-in code`,
+		text: [
+			`Your sign-in code is ${code}`,
+			'',
+			`Enter it to finish logging in. It works for ${minutes} minutes.`,
+			'',
+			"If you didn't try to log in, someone else knows your password. Change it now."
+		].join('\n')
+	});
+}
