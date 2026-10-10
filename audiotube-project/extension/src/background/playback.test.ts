@@ -418,6 +418,15 @@ describe('resumePlayback', () => {
 		});
 	});
 
+	it('opens a live stream without a start time', async () => {
+		local.set('nowPlaying', { ...stored, isLive: true, durationSec: null, positionSec: 5000 });
+		expect(await resumePlayback(NOW + 5000)).toBe('ok');
+		expect(tabsCreate).toHaveBeenCalledWith({
+			url: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
+			active: false
+		});
+	});
+
 	it('records the new tab as the playback tab at once, paused, and not discardable', async () => {
 		local.set('nowPlaying', stored);
 		await resumePlayback(NOW + 5000);

@@ -41,3 +41,4 @@ Fixing typos or broken links in an old ADR is fine.
 | [0004](0004-reach-youtube-player-through-the-page-script.md) | Reach YouTube's player only through the page script | Content, page script | Accepted | 2026-10-10 |
 | [0005](0005-latest-tab-to-play-is-the-playback-tab.md) | The latest tab to start playing is the playback tab | System | Accepted | 2026-10-10 |
 | [0006](0006-overlay-on-every-youtube-tab.md) | The overlay covers every YouTube tab, not only the playback tab | Content | Accepted | 2026-10-10 |
+| [0007](0007-side-panel-counts-progress-forward.md) | The side panel counts progress forward between reports | Side panel, background, page script | Proposed | 2026-10-11 |

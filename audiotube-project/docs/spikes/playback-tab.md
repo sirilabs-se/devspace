@@ -96,3 +96,14 @@ user leaves a watch page by a normal link; it only does so through the mini-play
   (`chrome://discards` can discard a tab on demand to test the recovery path).
 - Whether YouTube's mini-player appears on its own when leaving a watch page in a signed-in browser.
 - A Short's player id, to confirm it is not `#movie_player`.
+
+## Results of the manual checks (normal, headed Chrome)
+
+To be filled in by the owner, one line each, with the date and Chrome version. Until then they are open.
+
+| Check | How | Result |
+|---|---|---|
+| A Resume tab opened in the background really starts playing | Play a video, close its tab, press Resume in the side panel, and watch whether the new tab (not shown) starts playing and how long it takes | _not yet done_ |
+| Disabling the extension with audio-only on leaves the video visible | With a watch page open and audio-only on, disable the extension in `chrome://extensions` and look at the open page | _not yet done_ |
+| Discarding the playback tab shows Resume | Play a video, open `chrome://discards`, discard the playing tab, look at the side panel | _not yet done_ |
+| Whether YouTube's mini-player appears by itself when signed in | Signed in, play a video, leave the watch page by a normal link (logo or search) and see whether it keeps playing in the mini-player | _not yet done_ |

@@ -216,7 +216,9 @@ export function resumePlayback(
 			outcome = 'ok';
 			return;
 		}
-		const url = `https://www.youtube.com/watch?v=${nowPlaying.videoId}&t=${nowPlaying.positionSec}s`;
+		// A live stream has no position to return to.
+		const start = nowPlaying.isLive ? '' : `&t=${nowPlaying.positionSec}s`;
+		const url = `https://www.youtube.com/watch?v=${nowPlaying.videoId}${start}`;
 		const tab = await chrome.tabs.create({ url, active: false });
 		if (tab.id === undefined) return;
 		const playbackTab: PlaybackTab = {

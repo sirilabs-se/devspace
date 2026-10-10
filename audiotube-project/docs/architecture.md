@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Status** | Draft |
-| **Last updated** | 2026-10-10 |
+| **Last updated** | 2026-10-11 |
 | **Owner** | SiriLabs |
-| **Covers** | What is built (phases 1 and 2) and what phase 3 adds (marked **Phase 3**) |
+| **Covers** | What is built (phases 1 to 3) and what phase 4 adds (marked **Phase 4**) |
 
 ## How to Read the Rules
 
@@ -39,7 +39,7 @@ The functional requirements are in [`audiotube_requirements.md`](audiotube_requi
 
 ## Out of Scope (for now)
 
-The requirements' Non-Goals (section 9) and Future Scope (section 10) are out of scope. In addition, until their phase starts: the Queue, Previous record and Playlists (sections 5 and 6), Settings (section 7), the Playback options panel, ads, failures and system media controls (sections 4.6 to 4.10).
+The requirements' Non-Goals (section 9) and Future Scope (section 10) are out of scope. In addition, until their phase starts: the Queue, Previous record and Playlists (sections 5 and 6), Settings (section 7), the Playback options panel (4.6), ads (4.7, being reviewed; only the `GLB-005` rule applies), failures (4.8), the panel mini-player and system media controls (4.9). Phase 4 builds the playback controls of section 4.5 that don't need the Queue, and remembering the volume (`PLY-063`).
 
 ## Prototype
 
@@ -129,9 +129,10 @@ The background is the only writer of stored state ([ADR 0001](architecture/decis
 | Quality the user had before | YouTube's page storage | `audiotube.previousQuality` | page script | page script | Audio-only off |
 | Early CSS registration | Chrome's registered scripts | `audiotube-early-css` | background | Chrome | Audio-only off |
 | Now Playing | local | `nowPlaying` | background | side panel | Replaced by another video; the user stops (later phase) |
-| Playback tab | session | `playbackTab` | background | side panel | Tab lost; browser restart |
+| Playback tab | session | `playbackTab` | background | side panel | Tab lost; browser restart. From phase 4 it also holds the position and rate at its last state change, which the side panel counts forward from ([ADR 0007](architecture/decisions/0007-side-panel-counts-progress-forward.md)) |
 | Pending Resume | session | `resume` | background | side panel | The resumed tab plays, or is lost; browser restart |
 | Last video seen in a tab | session | `tabVideo:<tabId>` | background | background | Tab closes or is replaced; browser restart |
+| **Phase 4:** Volume and mute | local | `volume` | background | side panel | Changed by the user, in the side panel or on YouTube (`PLY-063`) |
 
 The quality the user had before is the one value kept outside `chrome.storage`. The page script owns it because only the page can read YouTube's own preference, and it must survive a page reload ([spike](spikes/save-bandwidth.md)).
 
@@ -166,6 +167,12 @@ erDiagram
         int windowId
         string state "playing, paused, buffering, ended"
         int stateAt "epoch ms"
+        float positionSec "phase 4"
+        float rate "phase 4"
+    }
+    VOLUME {
+        int level "0 to 100, phase 4"
+        boolean muted
     }
     OVERLAY_STATUS {
         int tabId "part of the key"
@@ -215,6 +222,9 @@ The shared video record of `PLS-073` to `PLS-081` is not built in phase 3: Now P
 | `player/gone` | page → content → background | The main player has been missing for a moment (left the watch page, no mini-player), with the last position | Built (phase 3) |
 | `player/command` | side panel → background | Play, pause, go to video, resume, check (look at the playback tab). Accepted only from an extension page | Built (phase 3) |
 | `player/command` | background → content → page | Play or pause this tab's player | Built (phase 3) |
+| `player/state` (rate) | page → content → background | Also carries the playback rate, and is sent on a seek and a rate change too ([ADR 0007](architecture/decisions/0007-side-panel-counts-progress-forward.md)) | Phase 4 |
+| `player/volume` | page → content → background | The main player's volume or mute changed | Phase 4 |
+| `player/command` seek, set-volume | side panel → background → content → page | Seek to a position; set the volume or mute. A seek is ignored while an ad is showing (`GLB-005`) | Phase 4 |
 
 ### Turning audio-only off (built)
 
@@ -288,7 +298,7 @@ How a tab opened in the background starts playing is not yet proven; Chrome may 
 | Replaceable design | Side panel look lives only in `sidepanel/ui/` and `theme.css`; see [ADR 0002](architecture/decisions/0002-keep-the-side-panel-design-replaceable.md) | MUST | Lint, review |
 | Content on YouTube's pages | Everything the extension adds to YouTube's page lives in a shadow root or is scoped to the extension's own elements and attributes, so YouTube's styles can't reach it and it can't break YouTube's | MUST | Review |
 | YouTube's player | Only the page script calls YouTube's player object ([ADR 0004](architecture/decisions/0004-reach-youtube-player-through-the-page-script.md)) | MUST | Lint |
-| Ads | The extension never skips, mutes, speeds up or blocks an ad (`GLB-005`) | MUST | Review |
+| Ads | The extension never skips, mutes, speeds up or blocks an ad (`GLB-005`). Until section 4.7 is built, the page script ignores a seek while `#movie_player` has the class `ad-showing` | MUST | Review, test |
 | Errors | Domain errors use typed error codes; the side panel turns them into readable messages | SHOULD | — |
 | Text from YouTube | Shown with `textContent` or Svelte's default escaping, never as HTML | MUST | Review |
 | No AI attribution | Nowhere in the repository | MUST | Git hook, review |
@@ -356,7 +366,8 @@ Phase 3 stores a few hundred bytes. When the Queue and Playlists arrive, the ful
 ## Open Questions
 
 - [x] Overlay on every YouTube tab, or only the playback tab? Decided: every tab ([ADR 0006](architecture/decisions/0006-overlay-on-every-youtube-tab.md), accepted in phase 3, task 18).
-- [ ] Can a tab opened in the background start playing without being shown? Answered by phase 3's spike; decides how Resume works.
+- [ ] Can a tab opened in the background start playing without being shown? Phase 3's spike says yes in its environment, and Resume is built that way; it still needs a manual check in a normal, headed Chrome.
+- [ ] `PLY-044` can't be met as written: YouTube stops the video when the user leaves a watch page by a normal link, and keeps it going only if the user opens the mini-player. Reword when the requirements are revised.
 - [ ] How video records are stored once the Queue and Playlists exist (`PLS-073` to `PLS-081`), and the worst-case storage size.
 - [ ] YouTube saves the quality request as the user's own setting. If the extension is removed while audio-only is on, the user's YouTube stays at the lowest quality. Accept, or warn somewhere (Settings, About)?
 - [ ] Chrome Web Store release: listing, privacy policy (`OQ-006`), permission justifications.
