@@ -1,5 +1,6 @@
 import {
 	isPlayerReport,
+	isTabCommand,
 	onMessageToContent,
 	readSettings,
 	reportOverlayStatus,
@@ -44,6 +45,14 @@ if (!scope[GUARD]) {
 		if (!response.ok && !isExtensionAlive()) shutdown();
 		return response.ok;
 	};
+
+	// A command from the background is for this tab's player; only the extension itself may send one.
+	const onCommand = (message: unknown, sender: chrome.runtime.MessageSender) => {
+		if (sender.id !== chrome.runtime.id || sender.tab !== undefined) return;
+		if (isTabCommand(message)) sendToPage({ type: 'player/command', command: message.command });
+	};
+	chrome.runtime.onMessage.addListener(onCommand);
+	stops.push(() => chrome.runtime.onMessage.removeListener(onCommand));
 
 	// What the page script says about the player is checked before it goes on; the page can forge messages.
 	stops.push(

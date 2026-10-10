@@ -1,4 +1,4 @@
-import type { PlayerReport } from './page-messages';
+import type { PlayCommand, PlayerReport } from './page-messages';
 import type { OverlayStatus } from './storage/overlay-status';
 import { isVideoId } from './storage/now-playing';
 import { isPlayState } from './storage/playback-tab';
@@ -85,4 +85,16 @@ export async function requestSetAudioOnly(value: boolean): Promise<SetAudioOnlyR
 	} catch {
 		return { ok: false, error: 'background-unavailable' };
 	}
+}
+
+/** Background → one tab's content script: do this to the tab's player. */
+export interface TabCommand {
+	type: 'player/command';
+	command: PlayCommand;
+}
+
+export function isTabCommand(message: unknown): message is TabCommand {
+	if (typeof message !== 'object' || message === null) return false;
+	const { type, command } = message as { type?: unknown; command?: unknown };
+	return type === 'player/command' && (command === 'play' || command === 'pause');
 }

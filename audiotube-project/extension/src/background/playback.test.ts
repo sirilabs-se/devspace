@@ -6,6 +6,7 @@ type Store = Map<string, unknown>;
 let local: Store;
 let session: Store;
 const update = vi.fn();
+const sendMessage = vi.fn();
 let onRemoved: (tabId: number) => void;
 let onUpdated: (tabId: number, info: { status?: string }) => void;
 
@@ -23,10 +24,12 @@ beforeEach(() => {
 	local = new Map();
 	session = new Map();
 	update.mockReset().mockResolvedValue({});
+	sendMessage.mockReset().mockResolvedValue(undefined);
 	vi.stubGlobal('chrome', {
 		storage: { local: area(local), session: area(session) },
 		tabs: {
 			update,
+			sendMessage,
 			onRemoved: { addListener: (l: typeof onRemoved) => (onRemoved = l) },
 			onUpdated: { addListener: (l: typeof onUpdated) => (onUpdated = l) }
 		}
@@ -161,6 +164,53 @@ describe('handlePlayerReport', () => {
 			positionSec: 20,
 			updatedAt: NOW
 		});
+	});
+
+	it('pauses the old playback tab, never closes it, and moves the discard mark', async () => {
+		await handlePlayerReport(video(), TAB_A, NOW);
+		await handlePlayerReport(state('playing', 30), TAB_A, NOW);
+		await handlePlayerReport(
+			video({ videoId: 'jNQXAC9IVRw', title: 'Me at the zoo' }),
+			TAB_B,
+			NOW + 1000
+		);
+		await handlePlayerReport(state('playing', 2), TAB_B, NOW + 2000);
+
+		expect(session.get('playbackTab')).toMatchObject({ tabId: 2, windowId: 11, state: 'playing' });
+		expect(local.get('nowPlaying')).toMatchObject({ videoId: 'jNQXAC9IVRw', positionSec: 2 });
+		expect(sendMessage).toHaveBeenCalledTimes(1);
+		expect(sendMessage).toHaveBeenCalledWith(1, { type: 'player/command', command: 'pause' });
+		expect(update).toHaveBeenCalledWith(1, { autoDiscardable: true });
+		expect(update).toHaveBeenCalledWith(2, { autoDiscardable: false });
+	});
+
+	it('does not pause the same tab when it reports playing again', async () => {
+		await handlePlayerReport(video(), TAB_A, NOW);
+		await handlePlayerReport(state('playing', 1), TAB_A, NOW);
+		await handlePlayerReport(state('paused', 4), TAB_A, NOW + 1000);
+		await handlePlayerReport(state('playing', 4), TAB_A, NOW + 2000);
+		expect(sendMessage).not.toHaveBeenCalled();
+	});
+
+	it('does not let a tab that only loads or pauses a video take over', async () => {
+		await handlePlayerReport(video(), TAB_A, NOW);
+		await handlePlayerReport(state('playing', 30), TAB_A, NOW);
+		await handlePlayerReport(video({ videoId: 'jNQXAC9IVRw' }), TAB_B, NOW + 1000);
+		await handlePlayerReport(state('paused', 0), TAB_B, NOW + 1500);
+		await handlePlayerReport(state('buffering', 0), TAB_B, NOW + 1600);
+		await handlePlayerReport(position(5), TAB_B, NOW + 1700);
+		expect(session.get('playbackTab')).toMatchObject({ tabId: 1 });
+		expect(local.get('nowPlaying')).toMatchObject({ videoId: 'aqz-KE-bpKQ' });
+		expect(sendMessage).not.toHaveBeenCalled();
+	});
+
+	it('carries on when the old tab cannot be reached', async () => {
+		sendMessage.mockRejectedValue(new Error('Could not establish connection'));
+		await handlePlayerReport(video(), TAB_A, NOW);
+		await handlePlayerReport(state('playing', 30), TAB_A, NOW);
+		await handlePlayerReport(video({ videoId: 'jNQXAC9IVRw' }), TAB_B, NOW + 1000);
+		await handlePlayerReport(state('playing', 0), TAB_B, NOW + 2000);
+		expect(session.get('playbackTab')).toMatchObject({ tabId: 2 });
 	});
 
 	it('applies reports one after another', async () => {

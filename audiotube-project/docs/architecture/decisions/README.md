@@ -39,5 +39,5 @@ Fixing typos or broken links in an old ADR is fine.
 | [0002](0002-keep-the-side-panel-design-replaceable.md) | Keep the side panel design replaceable | Side panel | Accepted | 2026-10-10 |
 | [0003](0003-state-lives-in-storage.md) | State lives in `chrome.storage`, never only in the service worker's memory | System | Accepted | 2026-10-10 |
 | [0004](0004-reach-youtube-player-through-the-page-script.md) | Reach YouTube's player only through the page script | Content, page script | Accepted | 2026-10-10 |
-| [0005](0005-latest-tab-to-play-is-the-playback-tab.md) | The latest tab to start playing is the playback tab | System | Proposed | 2026-10-10 |
-| [0006](0006-overlay-on-every-youtube-tab.md) | The overlay covers every YouTube tab, not only the playback tab | Content | Proposed | 2026-10-10 |
+| [0005](0005-latest-tab-to-play-is-the-playback-tab.md) | The latest tab to start playing is the playback tab | System | Accepted | 2026-10-10 |
+| [0006](0006-overlay-on-every-youtube-tab.md) | The overlay covers every YouTube tab, not only the playback tab | Content | Accepted | 2026-10-10 |

@@ -46,21 +46,23 @@ function sync(attempt = 0) {
 	}
 }
 
-/** Pauses a playing video and plays a paused one, as a click on YouTube's own picture does. */
-function togglePlayback() {
+/** Plays or pauses the player; `undefined` toggles, as a click on YouTube's own picture does. */
+function setPlayback(wantPlaying?: boolean) {
 	const player = document.querySelector(PLAYER_SELECTOR) as unknown as YouTubePlayer | null;
 	try {
 		if (player?.getPlayerState && player.playVideo && player.pauseVideo) {
 			// 1 playing, 3 buffering: both are on their way to being heard.
 			const playing = [1, 3].includes(player.getPlayerState() as number);
-			if (playing) player.pauseVideo();
-			else player.playVideo();
+			const play = wantPlaying ?? !playing;
+			if (play && !playing) player.playVideo();
+			else if (!play && playing) player.pauseVideo();
 			return;
 		}
 		const video = document.querySelector<HTMLVideoElement>(`${PLAYER_SELECTOR} video`);
 		if (!video) return;
-		if (video.paused) void video.play().catch(() => {});
-		else video.pause();
+		const play = wantPlaying ?? video.paused;
+		if (play && video.paused) void video.play().catch(() => {});
+		else if (!play && !video.paused) video.pause();
 	} catch {
 		// The player is YouTube's to control; if it refuses, nothing else should break.
 	}
@@ -101,7 +103,9 @@ function readSnapshot(): PlayerSnapshot | null {
 const reporter = createReporter({ read: readSnapshot, send: sendToContent, now: () => Date.now() });
 
 const stopListening = onMessageToPage((message) => {
-	if (message.type === 'player/toggle-playback') return togglePlayback();
+	if (message.type === 'player/toggle-playback') return setPlayback();
+	if (message.type === 'player/command') return setPlayback(message.command === 'play');
+	if (message.type !== 'quality/set') return;
 	// The content script repeats the mode when this script starts; the same mode needs no second request.
 	if (message.mode === mode) return;
 	mode = message.mode;

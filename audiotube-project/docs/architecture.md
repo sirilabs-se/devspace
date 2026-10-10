@@ -267,7 +267,7 @@ How a tab opened in the background starts playing is not yet proven; Chrome may 
 
 | Behaviour | How |
 |---|---|
-| Overlay on every YouTube tab | The content script in each tab follows the saved audio-only value ([ADR 0006](architecture/decisions/0006-overlay-on-every-youtube-tab.md), proposed) |
+| Overlay on every YouTube tab | The content script in each tab follows the saved audio-only value ([ADR 0006](architecture/decisions/0006-overlay-on-every-youtube-tab.md)) |
 | No flash on load | The background registers `early.css` at `document_start` while audio-only is on; the content script's `data-audiotube-visible` flag on `<html>` lifts it |
 | Only the main player counts | The player is `#movie_player` on a watch page or inside `ytd-miniplayer`. Hover previews, Shorts and embeds are never covered or tracked |
 | Extension updated or reloaded | The background adds the scripts to open YouTube tabs; a new copy removes what an older copy left; an older copy cut off from the extension shuts itself down |
@@ -352,7 +352,7 @@ Phase 3 stores a few hundred bytes. When the Queue and Playlists arrive, the ful
 
 ## Open Questions
 
-- [ ] Overlay on every YouTube tab, or only the playback tab, once there is one? Proposed: every tab ([ADR 0006](architecture/decisions/0006-overlay-on-every-youtube-tab.md)). Needed by phase 3, task 18.
+- [x] Overlay on every YouTube tab, or only the playback tab? Decided: every tab ([ADR 0006](architecture/decisions/0006-overlay-on-every-youtube-tab.md), accepted in phase 3, task 18).
 - [ ] Can a tab opened in the background start playing without being shown? Answered by phase 3's spike; decides how Resume works.
 - [ ] How video records are stored once the Queue and Playlists exist (`PLS-073` to `PLS-081`), and the worst-case storage size.
 - [ ] YouTube saves the quality request as the user's own setting. If the extension is removed while audio-only is on, the user's YouTube stays at the lowest quality. Accept, or warn somewhere (Settings, About)?

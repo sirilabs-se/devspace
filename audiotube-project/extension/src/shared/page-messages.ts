@@ -4,9 +4,14 @@ const SOURCE = 'audiotube';
 
 export type QualityMode = 'lowest' | 'normal';
 
+/** What a tab's player can be told to do. */
+export type PlayCommand = 'play' | 'pause';
+
 /** Content script → page script. */
 export type ContentToPage =
-	{ type: 'quality/set'; mode: QualityMode } | { type: 'player/toggle-playback' };
+	| { type: 'quality/set'; mode: QualityMode }
+	| { type: 'player/toggle-playback' }
+	| { type: 'player/command'; command: PlayCommand };
 
 /** The details of the video in a player. */
 export interface PlayerVideoDetails {

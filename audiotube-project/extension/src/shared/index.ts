@@ -17,11 +17,13 @@ export {
 export {
 	isBackgroundRequest,
 	isPlayerReport,
+	isTabCommand,
 	reportPlayer,
 	reportOverlayStatus,
 	requestSetAudioOnly,
 	type BackgroundRequest,
 	type OverlayStatusReport,
+	type TabCommand,
 	type SetAudioOnlyRequest,
 	type SetAudioOnlyResponse,
 	type SettingsError
@@ -33,6 +35,7 @@ export {
 	sendToPage,
 	type ContentToPage,
 	type PageToContent,
+	type PlayCommand,
 	type PlayerReport,
 	type PlayerVideoDetails,
 	type QualityMode

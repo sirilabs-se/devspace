@@ -41,8 +41,8 @@ These apply to this phase only and do not change the requirements document.
 | 15 | Fixes from the phase 2 review, and the new architecture checks | GLB-009, ADR 0001, ADR 0004 | 14 | Done |
 | 16 | Spike: the playback tab | PLY-041, PLY-043, PLY-044, PLY-050, PLY-053, OQ-001 | 15 | Done |
 | 17 | Now Playing from YouTube's player | PLY-037, PLY-038, PLY-048, PLY-130 | 16 | Done |
-| 18 | One playback tab across all windows | GLB-001, PLY-039, PLY-040, PLY-045 | 17 | In progress |
-| 19 | Now Playing in the side panel | PLY-036, PLY-051, PLY-055, PLY-056, PLY-057, PLY-115, PLY-119 | 17 | To do |
+| 18 | One playback tab across all windows | GLB-001, PLY-039, PLY-040, PLY-045 | 17 | Done |
+| 19 | Now Playing in the side panel | PLY-036, PLY-051, PLY-055, PLY-056, PLY-057, PLY-115, PLY-119 | 17 | In progress |
 | 20 | Playback tab lost, and Resume | PLY-049, PLY-050, PLY-052, PLY-053, PLY-054 | 18, 19 | To do |
 | 21 | Moving around in the playback tab | PLY-044, PLY-045 | 18 | To do |
 
@@ -184,11 +184,21 @@ Task 15 comes first, then the spike. Tasks 18 and 19 can be done in either order
 
 **Done when:**
 
-- [ ] With two test tabs: A plays; B plays → A is paused, not closed; B is the playback tab and Now Playing
-- [ ] The same with A and B in different windows
-- [ ] Opening another video in the playback tab replaces Now Playing
-- [ ] A paused tab, or a tab that only loads a video without playing it, never takes over
-- [ ] Manual check on real YouTube passes
+- [x] With two test tabs: A plays; B plays → A is paused, not closed; B is the playback tab and Now Playing
+- [x] The same with A and B in different windows
+- [x] Opening another video in the playback tab replaces Now Playing
+- [x] A paused tab, or a tab that only loads a video without playing it, never takes over
+- [x] Manual check on real YouTube passes
+
+**Notes:**
+
+- When a tab other than the playback tab reports `playing` (and has reported its video), it becomes the playback tab and its video Now Playing; the background then sends `player/command (pause)` to the old playback tab with `chrome.tabs.sendMessage`, and moves the discard mark (`autoDiscardable: true` to the old tab, `false` to the new). The old tab is never closed, and a failed send (the tab is gone) does not stop the take-over.
+- The command goes background → that tab's content script → page script, which pauses through the player (or the `<video>` element if the methods are missing). The content script accepts a command only from the extension itself, never from another tab or the page, and the shared `isTabCommand` check allows only `play` and `pause`.
+- Opening a different video in the playback tab replaces Now Playing (done in task 17, now covered by a browser test too). A tab that only loads a video, or is paused or buffering, changes nothing (unit and browser tests).
+- Two windows: the browser test creates one with `chrome.windows.create`; its page is loaded again through the test route because the first request of an externally created window is not routed.
+- ADRs 0005 and 0006 are Accepted as written (overlay on every tab, as now), with the tab-lost rules and discard fact added in task 16. The system design's open question on this is closed.
+- Real YouTube (headless, signed out): A playing, then B playing in another tab → A paused (state 2) and still open, B the playback tab and Now Playing; then a third video in a second window → B paused, the playback tab's window id is the new window's.
+
 
 ### 19. Now Playing in the side panel
 

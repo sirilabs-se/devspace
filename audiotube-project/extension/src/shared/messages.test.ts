@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isBackgroundRequest, isPlayerReport } from './messages';
+import { isBackgroundRequest, isPlayerReport, isTabCommand } from './messages';
 
 const video = {
 	type: 'player/video',
@@ -42,5 +42,15 @@ describe('isBackgroundRequest', () => {
 		expect(isBackgroundRequest({ type: 'overlay/status', status: 'meh' })).toBe(false);
 		expect(isBackgroundRequest({ type: 'player/state', state: 'x', positionSec: 1 })).toBe(false);
 		expect(isBackgroundRequest('hello')).toBe(false);
+	});
+});
+
+describe('isTabCommand', () => {
+	it('accepts play and pause only', () => {
+		expect(isTabCommand({ type: 'player/command', command: 'pause' })).toBe(true);
+		expect(isTabCommand({ type: 'player/command', command: 'play' })).toBe(true);
+		expect(isTabCommand({ type: 'player/command', command: 'seek' })).toBe(false);
+		expect(isTabCommand({ type: 'player/other', command: 'pause' })).toBe(false);
+		expect(isTabCommand(null)).toBe(false);
 	});
 });

@@ -9,7 +9,8 @@ import {
 	type NowPlaying,
 	type PlayerReport,
 	type PlayerVideoDetails,
-	type PlaybackTab
+	type PlaybackTab,
+	type TabCommand
 } from '../shared';
 
 const TAB_VIDEO_PREFIX = 'tabVideo:';
@@ -117,6 +118,7 @@ async function takeOver(tab: ReportingTab, positionSec: number, now: number): Pr
 			? { ...current, positionSec: Math.floor(positionSec), positionSavedAt: now }
 			: toNowPlaying(video, positionSec, now);
 	await chrome.storage.local.set({ [NOW_PLAYING_KEY]: nowPlaying });
+	const previous = await readPlaybackTab();
 	const playbackTab: PlaybackTab = {
 		tabId: tab.tabId,
 		windowId: tab.windowId,
@@ -126,6 +128,13 @@ async function takeOver(tab: ReportingTab, positionSec: number, now: number): Pr
 	await chrome.storage.session.set({ [PLAYBACK_TAB_KEY]: playbackTab });
 	// Chrome must not discard the one tab that is making the sound (PLY-050).
 	await chrome.tabs.update(tab.tabId, { autoDiscardable: false }).catch(() => {});
+
+	// There is one playback tab (GLB-001): the old one is paused, never closed (PLY-040).
+	if (previous && previous.tabId !== tab.tabId) {
+		const pause: TabCommand = { type: 'player/command', command: 'pause' };
+		await chrome.tabs.sendMessage(previous.tabId, pause).catch(() => {});
+		await chrome.tabs.update(previous.tabId, { autoDiscardable: true }).catch(() => {});
+	}
 }
 
 /** A closed tab, and a tab loading a new page, no longer has a known video. */
