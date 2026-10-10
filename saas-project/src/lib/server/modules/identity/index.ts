@@ -26,6 +26,7 @@ export {
 	type SetFirstPasswordResult,
 	type UnlinkProviderResult
 } from './connections';
+export { recogniseDevice, type DeviceRecognition } from './device-recognition';
 export {
 	DELETION_GRACE_DAYS,
 	onUserDeleted,

@@ -132,6 +132,7 @@
 			icon: 'alert'
 		},
 		backup_codes_regenerated: { title: 'New backup codes made', icon: 'check' },
+		login_new_device: { title: 'Signed in from a new browser', icon: 'alert' },
 		session_ended: { title: 'Session ended from settings', icon: 'x' },
 		passkey_added: { title: 'Passkey added', icon: 'fingerprint' },
 		passkey_removed: { title: 'Passkey removed', icon: 'fingerprint' },

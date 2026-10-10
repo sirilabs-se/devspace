@@ -57,7 +57,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 18 | Authenticator app and backup codes | Identity | 4 | Done |
 | 19 | Email code and trusted devices | Identity | 18 | Done |
 | 20 | Active sessions | Identity | 4 | Done |
-| 21 | New-device alerts | Identity | 20 | To do |
+| 21 | New-device alerts | Identity | 20 | Done |
 | 22 | Admin user search | Identity | 4 | To do |
 | 23 | Suspend and reinstate | Identity | 22 | To do |
 | 24 | Impersonation | Identity | 22 | To do |
@@ -888,10 +888,18 @@ Blocked: no notification types exist until another module defines one, so there 
 
 **Done when:**
 
-- [ ] The first login from a new browser sends an alert email; later logins from it don't
-- [ ] Tests cover the above
+- [x] The first login from a new browser sends an alert email; later logins from it don't
+- [x] Tests cover the above
 
-**Notes:** How a device is recognised is not in the design docs; ask before building.
+**Notes:**
+
+- How a device is recognised, as the owner chose: a cookie per browser. It lists, in scrambled form, the accounts that have been used on that browser, and is signed so it can't be altered. It lasts a year and can't be read by the page's scripts. Nothing about devices is stored on the server, so no table was needed.
+- The check runs in one place, `hooks.server.ts`, on the first request from a signed-in person on a browser without their account's mark. That covers every way of signing in (password, second step, passkey, Google, Facebook) without each having its own code.
+- A brand-new account's first browser gets no alert: an account less than 15 minutes old is marked quietly. Without this, everyone would get an alert as they sign up.
+- The alert email gives the device in plain words, the network address and the time, and points to the security page to change the password and sign out everywhere. No location, as agreed.
+- The sign-in is also recorded in the audit log as "Signed in from a new browser", and shows in the person's security activity.
+- Clearing cookies, a private window or another browser on the same computer all count as a new device. That is the cost of this approach, as discussed.
+- A cookie that has been altered counts as an unknown browser, so it can't be forged to hide a sign-in.
 
 ### 22. Admin user search
 

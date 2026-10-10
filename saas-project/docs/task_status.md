@@ -625,3 +625,36 @@ Passkeys need `localhost` or an HTTPS address; they won't work if you open the a
 **Left for later**
 
 - Listing and revoking trusted devices.
+
+## Task 21: New-device alerts
+
+**Status:** Done. `npm run verify` passes (343 logic tests, 27 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/device-recognition.ts`: `recogniseDevice`.
+- `identity/emails.ts`: the "New sign-in" email.
+- `src/hooks.server.ts`: runs the check for each signed-in request.
+- `src/routes/settings/security/+page.svelte`: wording for the new event in the activity list.
+- Tests beside each.
+
+**Try it**
+
+An account less than 15 minutes old gets no alert, so use one you made earlier, or wait.
+
+1. Log in in your usual browser. No email arrives: it is already known.
+2. Log in to the same account in a different browser or a private window.
+3. Open http://localhost:8025: there is a "New sign-in to your SaaS account" email naming the browser and the time.
+4. Log out and in again in that second browser: no further email.
+
+**Decisions**
+
+- You chose the cookie-per-browser approach.
+- No alert for an account's first browser while the account is under 15 minutes old.
+- One check in `hooks.server.ts` covers every sign-in method.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- Nothing in this task. This completes Phase 2.

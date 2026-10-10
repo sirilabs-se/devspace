@@ -1,5 +1,9 @@
 import type { RequestEvent } from '@sveltejs/kit';
+import { sql } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { db } from '$lib/server/db';
+import { sendEmail } from '$lib/server/email';
+import { logIn } from '$lib/server/modules/identity';
 import { createSignedInUser, TestCookieJar } from '../tests/setup/accounts';
 import { resetDatabase } from '../tests/setup/reset-database';
 import { handle } from './hooks.server';
@@ -84,6 +88,38 @@ describe('the login check in hooks', () => {
 
 	it('leaves unknown addresses to the "not found" page', async () => {
 		expect((await visit('/no-such-page', new TestCookieJar(), false)).reached).toBe(true);
+	});
+});
+
+describe('new-device alerts', () => {
+	const alerts = () =>
+		vi.mocked(sendEmail).mock.calls.filter(([message]) => message.subject.includes('New sign-in'));
+
+	it('emails the owner on the first request from a new browser, and not again', async () => {
+		await createSignedInUser('anna@example.com', 'Anna Berg');
+		await db.execute(sql`update users set created_at = now() - interval '2 days'`);
+		// Someone logs in to the account from a browser it has never been used on.
+		const newBrowser = new TestCookieJar();
+		await logIn({ email: 'anna@example.com', password: 'Correct-Horse-42' }, newBrowser, {
+			ipAddress: '198.51.100.20',
+			userAgent: 'New Browser'
+		});
+		vi.mocked(sendEmail).mockClear();
+
+		await visit('/', newBrowser);
+		await visit('/settings/profile', newBrowser);
+		await visit('/', newBrowser);
+
+		expect(alerts()).toHaveLength(1);
+		expect(alerts()[0][0].to).toBe('anna@example.com');
+	});
+
+	it('sends nothing for a signed-out visitor', async () => {
+		vi.mocked(sendEmail).mockClear();
+
+		await visit('/');
+
+		expect(sendEmail).not.toHaveBeenCalled();
 	});
 });
 

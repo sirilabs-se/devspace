@@ -178,3 +178,32 @@ export async function sendTwoStepCodeEmail(
 		].join('\n')
 	});
 }
+
+export async function sendNewDeviceEmail(
+	to: string,
+	details: { device: string; ipAddress: string | null; at: Date; origin: string }
+): Promise<void> {
+	const when = details.at.toLocaleString('en-GB', {
+		day: '2-digit',
+		month: 'long',
+		year: 'numeric',
+		hour: '2-digit',
+		minute: '2-digit',
+		hour12: false,
+		timeZone: 'UTC'
+	});
+	await sendEmail({
+		to,
+		subject: `New sign-in to your ${APP_NAME} account`,
+		text: [
+			`Your ${APP_NAME} account was just signed in to from a browser we haven't seen it on before.`,
+			'',
+			`Device: ${details.device}`,
+			...(details.ipAddress ? [`Network address: ${details.ipAddress}`] : []),
+			`Time: ${when} (UTC)`,
+			'',
+			'If that was you, there is nothing to do.',
+			`If it wasn't, change your password and sign out everywhere: ${details.origin}/settings/security`
+		].join('\n')
+	});
+}

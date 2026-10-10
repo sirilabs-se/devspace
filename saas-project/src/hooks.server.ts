@@ -1,6 +1,15 @@
-import { redirect, type Handle } from '@sveltejs/kit';
-import { getSessionUser } from '$lib/server/modules/identity';
+import { redirect, type Handle, type RequestEvent } from '@sveltejs/kit';
+import { getSessionUser, recogniseDevice } from '$lib/server/modules/identity';
 import { isPublicPath } from '$lib/server/public-paths';
+
+/** The visitor's network address, or null where it can't be known (such as while pre-rendering). */
+function clientAddress(event: RequestEvent): string | null {
+	try {
+		return event.getClientAddress();
+	} catch {
+		return null;
+	}
+}
 
 const welcomeExempt = (pathname: string) =>
 	pathname === '/welcome' ||
@@ -11,6 +20,14 @@ const welcomeExempt = (pathname: string) =>
 export const handle: Handle = async ({ event, resolve }) => {
 	// The only place the acting user is decided: from the session cookie.
 	event.locals.user = await getSessionUser(event.request.headers, event.cookies);
+
+	// The first request from a browser this account hasn't been used on sends its owner an alert.
+	if (event.locals.user) {
+		await recogniseDevice(event.locals.user, event.cookies, {
+			ipAddress: clientAddress(event),
+			userAgent: event.request.headers.get('user-agent')
+		});
+	}
 
 	// Unknown addresses fall through to the normal "not found" page.
 	if (!event.locals.user && event.route.id !== null && !isPublicPath(event.url.pathname)) {
