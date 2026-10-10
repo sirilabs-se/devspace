@@ -22,7 +22,8 @@ function setup(options: { saved?: boolean; request?: AudioOnlyDeps['request'] } 
 		controller,
 		request,
 		stopWatching,
-		emitChange: (audioOnly: boolean) => watcher?.({ audioOnly, saveBandwidth: true })
+		emitChange: (audioOnly: boolean) => watcher?.({ audioOnly, saveBandwidth: true }),
+		emitSettings: (settings: Settings) => watcher?.(settings)
 	};
 }
 
@@ -34,7 +35,12 @@ describe('createAudioOnlyController', () => {
 		const { controller } = setup({ saved: false });
 		expect(controller.get().ready).toBe(false);
 		await vi.advanceTimersByTimeAsync(0);
-		expect(controller.get()).toEqual({ ready: true, audioOnly: false, error: null });
+		expect(controller.get()).toEqual({
+			ready: true,
+			audioOnly: false,
+			saveBandwidth: true,
+			error: null
+		});
 	});
 
 	it('shows on when nothing is saved', async () => {
@@ -48,7 +54,12 @@ describe('createAudioOnlyController', () => {
 		await vi.advanceTimersByTimeAsync(0);
 		await controller.set(false);
 		expect(request).toHaveBeenCalledWith(false);
-		expect(controller.get()).toEqual({ ready: true, audioOnly: false, error: null });
+		expect(controller.get()).toEqual({
+			ready: true,
+			audioOnly: false,
+			saveBandwidth: true,
+			error: null
+		});
 	});
 
 	it('shows the new position straight away, before the save is confirmed', async () => {
@@ -67,7 +78,12 @@ describe('createAudioOnlyController', () => {
 		});
 		await vi.advanceTimersByTimeAsync(0);
 		await controller.set(false);
-		expect(controller.get()).toEqual({ ready: true, audioOnly: true, error: 'save-failed' });
+		expect(controller.get()).toEqual({
+			ready: true,
+			audioOnly: true,
+			saveBandwidth: true,
+			error: 'save-failed'
+		});
 	});
 
 	it('clears the error after a few seconds and when the next change works', async () => {
@@ -97,6 +113,14 @@ describe('createAudioOnlyController', () => {
 		emitChange(false);
 		expect(controller.get().audioOnly).toBe(false);
 		expect(seen).toEqual([true, false]);
+	});
+
+	it('follows Save bandwidth too', async () => {
+		const { controller, emitSettings } = setup();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(controller.get().saveBandwidth).toBe(true);
+		emitSettings({ audioOnly: true, saveBandwidth: false });
+		expect(controller.get().saveBandwidth).toBe(false);
 	});
 
 	it('uses the change from elsewhere as the position to go back to', async () => {

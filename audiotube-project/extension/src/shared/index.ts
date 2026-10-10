@@ -16,3 +16,12 @@ export {
 	type SetAudioOnlyResponse,
 	type SettingsError
 } from './messages';
+export {
+	onMessageToContent,
+	onMessageToPage,
+	sendToContent,
+	sendToPage,
+	type ContentToPage,
+	type PageToContent
+} from './page-messages';
+export { PLAYER_SELECTOR } from './youtube';

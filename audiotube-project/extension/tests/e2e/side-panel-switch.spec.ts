@@ -27,6 +27,17 @@ test('shows on for a fresh install, and the saved value when the panel opens', a
 	await expect(toggle(reopened)).toHaveAttribute('aria-checked', 'false');
 });
 
+test('the status line says the lowest quality is requested, unless Save bandwidth is off', async ({
+	context,
+	extensionId
+}) => {
+	const page = await openPanel(context, extensionId);
+	await expect(page.getByText('Video hidden · lowest quality requested')).toBeVisible();
+
+	await (await worker(context)).evaluate(() => chrome.storage.local.set({ saveBandwidth: false }));
+	await expect(page.getByText('Video hidden', { exact: true })).toBeVisible();
+});
+
 test('turning the switch saves the new value', async ({ context, extensionId }) => {
 	const page = await openPanel(context, extensionId);
 	await toggle(page).click();

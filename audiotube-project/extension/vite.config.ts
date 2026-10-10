@@ -8,7 +8,10 @@ export default defineConfig({
 	plugins: [
 		tailwindcss(),
 		svelte(),
-		crx({ manifest, contentScripts: { standaloneFiles: ['src/content/index.ts'] } })
+		crx({
+			manifest,
+			contentScripts: { standaloneFiles: ['src/content/index.ts', 'src/inject/index.ts'] }
+		})
 	],
 	server: { cors: { origin: [/chrome-extension:\/\//] } },
 	build: { outDir: 'dist', emptyOutDir: true }

@@ -13,6 +13,8 @@ export interface AudioOnlyView {
 	/** False until the saved value has been read, so the panel never flashes the wrong position. */
 	ready: boolean;
 	audioOnly: boolean;
+	/** Whether the lowest video quality is asked for while audio-only is on. */
+	saveBandwidth: boolean;
 	error: AudioOnlyError | null;
 }
 
@@ -36,7 +38,12 @@ const ERROR_VISIBLE_MS = 6000;
 export function createAudioOnlyController(
 	deps: AudioOnlyDeps = { read: readSettings, watch: watchSettings, request: requestSetAudioOnly }
 ): AudioOnlyController {
-	let view: AudioOnlyView = { ready: false, audioOnly: DEFAULT_SETTINGS.audioOnly, error: null };
+	let view: AudioOnlyView = {
+		ready: false,
+		audioOnly: DEFAULT_SETTINGS.audioOnly,
+		saveBandwidth: DEFAULT_SETTINGS.saveBandwidth,
+		error: null
+	};
 	let saved = DEFAULT_SETTINGS.audioOnly;
 	let busy = false;
 	let clearTimer: ReturnType<typeof setTimeout> | undefined;
@@ -56,14 +63,14 @@ export function createAudioOnlyController(
 	// Watch before reading, so a change made between the two is never missed.
 	const stopWatching = deps.watch((settings) => {
 		saved = settings.audioOnly;
-		update({ ready: true, audioOnly: settings.audioOnly });
+		update({ ready: true, audioOnly: settings.audioOnly, saveBandwidth: settings.saveBandwidth });
 	});
 
 	deps.read().then(
 		(settings) => {
 			if (view.ready) return;
 			saved = settings.audioOnly;
-			update({ ready: true, audioOnly: settings.audioOnly });
+			update({ ready: true, audioOnly: settings.audioOnly, saveBandwidth: settings.saveBandwidth });
 		},
 		() => {
 			if (view.ready) return;

@@ -22,7 +22,11 @@
 	</header>
 	<main class="flex flex-col gap-3 p-3.5">
 		{#if view.ready}
-			<AudioOnlyCard checked={view.audioOnly} onToggle={audioOnly.toggle} />
+			<AudioOnlyCard
+				checked={view.audioOnly}
+				lowestQuality={view.saveBandwidth}
+				onToggle={audioOnly.toggle}
+			/>
 		{/if}
 		{#if view.error}
 			<p role="alert" class="m-0 rounded-card bg-card px-3.5 py-2.5 text-xs text-error">

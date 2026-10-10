@@ -3,7 +3,11 @@
 	import { HEADPHONES, VIDEO } from './icons';
 	import Switch from './Switch.svelte';
 
-	let { checked, onToggle }: { checked: boolean; onToggle: () => void } = $props();
+	let {
+		checked,
+		lowestQuality,
+		onToggle
+	}: { checked: boolean; lowestQuality: boolean; onToggle: () => void } = $props();
 </script>
 
 <button
@@ -26,7 +30,11 @@
 		<span class="flex min-w-0 flex-col">
 			<span class="text-md font-medium">Audio only</span>
 			<span id="audio-only-status" class="text-xs text-muted">
-				{checked ? 'Video hidden' : 'Video visible on the YouTube tab'}
+				{checked
+					? lowestQuality
+						? 'Video hidden · lowest quality requested'
+						: 'Video hidden'
+					: 'Video visible on the YouTube tab'}
 			</span>
 		</span>
 	</span>

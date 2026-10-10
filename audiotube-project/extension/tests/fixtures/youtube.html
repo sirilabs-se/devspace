@@ -49,9 +49,37 @@
 				<div class="ytp-chrome-bottom"><button class="ytp-play-button" id="play">Play</button></div>
 				<div class="ytp-caption-window-container">Caption text</div>
 			</div></div></ytd-watch-flexy>`;
+			// A stand-in for YouTube's player API, recording what it is asked for.
+			window.__levels = ['hd1080', 'hd720', 'large', 'medium', 'small', 'tiny', 'auto'];
+			window.__qualityCalls = [];
+			window.__failQuality ??= false;
+			window.__noApi ??= false;
+			function attachPlayerApi() {
+				const player = document.getElementById('movie_player');
+				if (!player || window.__noApi) return;
+				const heights = {
+					tiny: 144,
+					small: 240,
+					medium: 360,
+					large: 480,
+					hd720: 720,
+					hd1080: 1080
+				};
+				player.getAvailableQualityLevels = () => window.__levels;
+				player.setPlaybackQualityRange = (min, max) => {
+					window.__qualityCalls.push([min, max ?? null]);
+					if (window.__failQuality) throw new Error('player refused');
+					const quality = min === 'auto' ? 0 : heights[min];
+					localStorage.setItem(
+						'yt-player-quality',
+						JSON.stringify({ data: JSON.stringify({ quality, previousQuality: 0 }), creation: 1 })
+					);
+				};
+			}
 			function render() {
 				const onWatch = location.pathname === '/watch';
 				document.getElementById('slot').innerHTML = onWatch ? PLAYER : '<p>Home page</p>';
+				attachPlayerApi();
 				document.getElementById('play')?.addEventListener('click', () => window.__playClicks++);
 			}
 			// Mimics YouTube's in-page navigation: the URL changes and an event is fired, with no reload.

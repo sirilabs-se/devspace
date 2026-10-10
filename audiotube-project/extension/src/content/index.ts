@@ -1,5 +1,12 @@
-import { readSettings, requestSetAudioOnly, watchSettings } from '../shared';
+import {
+	onMessageToContent,
+	readSettings,
+	requestSetAudioOnly,
+	sendToPage,
+	watchSettings
+} from '../shared';
 import { startOverlayController } from './overlay-controller';
+import { startQualityController } from './quality-controller';
 
 const GUARD = '__audiotubeContentStarted';
 const scope = globalThis as unknown as Record<string, boolean>;
@@ -11,5 +18,12 @@ if (!scope[GUARD]) {
 		read: readSettings,
 		watch: watchSettings,
 		requestShowVideo: () => void requestSetAudioOnly(false)
+	});
+	startQualityController({
+		read: readSettings,
+		watch: watchSettings,
+		send: sendToPage,
+		onPageReady: (handler) =>
+			onMessageToContent((message) => message.type === 'quality/ready' && handler())
 	});
 }

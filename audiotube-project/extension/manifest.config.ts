@@ -16,6 +16,12 @@ export const manifest = {
 			matches: ['https://www.youtube.com/*'],
 			js: ['src/content/index.ts'],
 			run_at: 'document_idle'
+		},
+		{
+			matches: ['https://www.youtube.com/*'],
+			js: ['src/inject/index.ts'],
+			run_at: 'document_idle',
+			world: 'MAIN' as const
 		}
 	],
 	icons: {

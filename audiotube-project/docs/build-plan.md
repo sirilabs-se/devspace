@@ -44,8 +44,8 @@ These apply to this phase only. They do not change the requirements document, wh
 | 3 | Side panel switch | PLY-004, PLY-005 | 2 | Done |
 | 4 | Overlay on YouTube | PLY-005, PLY-006 (+ 4.2 basics) | 2 | Done |
 | 5 | Spike: requesting the lowest quality | PLY-008, OQ-001 | 1 | Done |
-| 6 | Save bandwidth | PLY-008 | 4, 5 | To do |
-| 7 | Audio only button in YouTube's control bar | PLY-007 | 4 | To do |
+| 6 | Save bandwidth | PLY-008 | 4, 5 | Done |
+| 7 | Audio only button in YouTube's control bar | PLY-007 | 4 | In progress |
 
 Statuses: **To do**, **In progress**, **Done**, **Blocked** (say why in the task's notes).
 
@@ -255,13 +255,19 @@ Task 5 can run at any point after task 1, in parallel with tasks 2 to 4.
 
 **Done when:**
 
-- [ ] On the local test page, with a fake player object, turning audio-only on requests the lowest quality and turning it off restores the earlier quality
-- [ ] Moving to another video while on requests the lowest quality again
-- [ ] With `saveBandwidth` off, no quality is requested
-- [ ] If the request fails, audio keeps playing and nothing else breaks
-- [ ] Manual check on real YouTube passes
+- [x] On the local test page, with a fake player object, turning audio-only on requests the lowest quality and turning it off restores the earlier quality
+- [x] Moving to another video while on requests the lowest quality again
+- [x] With `saveBandwidth` off, no quality is requested
+- [x] If the request fails, audio keeps playing and nothing else breaks
+- [x] Manual check on real YouTube passes
 
 **Notes:** If the spike finds the request can't be made reliably, this task is replaced by whatever the spike recommends.
+- Built as the spike recommended. The page script (`inject/`, a second content script with `world: 'MAIN'`) asks for the last non-auto level with `setPlaybackQualityRange(q, q)`. Content and page script talk over typed `window.postMessage` messages defined in `shared/page-messages.ts`.
+- "Previous quality" is YouTube's stored preference (`localStorage['yt-player-quality']`, Auto if missing or unreadable), kept in the page's own storage under `audiotube.previousQuality`, so a reload or restart while audio-only is on still puts back the user's own choice and not the lowest. If another tab restores first, the second tab puts back the current preference.
+- The mode is repeated to the page script when it starts, and the page script ignores a repeat of the mode it already has. When the player has no quality levels yet (not loaded, or a stream that never starts) it retries every 500 ms up to 10 times and then stays quiet.
+- Not re-checked after an ad ends: the stored preference already makes the next video target the lowest, and the request is repeated on each in-page move. The side panel shows "Video hidden · lowest quality requested" whenever audio-only and Save bandwidth are both on, whether or not YouTube honoured the request.
+- Manual check on real YouTube (headless, signed out, with a 720p preference set): on by default → 144p; after a reload → still 144p with 720 remembered; off → back to 720p; on again → 144p; in-page move to another video → preference stays 144; Save bandwidth off + audio-only off → 720p, nothing left remembered. Not checked: live streams (the stream did not start in this environment), premieres, signed-in accounts.
+
 
 ### 7. Audio only button in YouTube's control bar
 
