@@ -43,7 +43,7 @@ These apply to this phase only. They do not change the requirements document, wh
 | 2 | Saved audio-only value | PLY-001–003 | 1 | Done |
 | 3 | Side panel switch | PLY-004, PLY-005 | 2 | Done |
 | 4 | Overlay on YouTube | PLY-005, PLY-006 (+ 4.2 basics) | 2 | Done |
-| 5 | Spike: requesting the lowest quality | PLY-008, OQ-001 | 1 | To do |
+| 5 | Spike: requesting the lowest quality | PLY-008, OQ-001 | 1 | Done |
 | 6 | Save bandwidth | PLY-008 | 4, 5 | To do |
 | 7 | Audio only button in YouTube's control bar | PLY-007 | 4 | To do |
 
@@ -227,7 +227,14 @@ Task 5 can run at any point after task 1, in parallel with tasks 2 to 4.
 
 **Done when:**
 
-- [ ] Findings written in `docs/spikes/save-bandwidth.md`: what works, how reliable it is, how failure shows, and a recommendation (build PLY-008 as written, build it differently, or reword it)
+- [x] Findings written in `docs/spikes/save-bandwidth.md`: what works, how reliable it is, how failure shows, and a recommendation (build PLY-008 as written, build it differently, or reword it)
+
+**Notes:**
+
+- Recommendation: build PLY-008 as written, asking for the last non-auto level with `setPlaybackQualityRange(q, q)`. Findings in `docs/spikes/save-bandwidth.md`.
+- Decision e is refined by the findings: "previous quality" is the stored YouTube preference (`localStorage['yt-player-quality']`), because YouTube saves every request as the user's own setting and `getPlaybackQuality()` under Auto reports the auto-picked level. The extension also keeps its own copy so it can restore after a restart.
+- Not verified in this environment: live streams, premieres, signed-in accounts. Task 6's manual check must cover them.
+
 
 ### 6. Save bandwidth
 
