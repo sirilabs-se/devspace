@@ -1,5 +1,6 @@
 import type { Settings } from '../shared';
 import { createOverlay, type Overlay } from './overlay';
+import { onPageChange } from './page-changes';
 import { findPlayer, isWatchPath } from './watch-page';
 
 export interface OverlayControllerDeps {
@@ -13,7 +14,6 @@ export function startOverlayController(deps: OverlayControllerDeps): () => void 
 	let audioOnly: boolean | null = null;
 	let overlay: Overlay | null = null;
 	let overlayPlayer: HTMLElement | null = null;
-	let scheduled = false;
 
 	function remove() {
 		overlay?.destroy();
@@ -22,19 +22,12 @@ export function startOverlayController(deps: OverlayControllerDeps): () => void 
 	}
 
 	function reconcile() {
-		scheduled = false;
 		const player = audioOnly && isWatchPath(location.pathname) ? findPlayer(document) : null;
 		if (!player) return remove();
 		if (overlay && overlayPlayer === player && player.contains(overlay.host)) return;
 		remove();
 		overlay = createOverlay(player, deps.requestShowVideo);
 		overlayPlayer = player;
-	}
-
-	function schedule() {
-		if (scheduled) return;
-		scheduled = true;
-		requestAnimationFrame(reconcile);
 	}
 
 	const apply = (settings: Settings) => {
@@ -48,16 +41,11 @@ export function startOverlayController(deps: OverlayControllerDeps): () => void 
 		() => {}
 	);
 
-	const observer = new MutationObserver(schedule);
-	observer.observe(document.documentElement, { childList: true, subtree: true });
-	document.addEventListener('yt-navigate-finish', schedule);
-	addEventListener('popstate', schedule);
+	const stopObserving = onPageChange(reconcile);
 
 	return () => {
 		stopWatching();
-		observer.disconnect();
-		document.removeEventListener('yt-navigate-finish', schedule);
-		removeEventListener('popstate', schedule);
+		stopObserving();
 		remove();
 	};
 }

@@ -36,6 +36,18 @@
 				left: 10px;
 				top: 5px;
 			}
+			.ytp-chrome-controls {
+				position: absolute;
+				right: 10px;
+				top: 0;
+				height: 40px;
+				display: flex;
+			}
+			.ytp-right-controls,
+			.ytp-right-controls-left {
+				display: flex;
+				height: 100%;
+			}
 		</style>
 	</head>
 	<body>
@@ -46,7 +58,10 @@
 			window.__playClicks = 0;
 			const PLAYER = `<ytd-watch-flexy><div id="player"><div id="movie_player" class="html5-video-player">
 				<div class="html5-video-container"><video></video></div>
-				<div class="ytp-chrome-bottom"><button class="ytp-play-button" id="play">Play</button></div>
+				<div class="ytp-chrome-bottom">
+					<button class="ytp-play-button" id="play">Play</button>
+					CONTROLS
+				</div>
 				<div class="ytp-caption-window-container">Caption text</div>
 			</div></div></ytd-watch-flexy>`;
 			// A stand-in for YouTube's player API, recording what it is asked for.
@@ -54,6 +69,7 @@
 			window.__qualityCalls = [];
 			window.__failQuality ??= false;
 			window.__noApi ??= false;
+			window.__noControlBar ??= false;
 			function attachPlayerApi() {
 				const player = document.getElementById('movie_player');
 				if (!player || window.__noApi) return;
@@ -77,8 +93,13 @@
 				};
 			}
 			function render() {
+				const controls = window.__noControlBar
+					? ''
+					: '<div class="ytp-chrome-controls"><div class="ytp-right-controls"><div class="ytp-right-controls-left"><button class="ytp-button" id="cc">CC</button></div></div></div>';
 				const onWatch = location.pathname === '/watch';
-				document.getElementById('slot').innerHTML = onWatch ? PLAYER : '<p>Home page</p>';
+				document.getElementById('slot').innerHTML = onWatch
+					? PLAYER.replace('CONTROLS', controls)
+					: '<p>Home page</p>';
 				attachPlayerApi();
 				document.getElementById('play')?.addEventListener('click', () => window.__playClicks++);
 			}

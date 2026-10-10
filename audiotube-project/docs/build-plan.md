@@ -45,7 +45,7 @@ These apply to this phase only. They do not change the requirements document, wh
 | 4 | Overlay on YouTube | PLY-005, PLY-006 (+ 4.2 basics) | 2 | Done |
 | 5 | Spike: requesting the lowest quality | PLY-008, OQ-001 | 1 | Done |
 | 6 | Save bandwidth | PLY-008 | 4, 5 | Done |
-| 7 | Audio only button in YouTube's control bar | PLY-007 | 4 | In progress |
+| 7 | Audio only button in YouTube's control bar | PLY-007 | 4 | Done |
 
 Statuses: **To do**, **In progress**, **Done**, **Blocked** (say why in the task's notes).
 
@@ -287,8 +287,13 @@ Task 5 can run at any point after task 1, in parallel with tasks 2 to 4.
 
 **Done when:**
 
-- [ ] On the local test page, the button appears while audio-only is off and turns it on when pressed
-- [ ] If the control bar is missing, there is no button and no error
-- [ ] Manual check on real YouTube passes
+- [x] On the local test page, the button appears while audio-only is off and turns it on when pressed
+- [x] If the control bar is missing, there is no button and no error
+- [x] Manual check on real YouTube passes
 
 **Notes:** This depends on YouTube's page structure, which changes without notice. If it proves unreliable, it is left out of the first release (decision h).
+- The button is a headphones icon in a shadow root, placed first in `.ytp-right-controls-left` (the newer grouped layout) or, if that group is absent, `.ytp-right-controls`. It has the label and tooltip "Audio only" and appears only while audio-only is off on a watch page. If neither container is found, or anything in placing it throws, nothing is shown.
+- Checked on real YouTube (headless, signed out, consent accepted): the button sits at the start of the right-hand controls beside the subtitles and settings buttons, pressing it brings the overlay back and the button goes away. Its look is a plain 48 px icon button, not YouTube's own `ytp-button` classes, so it will not pick up YouTube's tooltip or hover styling; YouTube's own class names were avoided on purpose.
+- Decision h still holds: this is the most fragile piece, since it depends on YouTube's control bar markup. It is separate from everything else, so it can be dropped without touching the rest.
+- The observer that re-checks the page after YouTube changes it was pulled out of the overlay controller into `content/page-changes.ts` and is shared by both.
+

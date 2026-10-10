@@ -5,6 +5,7 @@ import {
 	sendToPage,
 	watchSettings
 } from '../shared';
+import { startControlButtonController } from './control-button-controller';
 import { startOverlayController } from './overlay-controller';
 import { startQualityController } from './quality-controller';
 
@@ -18,6 +19,11 @@ if (!scope[GUARD]) {
 		read: readSettings,
 		watch: watchSettings,
 		requestShowVideo: () => void requestSetAudioOnly(false)
+	});
+	startControlButtonController({
+		read: readSettings,
+		watch: watchSettings,
+		requestAudioOnly: () => void requestSetAudioOnly(true)
 	});
 	startQualityController({
 		read: readSettings,

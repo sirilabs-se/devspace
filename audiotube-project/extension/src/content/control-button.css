@@ -1,0 +1,28 @@
+:host {
+	display: inline-flex;
+	align-items: center;
+	height: 100%;
+}
+
+button {
+	display: grid;
+	place-items: center;
+	width: 48px;
+	height: 100%;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: #ffffff;
+	opacity: 0.9;
+	cursor: pointer;
+}
+
+button:hover,
+button:focus-visible {
+	opacity: 1;
+}
+
+button:focus-visible {
+	outline: 2px solid #ffffff;
+	outline-offset: -4px;
+}
