@@ -64,6 +64,11 @@ export const actions: Actions = {
 		);
 
 		if (result.status === 'signed_in') redirect(303, safeNextPath(url.searchParams.get('next')));
+		if (result.status === 'second_step') {
+			// The password was right; a code from the authenticator app is owed.
+			const next = url.searchParams.get('next');
+			redirect(303, next ? `/login/two-step?next=${encodeURIComponent(next)}` : '/login/two-step');
+		}
 		if (result.status === 'unverified') return { step: 'unverified' as const, email };
 		if (result.status === 'rate_limited') {
 			return fail(429, {

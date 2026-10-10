@@ -126,6 +126,24 @@ export const passkeys = pgTable(
 	(table) => [index('passkeys_user_id_idx').on(table.userId)]
 );
 
+// A person's second-step set-up: the authenticator secret and backup codes, both
+// stored encrypted. Shaped by the login library's two-factor add-on.
+export const twoFactors = pgTable('two_factors', {
+	id: text('id').primaryKey(),
+	userId: text('user_id')
+		.notNull()
+		.unique()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	secret: text('secret').notNull(),
+	backupCodes: text('backup_codes').notNull(),
+	/** False until the person has proved the authenticator app works, by entering a code. */
+	verified: boolean('verified').default(true),
+	failedVerificationCount: integer('failed_verification_count').default(0),
+	lockedUntil: timestamp('locked_until', { withTimezone: true }),
+	createdAt: createdAt(),
+	updatedAt: updatedAt()
+});
+
 // Usernames nobody else can take: a changed name for 30 days, a deleted account's name for good.
 export const usernameHolds = pgTable('username_holds', {
 	id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),

@@ -32,7 +32,8 @@ const UI_PACKAGES = [
 	'@tabler/',
 	'@fortawesome/',
 	'@fontsource/',
-	'@fontsource-variable/'
+	'@fontsource-variable/',
+	'uqr'
 ];
 
 const uiPackagePattern = `(^|node_modules/)(${UI_PACKAGES.map((name) =>

@@ -167,6 +167,66 @@ describe('passkeys on the security page', () => {
 	});
 });
 
+describe('two-step verification on the security page', () => {
+	it('sets up, turns on, makes new backup codes and turns off, each needing the password or a code', async () => {
+		const start = await outcome(() =>
+			securityActions.startTwoStep(event('/settings/security', { password: 'Correct-Horse-42' }))
+		);
+		const setup = (start.result as { twoStepSetup: { setupKey: string; backupCodes: string[] } })
+			.twoStepSetup;
+		expect(setup.backupCodes.length).toBeGreaterThan(0);
+
+		const wrongCode = await outcome(() =>
+			securityActions.confirmTwoStep(event('/settings/security', { code: '000000' }))
+		);
+		expect(wrongCode.result).toMatchObject({ status: 400, data: { twoStepError: 'code_wrong' } });
+
+		const { authenticatorCode } = await import('../../../tests/setup/totp');
+		const confirm = await outcome(() =>
+			securityActions.confirmTwoStep(
+				event('/settings/security', { code: authenticatorCode(setup.setupKey) })
+			)
+		);
+		expect(confirm.result).toEqual({ twoStepTurnedOn: true });
+		expect(
+			((await securityLoad(event('/settings/security'))) as { twoStepOn: boolean }).twoStepOn
+		).toBe(true);
+
+		const codes = await outcome(() =>
+			securityActions.newBackupCodes(event('/settings/security', { password: 'Correct-Horse-42' }))
+		);
+		expect((codes.result as { newBackupCodes: string[] }).newBackupCodes).not.toEqual(
+			setup.backupCodes
+		);
+
+		const wrongPassword = await outcome(() =>
+			securityActions.turnOffTwoStep(event('/settings/security', { password: 'Wrong-Horse-42' }))
+		);
+		expect(wrongPassword.result).toMatchObject({
+			status: 400,
+			data: { twoStepError: 'current_password_wrong' }
+		});
+
+		const off = await outcome(() =>
+			securityActions.turnOffTwoStep(event('/settings/security', { password: 'Correct-Horse-42' }))
+		);
+		expect(off.result).toEqual({ twoStepTurnedOff: true });
+	});
+
+	it('refuses someone who is not signed in', async () => {
+		user = null;
+
+		for (const action of [
+			securityActions.startTwoStep,
+			securityActions.confirmTwoStep,
+			securityActions.newBackupCodes,
+			securityActions.turnOffTwoStep
+		]) {
+			expect((await outcome(() => action(event('/settings/security')))).thrown?.status).toBe(401);
+		}
+	});
+});
+
 describe('security settings', () => {
 	it('lists the signed-in person’s own security activity, and nobody else’s', async () => {
 		await createSignedInUser('bo@example.com', 'Bo Lind');

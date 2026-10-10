@@ -54,7 +54,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 15 | Delete account | Identity | 7, 9 | Done |
 | 16 | Notification preferences | Identity | 8 | Blocked |
 | 17 | Passkeys | Identity | 4 | Done |
-| 18 | Authenticator app and backup codes | Identity | 4 | To do |
+| 18 | Authenticator app and backup codes | Identity | 4 | Done |
 | 19 | Email code and trusted devices | Identity | 18 | To do |
 | 20 | Active sessions | Identity | 4 | To do |
 | 21 | New-device alerts | Identity | 20 | To do |
@@ -791,12 +791,23 @@ Blocked: no notification types exist until another module defines one, so there 
 
 **Done when:**
 
-- [ ] A person turns on the second step and is asked for a code at the next password login
-- [ ] A backup code works once only
-- [ ] Regenerating backup codes makes the old ones stop working
-- [ ] Tests cover the above
+- [x] A person turns on the second step and is asked for a code at the next password login
+- [x] A backup code works once only
+- [x] Regenerating backup codes makes the old ones stop working
+- [x] Tests cover the above
 
-**Notes:** —
+**Notes:**
+
+- New package: `uqr`, approved by the owner, draws the QR code. It is used only inside `src/lib/ui/` and the code is drawn in the browser; the secret never goes to another service.
+- The second step applies to password logins. Passkeys and Google or Facebook sign-ins don't ask for it, as the design says. People with no password are told to set one first.
+- With the second step on, a correct password signs nobody in. It sets a short-lived "code owed" cookie and leads to `/login/two-step`, which can't be opened any other way.
+- Setting up needs the password, and the second step is only switched on after a code from the app is entered, so a failed set-up can't lock anyone out.
+- Backup codes are shown once: at set-up and when new ones are made. Making new ones needs the password and stops the old ones at once.
+- The `two_factors` table has three more columns than the design listed (`verified`, `failed_verification_count`, `locked_until`), because the add-on stores them. `schema.dbml` was updated.
+- Code attempts are limited to 10 per 15 minutes per network address. The number is mine.
+- The code is typed into one field, not the prototype's six separate boxes. One field is simpler, works with password managers and phones' code suggestions, and is easier for screen readers.
+- The sign-in is recorded in the audit log when the code is accepted, noting which second step was used. Wrong codes are recorded too.
+- Tests play the part of the authenticator app by working out the code from the set-up key.
 
 ### 19. Email code and trusted devices
 

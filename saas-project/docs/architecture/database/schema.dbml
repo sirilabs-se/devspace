@@ -136,6 +136,9 @@ Table two_factors {
   user_id text [unique, not null]
   secret text [not null, note: 'Authenticator app secret, encrypted']
   backup_codes text [not null, note: 'Encrypted']
+  verified boolean [default: true, note: 'False until a code from the app has been entered once']
+  failed_verification_count integer [default: 0]
+  locked_until timestamptz
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]
 

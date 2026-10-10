@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { createAuthMiddleware } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { username } from 'better-auth/plugins';
+import { twoFactor, username } from 'better-auth/plugins';
 import { passkey } from '@better-auth/passkey';
 import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
@@ -14,7 +14,7 @@ import {
 } from './emails';
 import { linkTokenPayload } from './link-token';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from './password';
-import { accounts, passkeys, sessions, users, verifications } from './schema';
+import { accounts, passkeys, sessions, twoFactors, users, verifications } from './schema';
 import { toUserId } from './user-id';
 import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH, usernameFormatProblem } from './username';
 
@@ -63,7 +63,7 @@ function createAuth() {
 		database: drizzleAdapter(db, {
 			provider: 'pg',
 			usePlural: true,
-			schema: { users, accounts, sessions, verifications, passkeys }
+			schema: { users, accounts, sessions, verifications, passkeys, twoFactors }
 		}),
 		emailAndPassword: {
 			enabled: true,
@@ -161,6 +161,8 @@ function createAuth() {
 			}
 		},
 		plugins: [
+			// The optional second step after a password login.
+			twoFactor({ issuer: 'SaaS' }),
 			passkey({
 				rpID: new URL(appOrigin()).hostname,
 				rpName: 'SaaS',

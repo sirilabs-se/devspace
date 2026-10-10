@@ -12,6 +12,7 @@
 		disabled = false,
 		loading = false,
 		onclick,
+		formaction,
 		children
 	}: {
 		type?: 'button' | 'submit';
@@ -23,6 +24,8 @@
 		disabled?: boolean;
 		/** Shows a spinner and blocks further presses. */
 		loading?: boolean;
+		/** Sends the form to a different action than the form's own. */
+		formaction?: string;
 		/** Called when the button is pressed. Not used for links. */
 		onclick?: () => void;
 		children: Snippet;
@@ -40,6 +43,7 @@
 		class:loading
 		{type}
 		{onclick}
+		{formaction}
 		disabled={disabled || loading}
 		aria-busy={loading ? 'true' : undefined}
 	>

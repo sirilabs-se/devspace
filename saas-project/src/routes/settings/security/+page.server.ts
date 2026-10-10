@@ -1,12 +1,18 @@
 import { fail, redirect } from '@sveltejs/kit';
 import {
+	confirmTwoStepSetup,
 	getProfile,
+	isTwoStepOn,
+	listConnections,
 	listPasskeys,
 	listSecurityActivity,
+	regenerateBackupCodes,
 	removePasskey,
 	renamePasskey,
 	requireUser,
-	signOutEverywhere
+	signOutEverywhere,
+	startTwoStepSetup,
+	turnOffTwoStep
 } from '$lib/server/modules/identity';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -16,6 +22,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		timeZone: (await getProfile(user.id)).timeZone,
+		twoStepOn: await isTwoStepOn(user.id),
+		hasPassword: (await listConnections(user.id)).hasPassword,
 		passkeys: (await listPasskeys(user.id)).map((passkey) => ({
 			...passkey,
 			createdAt: passkey.createdAt.toISOString()
@@ -25,6 +33,65 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
+	startTwoStep: async ({ request, locals, getClientAddress }) => {
+		const user = requireUser(locals);
+		const form = await request.formData();
+
+		const result = await startTwoStepSetup(user, request.headers, form.get('password'), {
+			ipAddress: getClientAddress(),
+			userAgent: request.headers.get('user-agent')
+		});
+
+		if (result.status !== 'started') return fail(400, { twoStepError: result.status });
+		// Shown once, while the person sets up their app and saves the codes.
+		return {
+			twoStepSetup: {
+				totpUri: result.totpUri,
+				setupKey: result.setupKey,
+				backupCodes: result.backupCodes
+			}
+		};
+	},
+
+	confirmTwoStep: async ({ request, cookies, locals, getClientAddress }) => {
+		const user = requireUser(locals);
+		const form = await request.formData();
+
+		const result = await confirmTwoStepSetup(user, request.headers, cookies, form.get('code'), {
+			ipAddress: getClientAddress(),
+			userAgent: request.headers.get('user-agent')
+		});
+
+		if (result.status !== 'on') return fail(400, { twoStepError: 'code_wrong' as const });
+		return { twoStepTurnedOn: true as const };
+	},
+
+	newBackupCodes: async ({ request, locals, getClientAddress }) => {
+		const user = requireUser(locals);
+		const form = await request.formData();
+
+		const result = await regenerateBackupCodes(user, request.headers, form.get('password'), {
+			ipAddress: getClientAddress(),
+			userAgent: request.headers.get('user-agent')
+		});
+
+		if (result.status !== 'done') return fail(400, { twoStepError: result.status });
+		return { newBackupCodes: result.backupCodes };
+	},
+
+	turnOffTwoStep: async ({ request, cookies, locals, getClientAddress }) => {
+		const user = requireUser(locals);
+		const form = await request.formData();
+
+		const result = await turnOffTwoStep(user, request.headers, cookies, form.get('password'), {
+			ipAddress: getClientAddress(),
+			userAgent: request.headers.get('user-agent')
+		});
+
+		if (result.status !== 'off') return fail(400, { twoStepError: result.status });
+		return { twoStepTurnedOff: true as const };
+	},
+
 	renamePasskey: async ({ request, locals }) => {
 		const user = requireUser(locals);
 		const form = await request.formData();

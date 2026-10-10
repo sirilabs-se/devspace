@@ -91,6 +91,8 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `requestAccountDeletion(user, headers, cookies, input, context)` | Schedules the acting user's account for deletion in 30 days and signs them out everywhere | `/settings/account` |
 | `runDailyJob()` | The daily clean-up: permanent deletions, expired holds and links, old audit entries | `/api/jobs/daily` |
 | `listPasskeys(userId)` / `renamePasskey(userId, id, name)` / `removePasskey(userId, id, context)` | Lists, names and removes the acting user's own passkeys. The last way to sign in can't be removed | `/settings/security` |
+| `isTwoStepOn(userId)`, `startTwoStepSetup(...)`, `confirmTwoStepSetup(...)`, `regenerateBackupCodes(...)`, `turnOffTwoStep(...)` | The acting user's second step: set up with a QR code, switch on with a code, replace backup codes, switch off. Each change needs the password or a code | `/settings/security` |
+| `hasTwoStepChallenge(headers)` / `completeTwoStepLogin(method, code, headers, cookies, context)` | Finishes a login that is waiting for its code | `/login/two-step` |
 | `listSecurityActivity(userId)` | Lists the acting user's own recent security events, newest first | `/settings/security` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
@@ -109,7 +111,7 @@ Pages use form actions, following the shared conventions in the system doc.
 | `/signup` | Registers a new account | Anyone |
 | `/verify-email` | Shows "check your inbox" after sign-up; confirms the email from the link; resends the link; handles expired and invalid links | Anyone |
 | `/login` | Signs in: email first, then the password on a second step; or Google, Facebook or a passkey | Anyone |
-| `/login/two-step` | Takes the second-step code or a backup code | Anyone part-way through login |
+| `/login/two-step` | Takes the authenticator code or a backup code. Only reachable straight after a correct password | Anyone part-way through login |
 | `/logout` | Signs out of this session; a submitted form only | Signed-in users |
 | `/forgot-password` | Requests a reset link | Anyone |
 | `/reset-password` | Sets a new password from the link | Anyone |
@@ -293,6 +295,8 @@ sequenceDiagram
 - The login library's own web addresses are closed to the outside, apart from the provider return addresses, so nobody can go around the app's rules (limits, lockout, consents, the password rule) by calling the library directly.
 - A passkey signs a person in on its own, with no password and no second step. Adding one is an exchange between the browser and the login library, and is only allowed within a day of logging in.
 - A passkey counts as a way to sign in, alongside a password and each connected provider. Whichever is the last one can't be removed.
+- The second step applies to password logins only. With it on, a correct password does not sign anyone in: it starts a short wait for a 6-digit authenticator code or a single-use backup code. Code attempts are limited to 10 per 15 minutes per network address.
+- Setting it up, replacing the backup codes and switching it off each need the password. It is only switched on once a code from the app has been entered. Backup codes are shown once.
 - Trusted devices skip the second step for 30 days.
 - A username is optional. When set: 3 to 30 characters (letters, numbers, dots, hyphens, underscores), starting and ending with a letter or number, compared without regard to case, checked against a reserved list kept in code. Setting a first username is always allowed; replacing or removing one is allowed once every 30 days. The old name is held for 30 days, during which only its previous owner can take it back. Changing only the capital letters is not a change. A deleted account's name is held permanently.
 - Sign-up has one checkbox covering the terms, the privacy policy and being 18 or older. Each is still saved as its own consent record.

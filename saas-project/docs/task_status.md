@@ -523,3 +523,42 @@ Passkeys need `localhost` or an HTTPS address; they won't work if you open the a
 
 - A rename control on the page.
 - Lengthening the one-day window for adding a passkey, if it proves annoying.
+
+## Task 18: Authenticator app and backup codes
+
+**Status:** Done. `npm run verify` passes (315 logic tests, 25 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/two-step.ts`: set-up, switching on and off, backup codes, finishing a login.
+- `identity/log-in.ts`: a correct password now answers "second step" when it is on.
+- `identity/schema.ts` and `migrations/0005_two_factors.sql`: the `two_factors` table.
+- `identity/auth.ts`: the two-factor add-on.
+- `src/routes/login/two-step/`: the code page.
+- `src/routes/settings/security/`: a "Two-step verification" card.
+- `src/lib/ui/QrCode.svelte` and `CodeList.svelte`: new components.
+- `package.json`: `uqr`.
+- `tests/setup/totp.ts`: plays the authenticator app in tests.
+- Tests beside each, plus `tests/e2e/two-step.test.ts`.
+
+**Try it**
+
+1. Run `npm install` and `npm run db:migrate`.
+2. Install an authenticator app on your phone if you don't have one.
+3. Log in, open Settings then "Security". In "Two-step verification", enter your password and press "Set up two-step verification".
+4. Scan the QR code with the app, enter the 6-digit code it shows, and press "Turn on".
+5. Save the backup codes that appear. They are shown only this once.
+6. Log out and log in with your password: you are asked for a code. Enter it from the app.
+7. Log out again, and this time choose "Use a backup code instead". The code works; the same code won't work a second time.
+
+**Decisions**
+
+- One code field, not six boxes.
+- Passkey and provider sign-ins don't ask for the second step.
+- 10 code attempts per 15 minutes per network address.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- Email codes and "trust this device" are task 19.

@@ -6,9 +6,11 @@
 		Alert,
 		Button,
 		Card,
+		CodeList,
 		Heading,
 		ListRow,
 		PageHeader,
+		QrCode,
 		Stack,
 		Text,
 		TextField
@@ -16,6 +18,36 @@
 	import type { IconName } from '$lib/ui';
 
 	let { data, form } = $props();
+
+	// The set-up details and backup codes arrive once, from a form action. They are kept
+	// here so they stay on screen while the person scans the code and saves the codes.
+	let setup = $state<{ totpUri: string; setupKey: string; backupCodes: string[] }>();
+	let savedCodes = $state<string[]>();
+	let twoStepPassword = $state('');
+	let twoStepCode = $state('');
+	$effect(() => {
+		if (form?.twoStepSetup) setup = form.twoStepSetup;
+		if (form?.twoStepTurnedOn && setup) {
+			savedCodes = setup.backupCodes;
+			setup = undefined;
+		}
+		if (form?.newBackupCodes) savedCodes = form.newBackupCodes;
+		if (form?.twoStepTurnedOff) savedCodes = undefined;
+	});
+	const twoStepErrors: Record<string, string> = {
+		current_password_wrong: 'That’s not your password.',
+		code_wrong:
+			'That code didn’t match. Codes refresh every 30 seconds — check your device’s clock.',
+		already_on: 'Two-step verification is already on.',
+		not_on: 'Two-step verification is not on.'
+	};
+	const clearTwoStepFields = () => {
+		return async ({ update }: { update: (options?: { reset?: boolean }) => Promise<void> }) => {
+			await update({ reset: false });
+			twoStepPassword = '';
+			twoStepCode = '';
+		};
+	};
 
 	let passkeyName = $state('');
 	let addingPasskey = $state(false);
@@ -93,6 +125,13 @@
 		email_change_undone: { title: 'Change of email undone', icon: 'mail' },
 		provider_linked: { title: 'Sign-in provider connected', icon: 'link' },
 		provider_unlinked: { title: 'Sign-in provider disconnected', icon: 'link' },
+		two_step_turned_on: { title: 'Two-step verification turned on', icon: 'check' },
+		two_step_turned_off: { title: 'Two-step verification turned off', icon: 'alert' },
+		two_step_change_refused: {
+			title: 'Failed attempt to change two-step verification',
+			icon: 'alert'
+		},
+		backup_codes_regenerated: { title: 'New backup codes made', icon: 'check' },
 		passkey_added: { title: 'Passkey added', icon: 'fingerprint' },
 		passkey_removed: { title: 'Passkey removed', icon: 'fingerprint' },
 		account_deletion_requested: { title: 'Account deletion requested', icon: 'alert' },
@@ -204,6 +243,96 @@
 					<Text variant="muted">This browser may not support passkeys.</Text>
 				{/if}
 			</Stack>
+		</Stack>
+	</Card>
+
+	<Card>
+		<Stack gap="large">
+			<Stack gap="small">
+				<Heading level={2}>Two-step verification</Heading>
+				<Text variant="lead">
+					After your password, also ask for a 6-digit code from an authenticator app on your phone.
+					It is {data.twoStepOn ? 'on' : 'off'}.
+				</Text>
+			</Stack>
+
+			{#if form?.twoStepError}
+				<Alert variant="danger" title="That didn’t work">{twoStepErrors[form.twoStepError]}</Alert>
+			{:else if form?.twoStepTurnedOn}
+				<Alert variant="success" title="Two-step verification is on">
+					You’ll be asked for a code the next time you log in with your password.
+				</Alert>
+			{:else if form?.twoStepTurnedOff}
+				<Alert variant="success" title="Two-step verification is off" />
+			{/if}
+
+			{#if savedCodes}
+				<Stack gap="medium">
+					<Alert variant="warning" title="Save these backup codes now">
+						Each one works once if you can’t use your authenticator app. They won’t be shown again.
+					</Alert>
+					<CodeList codes={savedCodes} label="Backup codes" />
+				</Stack>
+			{/if}
+
+			{#if setup}
+				<Stack gap="medium">
+					<Text>
+						1. Scan this code with your authenticator app, or type the set-up key in by hand.
+					</Text>
+					<QrCode value={setup.totpUri} label="QR code for your authenticator app" />
+					<Text variant="muted">Set-up key: <b>{setup.setupKey}</b></Text>
+					<Text>2. Enter the 6-digit code the app shows.</Text>
+				</Stack>
+				<form method="POST" action="?/confirmTwoStep" novalidate use:enhance={clearTwoStepFields}>
+					<Stack gap="medium">
+						<TextField
+							label="6-digit code"
+							name="code"
+							autocomplete="one-time-code"
+							numeric
+							required
+							bind:value={twoStepCode}
+						/>
+						<div><Button type="submit">Turn on</Button></div>
+					</Stack>
+				</form>
+			{:else if !data.hasPassword}
+				<Text variant="muted">
+					Two-step verification follows a password. Set a password in your account settings first.
+				</Text>
+			{:else}
+				<form
+					method="POST"
+					action={data.twoStepOn ? '?/newBackupCodes' : '?/startTwoStep'}
+					novalidate
+					use:enhance={clearTwoStepFields}
+				>
+					<Stack gap="medium">
+						<TextField
+							label="Your password"
+							name="password"
+							type="password"
+							autocomplete="current-password"
+							required
+							hint="To confirm it’s you."
+							bind:value={twoStepPassword}
+						/>
+						<Stack gap="small">
+							{#if data.twoStepOn}
+								<div><Button type="submit" variant="outline">Get new backup codes</Button></div>
+								<div>
+									<Button type="submit" variant="danger" formaction="?/turnOffTwoStep">
+										Turn off two-step verification
+									</Button>
+								</div>
+							{:else}
+								<div><Button type="submit">Set up two-step verification</Button></div>
+							{/if}
+						</Stack>
+					</Stack>
+				</form>
+			{/if}
 		</Stack>
 	</Card>
 

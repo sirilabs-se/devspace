@@ -82,6 +82,17 @@ export {
 	type SignUpField,
 	type SignUpResult
 } from './sign-up';
+export {
+	completeTwoStepLogin,
+	confirmTwoStepSetup,
+	hasTwoStepChallenge,
+	isTwoStepOn,
+	regenerateBackupCodes,
+	startTwoStepSetup,
+	turnOffTwoStep,
+	type CompleteTwoStepLoginResult,
+	type StartTwoStepSetupResult
+} from './two-step';
 export type { UserId } from './user-id';
 export {
 	changeUsername,

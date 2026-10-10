@@ -17,11 +17,14 @@ import { toUserId } from './user-id';
  *   email and a wrong password, so it never reveals who is registered. It is
  *   also the answer while an email is locked out after repeated failures, even
  *   for the right password, so a lockout looks like any other failure.
+ * - "second_step": the password was right and the person has the second step
+ *   switched on. They are not signed in until they enter a code.
  * - "unverified": the password was right, but the email isn't verified yet.
  * - "rate_limited": too many login attempts from this network address.
  */
 export type LogInResult =
 	| { status: 'signed_in' }
+	| { status: 'second_step' }
 	| { status: 'invalid' }
 	| { status: 'unverified' }
 	| { status: 'rate_limited'; retryAfterSeconds: number };
@@ -58,12 +61,15 @@ export async function logIn(
 		return { status: 'invalid' };
 	}
 
+	let needsSecondStep: boolean;
 	try {
-		const { headers } = await getAuth().api.signInEmail({
+		const { headers, response } = await getAuth().api.signInEmail({
 			body: { email, password, rememberMe },
 			returnHeaders: true
 		});
+		// With the second step on, this sets a short-lived "code owed" cookie, not a session.
 		applySessionCookies(headers, cookies);
+		needsSecondStep = 'twoFactorRedirect' in response && response.twoFactorRedirect === true;
 	} catch (error) {
 		if (!(error instanceof APIError)) throw error;
 
@@ -80,6 +86,9 @@ export async function logIn(
 	}
 
 	await clearLoginFailures(email);
+	// The sign-in is recorded when the code is accepted, in `completeTwoStepLogin`.
+	if (needsSecondStep) return { status: 'second_step' };
+
 	await recordAuditEvent(subject, 'login', subject, {
 		...context,
 		details: { method: 'password', rememberMe }

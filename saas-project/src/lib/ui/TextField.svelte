@@ -12,6 +12,7 @@
 		autocomplete,
 		required = false,
 		disabled = false,
+		numeric = false,
 		optional = false,
 		hint,
 		status,
@@ -29,6 +30,8 @@
 		required?: boolean;
 		/** Shown but not editable, and not sent with the form. */
 		disabled?: boolean;
+		/** For codes made of digits: phones show the number pad. */
+		numeric?: boolean;
 		/** Marks the field "Optional" beside its label. */
 		optional?: boolean;
 		/** Standing guidance shown under the field. */
@@ -64,6 +67,7 @@
 			{placeholder}
 			{autocomplete}
 			{disabled}
+			inputmode={numeric ? 'numeric' : undefined}
 			aria-required={required ? 'true' : undefined}
 			bind:value
 			aria-invalid={error ? 'true' : undefined}

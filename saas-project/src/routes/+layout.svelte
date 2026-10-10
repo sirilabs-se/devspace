@@ -9,6 +9,7 @@
 	const plainRoutes = [
 		'/signup',
 		'/login',
+		'/login/two-step',
 		'/verify-email',
 		'/forgot-password',
 		'/reset-password',
