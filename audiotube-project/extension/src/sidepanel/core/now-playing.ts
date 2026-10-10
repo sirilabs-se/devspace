@@ -69,6 +69,8 @@ const defaultDeps: NowPlayingDeps = {
 	now: () => Date.now()
 };
 
+/** How long the button keeps showing what was asked for while the real state is on its way. */
+export const OPTIMISTIC_MS = 4000;
 /** How long a resumed tab may take to start before the panel says it is waiting. */
 export const WAITING_AFTER_MS = 10_000;
 /** How often an open panel asks the background to check that the playback tab is still there. */
@@ -103,6 +105,14 @@ export function createNowPlayingController(
 		waitingToStart: false
 	};
 	let waitTimer: ReturnType<typeof setTimeout> | undefined;
+	// What the user just asked for, shown at once; cleared when the real state arrives or after a while.
+	let asked: boolean | null = null;
+	let askedTimer: ReturnType<typeof setTimeout> | undefined;
+
+	function clearAsked() {
+		asked = null;
+		clearTimeout(askedTimer);
+	}
 	const listeners = new Set<(view: NowPlayingView) => void>();
 
 	function publish() {
@@ -125,7 +135,8 @@ export function createNowPlayingController(
 				thumbnailUrl: thumbnailUrl(nowPlaying.videoId),
 				positionText: formatPosition(nowPlaying.positionSec)
 			},
-			playing: playbackTab !== null && ['playing', 'buffering'].includes(playbackTab.state),
+			playing:
+				asked ?? (playbackTab !== null && ['playing', 'buffering'].includes(playbackTab.state)),
 			canControl: nowPlaying !== null && playbackTab !== null,
 			canResume: nowPlaying !== null && playbackTab === null,
 			waitingToStart: waiting && elapsed >= WAITING_AFTER_MS
@@ -143,6 +154,8 @@ export function createNowPlayingController(
 		}),
 		deps.watchPlaybackTab((value) => {
 			playbackTab = value;
+			// The real state has arrived; it replaces what was asked for.
+			clearAsked();
 			publish();
 		}),
 		deps.watchPendingResume((value) => {
@@ -172,7 +185,19 @@ export function createNowPlayingController(
 		},
 		togglePlayPause() {
 			if (!view.canControl) return;
-			void deps.command(view.playing ? 'pause' : 'play');
+			const wantPlaying = !view.playing;
+			asked = wantPlaying;
+			clearTimeout(askedTimer);
+			askedTimer = setTimeout(() => {
+				asked = null;
+				publish();
+			}, OPTIMISTIC_MS);
+			publish();
+			void deps.command(wantPlaying ? 'play' : 'pause').then((response) => {
+				if (response.ok) return;
+				clearAsked();
+				publish();
+			});
 		},
 		goToVideo() {
 			if (!view.canControl) return;
@@ -186,6 +211,7 @@ export function createNowPlayingController(
 			for (const stop of stops) stop();
 			clearInterval(checker);
 			clearTimeout(waitTimer);
+			clearTimeout(askedTimer);
 			listeners.clear();
 		}
 	};

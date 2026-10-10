@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { NowPlaying, PendingResume, PlaybackTab } from '../../shared';
-import { createNowPlayingController, thumbnailUrl, type NowPlayingDeps } from './now-playing';
+import {
+	createNowPlayingController,
+	OPTIMISTIC_MS,
+	thumbnailUrl,
+	type NowPlayingDeps
+} from './now-playing';
 
 const nowPlaying: NowPlaying = {
 	videoId: 'aqz-KE-bpKQ',
@@ -119,6 +124,39 @@ describe('createNowPlayingController', () => {
 		setTab(tab('paused'));
 		controller.togglePlayPause();
 		expect(command).toHaveBeenLastCalledWith('play');
+	});
+
+	it('shows the asked-for state at once, before the real one arrives', async () => {
+		const { controller, setTab } = setup({ now: nowPlaying, tab: tab('playing') });
+		await settle();
+		expect(controller.get().playing).toBe(true);
+		controller.togglePlayPause();
+		expect(controller.get().playing).toBe(false);
+		// The real state arrives and replaces it.
+		setTab(tab('paused'));
+		expect(controller.get().playing).toBe(false);
+		setTab(tab('playing'));
+		expect(controller.get().playing).toBe(true);
+	});
+
+	it('goes back to the real state if the command fails', async () => {
+		const { controller, command } = setup({ now: nowPlaying, tab: tab('playing') });
+		command.mockResolvedValue({ ok: false, error: 'failed' });
+		await settle();
+		controller.togglePlayPause();
+		await settle();
+		expect(controller.get().playing).toBe(true);
+	});
+
+	it('goes back to the real state if it never arrives', async () => {
+		vi.useFakeTimers();
+		const { controller } = setup({ now: nowPlaying, tab: tab('playing') });
+		await vi.advanceTimersByTimeAsync(0);
+		controller.togglePlayPause();
+		expect(controller.get().playing).toBe(false);
+		await vi.advanceTimersByTimeAsync(OPTIMISTIC_MS + 10);
+		expect(controller.get().playing).toBe(true);
+		vi.useRealTimers();
 	});
 
 	it('sends go-to-video', async () => {

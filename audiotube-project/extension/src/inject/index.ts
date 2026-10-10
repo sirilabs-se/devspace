@@ -3,7 +3,8 @@ import {
 	onMessageToPage,
 	PLAYER_SELECTOR,
 	sendToContent,
-	type PlayerVideoDetails
+	type PlayerVideoDetails,
+	type PlayState
 } from '../shared';
 import { createQualityManager, type PlayerApi } from './quality';
 import { createReporter, playStateFromNumber, type PlayerSnapshot } from './reporter';
@@ -68,6 +69,20 @@ function setPlayback(wantPlaying?: boolean) {
 	}
 }
 
+/**
+ * The play state, taken from the video element where there is one. YouTube's own state can trail the element
+ * by a moment, and a hidden tab's timer is throttled, so waiting for the next beat would be slow.
+ */
+function currentState(player: YouTubePlayer): PlayState {
+	const video = (player as unknown as HTMLElement).querySelector?.('video');
+	if (video) {
+		if (video.ended) return 'ended';
+		if (video.paused) return 'paused';
+		return video.readyState >= 3 ? 'playing' : 'buffering';
+	}
+	return playStateFromNumber(player.getPlayerState?.());
+}
+
 const textOf = (value: unknown) => (typeof value === 'string' ? value : '');
 
 /** What the main player shows now, or null when there is none or it has not got a video yet. */
@@ -91,7 +106,7 @@ function readSnapshot(): PlayerSnapshot | null {
 		};
 		return {
 			...details,
-			state: playStateFromNumber(player.getPlayerState?.()),
+			state: currentState(player),
 			positionSec: Number.isFinite(position) && position > 0 ? Math.floor(position) : 0,
 			adPlaying: (player as unknown as HTMLElement).classList?.contains('ad-showing') === true
 		};
@@ -119,24 +134,15 @@ const onNavigate = () => {
 };
 document.addEventListener('yt-navigate-finish', onNavigate);
 
-// The player's own events report a pause or play at once; the beat catches whatever they miss.
+// The video's own events report a pause or play at once. They are listened for on the document, in the
+// capture phase (media events do not bubble), so a video element YouTube swaps for another is still heard.
 const VIDEO_EVENTS = ['play', 'playing', 'pause', 'waiting', 'ended', 'loadedmetadata', 'seeked'];
-let watchedVideo: HTMLVideoElement | null = null;
-const onVideoEvent = () => reporter.check();
-function watchVideo() {
-	const video =
-		mainPlayer() && document.querySelector<HTMLVideoElement>(`${PLAYER_SELECTOR} video`);
-	if (video === watchedVideo) return;
-	for (const name of VIDEO_EVENTS) watchedVideo?.removeEventListener(name, onVideoEvent);
-	watchedVideo = video || null;
-	for (const name of VIDEO_EVENTS) watchedVideo?.addEventListener(name, onVideoEvent);
-}
+const onVideoEvent = (event: Event) => {
+	if (event.target instanceof HTMLVideoElement) reporter.check();
+};
+for (const name of VIDEO_EVENTS) document.addEventListener(name, onVideoEvent, true);
 
-const beat = setInterval(() => {
-	watchVideo();
-	reporter.check();
-}, CHECK_EVERY_MS);
-watchVideo();
+const beat = setInterval(() => reporter.check(), CHECK_EVERY_MS);
 reporter.check();
 
 scope[SLOT] = {
@@ -145,7 +151,7 @@ scope[SLOT] = {
 		clearInterval(beat);
 		stopListening();
 		document.removeEventListener('yt-navigate-finish', onNavigate);
-		for (const name of VIDEO_EVENTS) watchedVideo?.removeEventListener(name, onVideoEvent);
+		for (const name of VIDEO_EVENTS) document.removeEventListener(name, onVideoEvent, true);
 	}
 };
 

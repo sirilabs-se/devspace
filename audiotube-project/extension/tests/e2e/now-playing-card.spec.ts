@@ -204,3 +204,54 @@ test('the play button works from the keyboard and is labelled', async ({
 	await expect.poll(() => paused(page)).toBe(true);
 	await expect(card(panel).getByRole('button', { name: 'Play' })).toBeFocused();
 });
+
+test('the button changes at once, and the real state follows even when YouTube is slow to say it', async ({
+	context,
+	extensionId
+}) => {
+	await route(context);
+	const panel = await openPanel(context, extensionId);
+	const page = await playVideo(context, 'testvideo01', () => {
+		(window as unknown as { __stateLagMs: number }).__stateLagMs = 1500;
+	});
+	await expect(card(panel).getByRole('button', { name: 'Pause' })).toBeVisible();
+
+	const started = Date.now();
+	await card(panel).getByRole('button', { name: 'Pause' }).click();
+	// At once: shown before the player has even been asked.
+	await expect(card(panel).getByRole('button', { name: 'Play' })).toBeVisible({ timeout: 300 });
+	await expect.poll(() => paused(page), { timeout: 1000 }).toBe(true);
+
+	// And it stays Play: the slow state from YouTube does not flip it back.
+	await panel.waitForTimeout(2500);
+	await expect(card(panel).getByRole('button', { name: 'Play' })).toBeVisible();
+	expect(Date.now() - started).toBeGreaterThan(2500);
+});
+
+test('pausing on YouTube shows in the panel within a second, with a slow YouTube state', async ({
+	context,
+	extensionId
+}) => {
+	await route(context);
+	const panel = await openPanel(context, extensionId);
+	const page = await playVideo(context, 'testvideo01', () => {
+		(window as unknown as { __stateLagMs: number }).__stateLagMs = 3000;
+	});
+	await expect(card(panel).getByRole('button', { name: 'Pause' })).toBeVisible();
+	await page.evaluate(() => document.querySelector('video')!.pause());
+	await expect(card(panel).getByRole('button', { name: 'Play' })).toBeVisible({ timeout: 1500 });
+});
+
+test('a pause on a video element YouTube swapped in shows in the panel without waiting for a beat', async ({
+	context,
+	extensionId
+}) => {
+	await route(context);
+	const panel = await openPanel(context, extensionId);
+	const page = await playVideo(context);
+	await expect(card(panel).getByRole('button', { name: 'Pause' })).toBeVisible();
+	await page.evaluate(() => (window as unknown as { __swapVideo(): Promise<void> }).__swapVideo());
+	await page.waitForTimeout(1500); // beyond one beat, so only the event can explain a quick change
+	await page.evaluate(() => document.querySelector('video')!.pause());
+	await expect(card(panel).getByRole('button', { name: 'Play' })).toBeVisible({ timeout: 600 });
+});

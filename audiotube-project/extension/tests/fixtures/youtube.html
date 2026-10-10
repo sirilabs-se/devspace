@@ -139,7 +139,17 @@
 				player.getDuration = () => window.__duration ?? 212;
 				player.getCurrentTime = () => window.__position ?? 0;
 				player.getAvailableQualityLevels = () => window.__levels;
-				player.getPlayerState = () => (player.querySelector('video').paused ? 2 : 1);
+				// YouTube's own state can trail the video element by a moment; window.__stateLagMs imitates that.
+				let shown = null;
+				const video = player.querySelector('video');
+				for (const name of ['play', 'pause']) {
+					video.addEventListener(name, () => {
+						const actual = video.paused ? 2 : 1;
+						if (window.__stateLagMs) setTimeout(() => (shown = actual), window.__stateLagMs);
+						else shown = actual;
+					});
+				}
+				player.getPlayerState = () => shown ?? (video.paused ? 2 : 1);
 				player.playVideo = () => {
 					window.__playbackCalls.push('play');
 					player.querySelector('video').play();
@@ -189,6 +199,15 @@
 				video.muted = true;
 				video.srcObject = canvas.captureStream(20);
 				await video.play();
+			};
+			// YouTube can replace the <video> element while a video plays; this does the same.
+			window.__swapVideo = async () => {
+				const old = document.querySelector('#movie_player video');
+				const next = document.createElement('video');
+				next.muted = true;
+				next.srcObject = old.srcObject;
+				old.replaceWith(next);
+				await next.play();
 			};
 			window.__pipResult = null;
 			window.__tryPip = () => {

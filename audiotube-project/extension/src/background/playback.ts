@@ -160,9 +160,10 @@ async function takeOver(tab: ReportingTab, positionSec: number, now: number): Pr
 
 	// There is one playback tab (GLB-001): the old one is paused, never closed (PLY-040).
 	if (previous && previous.tabId !== tab.tabId) {
+		// Not waited for: a tab that is frozen or slow to answer must not hold up every report behind it.
 		const pause: TabCommand = { type: 'player/command', command: 'pause' };
-		await chrome.tabs.sendMessage(previous.tabId, pause).catch(() => {});
-		await chrome.tabs.update(previous.tabId, { autoDiscardable: true }).catch(() => {});
+		void chrome.tabs.sendMessage(previous.tabId, pause).catch(() => {});
+		void chrome.tabs.update(previous.tabId, { autoDiscardable: true }).catch(() => {});
 	}
 }
 
