@@ -10,7 +10,7 @@
 			}
 			#movie_player {
 				position: relative;
-				width: 640px;
+				width: min(640px, 100vw);
 				height: 360px;
 				background: #345;
 				overflow: hidden;
@@ -29,6 +29,20 @@
 				left: 20px;
 				bottom: 60px;
 				z-index: 10;
+				color: #fff;
+			}
+			body.theater #movie_player {
+				width: min(900px, 100vw);
+			}
+			#movie_player:fullscreen {
+				width: 100vw;
+				height: 100vh;
+			}
+			.ytp-error {
+				position: absolute;
+				inset: 0;
+				z-index: 44;
+				background: #000;
 				color: #fff;
 			}
 			.ytp-play-button {
@@ -51,6 +65,13 @@
 		</style>
 	</head>
 	<body>
+		<div id="tools">
+			<button id="theater" onclick="document.body.classList.toggle('theater')">Theater</button>
+			<button id="fullscreen" onclick="document.getElementById('movie_player').requestFullscreen()">
+				Fullscreen
+			</button>
+			<button id="error" onclick="window.__showError()">Error screen</button>
+		</div>
 		<ytd-app>
 			<div id="slot"></div>
 		</ytd-app>
@@ -104,6 +125,13 @@
 				document.getElementById('play')?.addEventListener('click', () => window.__playClicks++);
 			}
 			// Mimics YouTube's in-page navigation: the URL changes and an event is fired, with no reload.
+			window.__showError = () => {
+				const player = document.getElementById('movie_player');
+				const error = document.createElement('div');
+				error.className = 'ytp-error';
+				error.textContent = 'This video is unavailable';
+				player.append(error);
+			};
 			window.__navigate = (path) => {
 				history.pushState({}, '', path);
 				render();

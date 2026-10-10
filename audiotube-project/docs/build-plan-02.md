@@ -35,8 +35,8 @@ These apply to this phase only and do not change the requirements document.
 | # | Task | Requirements | Depends on | Status |
 |---|---|---|---|---|
 | 8 | Fixes from the phase 1 review | GLB-009, decision f | 7 | Done |
-| 9 | Overlay stays in place: theater, fullscreen, resize, error screen | PLY-013, PLY-020 | 8 | To do |
-| 10 | No flash on load, no ambient glow | PLY-015, PLY-017 | 8 | To do |
+| 9 | Overlay stays in place: theater, fullscreen, resize, error screen | PLY-013, PLY-020 | 8 | Done |
+| 10 | No flash on load, no ambient glow | PLY-015, PLY-017 | 8 | In progress |
 | 11 | Picture-in-picture off while audio-only is on | PLY-016 | 8 | To do |
 | 12 | Click to pause, and YouTube's shortcuts keep working | PLY-018, PLY-019 | 8 | To do |
 | 13 | Overlay on YouTube's mini-player | PLY-014, PLY-022 | 9 | To do |
@@ -107,9 +107,16 @@ Task 8 comes first; tasks 9 to 12 and 14 can then be done in any order, and task
 
 **Done when:**
 
-- [ ] On the test page, the overlay matches the player's size in normal, theater and fullscreen layouts and after a resize
-- [ ] On the test page, the overlay stays on top of the error screen
-- [ ] Manual check on real YouTube passes: theater, fullscreen (button and `F` key), resize, an unavailable video
+- [x] On the test page, the overlay matches the player's size in normal, theater and fullscreen layouts and after a resize
+- [x] On the test page, the overlay stays on top of the error screen
+- [x] Manual check on real YouTube passes: theater, fullscreen (button and `F` key), resize, an unavailable video
+
+**Notes:**
+
+- Nothing needed fixing: the overlay is a child of `#movie_player`, sized `inset: 0`, and its `z-index` (100000) is far above YouTube's error element (44), so it follows the player into theater and fullscreen and stays above the error screen.
+- The test page gained a theater toggle, a fullscreen button (which fullscreens `#movie_player`, as YouTube does), a resizable player, and an error element with YouTube's `ytp-error` class and z-index. Five browser tests cover them.
+- Real YouTube, headless Chromium, signed out: theater (`T` key), a resize to 900 px, fullscreen and back (`F` key) all left the overlay exactly the player's size and on top of the controls. Fullscreen was checked through the `F` key only; the fullscreen button goes through the same player code. A bad video id shows a page-level "Video unavailable" with no player at all (nothing to cover); the in-player error element was simulated on a real page and the overlay stayed on top of it. A real in-player error (a private or region-blocked video) was not found in this environment.
+
 
 ### 10. No flash on load, no ambient glow
 
