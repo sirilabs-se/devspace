@@ -36,8 +36,8 @@ These apply to this phase only and do not change the requirements document.
 |---|---|---|---|---|
 | 8 | Fixes from the phase 1 review | GLB-009, decision f | 7 | Done |
 | 9 | Overlay stays in place: theater, fullscreen, resize, error screen | PLY-013, PLY-020 | 8 | Done |
-| 10 | No flash on load, no ambient glow | PLY-015, PLY-017 | 8 | In progress |
-| 11 | Picture-in-picture off while audio-only is on | PLY-016 | 8 | To do |
+| 10 | No flash on load, no ambient glow | PLY-015, PLY-017 | 8 | Done |
+| 11 | Picture-in-picture off while audio-only is on | PLY-016 | 8 | In progress |
 | 12 | Click to pause, and YouTube's shortcuts keep working | PLY-018, PLY-019 | 8 | To do |
 | 13 | Overlay on YouTube's mini-player | PLY-014, PLY-022 | 9 | To do |
 | 14 | "Couldn't cover YouTube's player" message | PLY-021 | 8 | To do |
@@ -135,12 +135,21 @@ Task 8 comes first; tasks 9 to 12 and 14 can then be done in any order, and task
 
 **Done when:**
 
-- [ ] On the test page, with audio-only on, the video element is never visible from the first paint until the overlay is in place, on load and on an in-page move
-- [ ] On the test page, the ambient glow element is hidden while audio-only is on and shown again when it turns off
-- [ ] With audio-only off, the early CSS is not added to new pages
-- [ ] Manual check on real YouTube passes: reload a watch page and move between videos with audio-only on, no picture or glow visible
+- [x] On the test page, with audio-only on, the video element is never visible from the first paint until the overlay is in place, on load and on an in-page move
+- [x] On the test page, the ambient glow element is hidden while audio-only is on and shown again when it turns off
+- [x] With audio-only off, the early CSS is not added to new pages
+- [x] Manual check on real YouTube passes: reload a watch page and move between videos with audio-only on, no picture or glow visible
 
 **Notes:** The early CSS stays in a page once Chrome has added it. Make sure turning audio-only off in an already-open page still shows the picture (for example, key the CSS on an attribute the content script removes).
+
+**Notes:**
+
+- The background registers `early.css` as a CSS-only content script at `document_start` while audio-only is on and removes it when it turns off (`background/early-css.ts`). It follows the saved value at service worker start and on every change, one change after another. Registered scripts persist across browser sessions.
+- The CSS hides `#movie_player`'s video, video container, cued thumbnail and storyboard preview, and `#cinematics`, unless `<html>` carries `data-audiotube-visible`. The content script sets that attribute while audio-only is off (`content/visibility.ts`), so an open page shows the picture again at once. A page that finds the attribute absent before the script has read the saved value stays hidden, which is the safe side.
+- The overlay also hides `#cinematics` itself with a stylesheet it adds to the document while it is present, so the glow is hidden even on a page opened before the early CSS was registered.
+- Test: a frame-by-frame recorder on the test page finds no frame with the picture visible and no overlay, on load and on an in-page move. As a control, with the early CSS unregistered the same recorder sees 2 such frames on load.
+- Real YouTube: 0 such frames on first load, reload and an in-page move; turning audio-only off shows the picture. The ambient glow could not be seen in this environment: YouTube's `#cinematics` is already `display: none` for a signed-out headless profile with or without the extension, so the hide rule was only verified on the test page.
+
 
 ### 11. Picture-in-picture off while audio-only is on
 

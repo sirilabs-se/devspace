@@ -54,10 +54,16 @@ export function createOverlay(player: HTMLElement, onShowVideo: () => Promise<bo
 	root.append(cover);
 	player.append(host);
 
+	// YouTube's ambient glow follows the picture; it is hidden for as long as the overlay is there.
+	const glow = new CSSStyleSheet();
+	glow.replaceSync('#cinematics { display: none !important; }');
+	document.adoptedStyleSheets = [...document.adoptedStyleSheets, glow];
+
 	return {
 		host,
 		destroy() {
 			clearTimeout(hideMessage);
+			document.adoptedStyleSheets = document.adoptedStyleSheets.filter((sheet) => sheet !== glow);
 			host.remove();
 		}
 	};

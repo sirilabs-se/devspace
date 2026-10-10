@@ -19,7 +19,16 @@ describe('background start-up', () => {
 			},
 			sidePanel: { setPanelBehavior: vi.fn().mockResolvedValue(undefined) },
 			tabs: { query },
-			scripting: { executeScript }
+			storage: {
+				local: { get: vi.fn().mockResolvedValue({}) },
+				onChanged: { addListener: vi.fn(), removeListener: vi.fn() }
+			},
+			scripting: {
+				executeScript,
+				getRegisteredContentScripts: vi.fn().mockResolvedValue([]),
+				registerContentScripts: vi.fn().mockResolvedValue(undefined),
+				unregisterContentScripts: vi.fn().mockResolvedValue(undefined)
+			}
 		});
 
 		await import('./index');

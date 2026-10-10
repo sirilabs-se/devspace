@@ -1,0 +1,13 @@
+/* Added to YouTube pages before they are drawn while audio-only is on, so the picture
+   and the ambient glow are never seen. The content script sets data-audiotube-visible
+   on <html> when audio-only is off, which lifts all of this on a page that is already open. */
+html:not([data-audiotube-visible]) #movie_player video,
+html:not([data-audiotube-visible]) #movie_player .html5-video-container,
+html:not([data-audiotube-visible]) #movie_player .ytp-cued-thumbnail-overlay,
+html:not([data-audiotube-visible]) #movie_player .ytp-storyboard-framepreview {
+	visibility: hidden !important;
+}
+
+html:not([data-audiotube-visible]) #cinematics {
+	display: none !important;
+}
