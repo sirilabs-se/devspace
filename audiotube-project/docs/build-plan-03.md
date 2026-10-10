@@ -43,8 +43,8 @@ These apply to this phase only and do not change the requirements document.
 | 17 | Now Playing from YouTube's player | PLY-037, PLY-038, PLY-048, PLY-130 | 16 | Done |
 | 18 | One playback tab across all windows | GLB-001, PLY-039, PLY-040, PLY-045 | 17 | Done |
 | 19 | Now Playing in the side panel | PLY-036, PLY-051, PLY-055, PLY-056, PLY-057, PLY-115, PLY-119 | 17 | Done |
-| 20 | Playback tab lost, and Resume | PLY-049, PLY-050, PLY-052, PLY-053, PLY-054 | 18, 19 | In progress |
-| 21 | Moving around in the playback tab | PLY-044, PLY-045 | 18 | To do |
+| 20 | Playback tab lost, and Resume | PLY-049, PLY-050, PLY-052, PLY-053, PLY-054 | 18, 19 | Done |
+| 21 | Moving around in the playback tab | PLY-044, PLY-045 | 18 | In progress |
 
 Statuses: **To do**, **In progress**, **Done**, **Blocked** (say why in the task's notes).
 
@@ -259,11 +259,24 @@ Task 15 comes first, then the spike. Tasks 18 and 19 can be done in either order
 
 **Done when:**
 
-- [ ] Closing the playback tab at 12:30 → the side panel shows the video paused at 12:30 with Resume
-- [ ] The same when the tab moves to another site
-- [ ] Resume opens a new tab without moving focus; the video plays from within about 2 seconds of 12:30 (or as decided from the spike)
-- [ ] After a browser restart, Now Playing shows paused with Resume, and nothing plays by itself
-- [ ] Manual check on real YouTube passes, including a discarded tab if the spike found a way to cause one
+- [x] Closing the playback tab at 12:30 → the side panel shows the video paused at 12:30 with Resume
+- [x] The same when the tab moves to another site
+- [x] Resume opens a new tab without moving focus; the video plays from within about 2 seconds of 12:30 (or as decided from the spike)
+- [x] After a browser restart, Now Playing shows paused with Resume, and nothing plays by itself
+- [x] Manual check on real YouTube passes, including a discarded tab if the spike found a way to cause one
+
+**Notes:**
+
+- Loss (`background/playback.ts`): the playback tab is lost when it is closed (`tabs.onRemoved`), is discarded (`onUpdated` with `discarded`, and `onReplaced`, below), or is found gone, `unloaded` (a crash raises no event), discarded or **no longer on YouTube** when looked at. The look happens when the service worker starts, when the side panel asks (`player/command` `check`: an open panel asks when it opens and every 15 seconds), and 2.5 seconds after the tab starts a page load.
+- **A page load alone does not mean lost.** The first version treated `onUpdated` `status: 'loading'` as lost; that also fires for YouTube's own in-page moves (`history.pushState`), which made every move to another video drop the playback tab. The browser test for task 18 caught it. The tab is now looked at after the load: a tab with no URL (the extension has no access to other sites) or a non-YouTube URL is lost; a YouTube URL keeps the role. Consequence for task 21: a tab that reloads YouTube stays the playback tab and reports again.
+- **A discard gives the tab a new ID** (`tabs.onReplaced(new, old)`, and the discarded event arrives for the new ID), found with a spike script after the first tests failed; the old ID never fires. The background now treats `onReplaced` of the playback tab as lost.
+- On loss the background removes `playbackTab` (and the tab's video note) and keeps Now Playing, with the position saved by the last report (never more than about 5 seconds old). It never closes, reloads or navigates a tab (`PLY-049`).
+- Panel: with a video and no playback tab the card shows "Paused at m:ss" and a Resume button in place of play and pause; Go to video is disabled.
+- Resume (decision from the spike): `chrome.tabs.create({ url: watch?v=ID&t=<position>s, active: false })`, then the new tab is recorded at once as the playback tab, state `paused`, not discardable, with a `resume` mark in session storage. The tab's own page loading is not taken for a loss for 20 seconds after Resume. The mark clears when the tab reports `playing`. If it has not started after 10 seconds the card says "Waiting to start. Show the tab to begin playback." and Play and Go to video work on it. A first `paused` report at position 0 from the loading page does not overwrite the saved position.
+- After a browser restart there is no playback tab (session storage), Now Playing is read from local storage and shown paused with Resume; nothing opens or plays by itself (browser test).
+- Real YouTube (headless, signed out): closing the playing tab showed "Paused at 5:06" with Resume; Resume opened `watch?v=…&t=306s` in a background tab, it played at 307 within about 1.5 seconds, and the active tab did not change. The tab moved to another site and the discard were covered by browser tests on the test page, as was the crash path by unit test (a real crash could not be driven without hanging the harness).
+- Not verified: how a truly hidden tab in a normal Chrome behaves (see the spike's manual checks), and a discard under real memory pressure.
+
 
 ### 21. Moving around in the playback tab
 

@@ -21,7 +21,8 @@ describe('background start-up', () => {
 			tabs: {
 				query,
 				onRemoved: { addListener: vi.fn() },
-				onUpdated: { addListener: vi.fn() }
+				onUpdated: { addListener: vi.fn() },
+				onReplaced: { addListener: vi.fn() }
 			},
 			storage: {
 				local: { get: vi.fn().mockResolvedValue({}) },

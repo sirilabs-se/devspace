@@ -65,3 +65,10 @@ export {
 	type PlaybackTab,
 	type PlayState
 } from './storage/playback-tab';
+export {
+	parsePendingResume,
+	readPendingResume,
+	RESUME_KEY,
+	watchPendingResume,
+	type PendingResume
+} from './storage/resume';

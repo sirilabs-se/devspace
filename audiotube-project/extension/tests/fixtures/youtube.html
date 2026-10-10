@@ -261,6 +261,12 @@
 				document.dispatchEvent(new CustomEvent('yt-navigate-finish'));
 			};
 			render();
+			// A link with a start time, as Resume opens, starts playing there by itself, like YouTube.
+			const startAt = new URLSearchParams(location.search).get('t');
+			if (startAt) {
+				window.__position ??= Number(startAt.replace('s', '')) || 0;
+				if (!window.__noAutoplay) window.__startVideo();
+			}
 		</script>
 	</body>
 </html>

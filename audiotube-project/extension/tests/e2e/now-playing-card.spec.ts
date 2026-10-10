@@ -148,7 +148,7 @@ test('the card stays the same while the user switches tabs', async ({ context, e
 	await expect(card(panel).getByRole('heading')).toHaveText('Test video testvideo01');
 });
 
-test('with no playback tab the buttons are disabled but the video still shows', async ({
+test('with no playback tab the video shows paused with Resume, and Go to video is disabled', async ({
 	context,
 	extensionId
 }) => {
@@ -169,7 +169,8 @@ test('with no playback tab the buttons are disabled but the video still shows', 
 	);
 	const panel = await openPanel(context, extensionId);
 	await expect(card(panel).getByRole('heading')).toHaveText('Left from before');
-	await expect(card(panel).getByRole('button', { name: 'Play' })).toBeDisabled();
+	await expect(card(panel).getByRole('button', { name: 'Resume' })).toBeVisible();
+	await expect(card(panel).getByRole('button', { name: 'Play' })).toHaveCount(0);
 	await expect(card(panel).getByRole('button', { name: 'Go to video' })).toBeDisabled();
 });
 

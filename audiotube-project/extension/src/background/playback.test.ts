@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PlayerReport } from '../shared';
-import { handlePlayerReport, forgetVideosOfGoneTabs } from './playback';
+import {
+	checkPlaybackTab,
+	handlePlayerReport,
+	resumePlayback,
+	watchPlaybackTabLoss
+} from './playback';
 
 type Store = Map<string, unknown>;
 let local: Store;
@@ -8,7 +13,10 @@ let session: Store;
 const update = vi.fn();
 const sendMessage = vi.fn();
 let onRemoved: (tabId: number) => void;
-let onUpdated: (tabId: number, info: { status?: string }) => void;
+let onReplaced: (addedTabId: number, removedTabId: number) => void;
+let onUpdated: (tabId: number, info: { status?: string; discarded?: boolean }) => void;
+const tabsGet = vi.fn();
+const tabsCreate = vi.fn();
 
 function area(store: Store) {
 	return {
@@ -16,7 +24,9 @@ function area(store: Store) {
 		set: async (items: Record<string, unknown>) => {
 			for (const [k, v] of Object.entries(items)) store.set(k, v);
 		},
-		remove: async (key: string) => void store.delete(key)
+		remove: async (key: string | string[]) => {
+			for (const k of Array.isArray(key) ? key : [key]) store.delete(k);
+		}
 	};
 }
 
@@ -25,13 +35,23 @@ beforeEach(() => {
 	session = new Map();
 	update.mockReset().mockResolvedValue({});
 	sendMessage.mockReset().mockResolvedValue(undefined);
+	tabsGet.mockReset().mockResolvedValue({
+		id: 1,
+		status: 'complete',
+		discarded: false,
+		url: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ'
+	});
+	tabsCreate.mockReset().mockResolvedValue({ id: 50, windowId: 12 });
 	vi.stubGlobal('chrome', {
 		storage: { local: area(local), session: area(session) },
 		tabs: {
 			update,
 			sendMessage,
+			get: tabsGet,
+			create: tabsCreate,
 			onRemoved: { addListener: (l: typeof onRemoved) => (onRemoved = l) },
-			onUpdated: { addListener: (l: typeof onUpdated) => (onUpdated = l) }
+			onUpdated: { addListener: (l: typeof onUpdated) => (onUpdated = l) },
+			onReplaced: { addListener: (l: typeof onReplaced) => (onReplaced = l) }
 		}
 	});
 });
@@ -221,17 +241,213 @@ describe('handlePlayerReport', () => {
 	});
 });
 
-describe('forgetVideosOfGoneTabs', () => {
-	it('forgets the video of a closed tab, and of a tab that starts loading', async () => {
-		await handlePlayerReport(video(), TAB_A, NOW);
-		expect(session.has('tabVideo:1')).toBe(true);
-		forgetVideosOfGoneTabs();
-		onUpdated(1, { status: 'complete' });
-		expect(session.has('tabVideo:1')).toBe(true);
-		onUpdated(1, { status: 'loading' });
-		await vi.waitFor(() => expect(session.has('tabVideo:1')).toBe(false));
-		await handlePlayerReport(video(), TAB_A, NOW);
+async function playing(tab = TAB_A, position = 90) {
+	await handlePlayerReport(video(), tab, NOW);
+	await handlePlayerReport(state('playing', position), tab, NOW);
+	await handlePlayerReport(
+		position === 0
+			? state('playing', 0)
+			: position === 90
+				? ({ type: 'player/position', positionSec: 750 } as PlayerReport)
+				: state('playing', position),
+		tab,
+		NOW + 1000
+	);
+}
+
+describe('losing the playback tab', () => {
+	beforeEach(() => {
+		watchPlaybackTabLoss();
+	});
+
+	it('keeps Now Playing with its position when the tab is closed', async () => {
+		await playing();
 		onRemoved(1);
-		await vi.waitFor(() => expect(session.has('tabVideo:1')).toBe(false));
+		await vi.waitFor(() => expect(session.has('playbackTab')).toBe(false));
+		expect(local.get('nowPlaying')).toMatchObject({ videoId: 'aqz-KE-bpKQ', positionSec: 750 });
+	});
+
+	it('treats a tab that loads a page on another site as lost, once it has been looked at', async () => {
+		vi.useFakeTimers();
+		await playing();
+		tabsGet.mockResolvedValue({ id: 1, status: 'complete', discarded: false, url: undefined });
+		onUpdated(1, { status: 'loading' });
+		await vi.advanceTimersByTimeAsync(3000);
+		expect(session.has('playbackTab')).toBe(false);
+		expect(local.has('nowPlaying')).toBe(true);
+		vi.useRealTimers();
+	});
+
+	it('keeps the playback tab when YouTube moves on within the page, which also raises a load', async () => {
+		vi.useFakeTimers();
+		await playing();
+		tabsGet.mockResolvedValue({
+			id: 1,
+			status: 'complete',
+			discarded: false,
+			url: 'https://www.youtube.com/watch?v=jNQXAC9IVRw'
+		});
+		onUpdated(1, { status: 'loading' });
+		await vi.advanceTimersByTimeAsync(3000);
+		expect(session.get('playbackTab')).toMatchObject({ tabId: 1 });
+		vi.useRealTimers();
+	});
+
+	it('keeps a tab that is still loading its YouTube page when the look comes', async () => {
+		vi.useFakeTimers();
+		await playing();
+		tabsGet.mockResolvedValue({
+			id: 1,
+			status: 'loading',
+			discarded: false,
+			url: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ'
+		});
+		onUpdated(1, { status: 'loading' });
+		await vi.advanceTimersByTimeAsync(3000);
+		expect(session.get('playbackTab')).toMatchObject({ tabId: 1 });
+		vi.useRealTimers();
+	});
+
+	it('treats a discarded playback tab as lost', async () => {
+		await playing();
+		onUpdated(1, { discarded: true });
+		await vi.waitFor(() => expect(session.has('playbackTab')).toBe(false));
+	});
+
+	it('treats the playback tab being replaced, as a discard does with a new tab ID, as lost', async () => {
+		await playing();
+		onReplaced(99, 1);
+		await vi.waitFor(() => expect(session.has('playbackTab')).toBe(false));
+		expect(local.has('nowPlaying')).toBe(true);
+	});
+
+	it('does nothing when a tab that is not the playback tab goes', async () => {
+		await playing();
+		onRemoved(2);
+		onUpdated(2, { discarded: true });
+		await new Promise((r) => setTimeout(r, 20));
+		expect(session.get('playbackTab')).toMatchObject({ tabId: 1 });
+	});
+
+	it('leaves the playback tab alone for other updates', async () => {
+		await playing();
+		onUpdated(1, { status: 'complete' });
+		await new Promise((r) => setTimeout(r, 20));
+		expect(session.get('playbackTab')).toMatchObject({ tabId: 1 });
+	});
+
+	it('does not close, reload or navigate any tab', async () => {
+		await playing();
+		onRemoved(1);
+		await vi.waitFor(() => expect(session.has('playbackTab')).toBe(false));
+		expect(update).not.toHaveBeenCalledWith(1, expect.objectContaining({ url: expect.anything() }));
+	});
+});
+
+describe('checkPlaybackTab', () => {
+	it('keeps a tab that is there', async () => {
+		await playing();
+		await checkPlaybackTab();
+		expect(session.get('playbackTab')).toMatchObject({ tabId: 1 });
+	});
+
+	it('loses a tab that cannot be found, is unloaded after a crash, or is discarded', async () => {
+		for (const result of [
+			() => Promise.reject(new Error('No tab with id')),
+			() => Promise.resolve({ id: 1, status: 'unloaded', discarded: false }),
+			() => Promise.resolve({ id: 1, status: 'complete', discarded: true }),
+			() => Promise.resolve({ id: 1, status: 'complete', discarded: false }),
+			() =>
+				Promise.resolve({
+					id: 1,
+					status: 'complete',
+					discarded: false,
+					url: 'https://example.com/'
+				})
+		]) {
+			session.clear();
+			local.clear();
+			await playing();
+			tabsGet.mockImplementation(result);
+			await checkPlaybackTab();
+			expect(session.has('playbackTab')).toBe(false);
+			expect(local.has('nowPlaying')).toBe(true);
+		}
+	});
+
+	it('does nothing when there is no playback tab', async () => {
+		await checkPlaybackTab();
+		expect(tabsGet).not.toHaveBeenCalled();
+	});
+});
+
+describe('resumePlayback', () => {
+	const stored = {
+		videoId: 'aqz-KE-bpKQ',
+		title: 'Big Buck Bunny',
+		channel: 'Blender',
+		durationSec: 635,
+		isLive: false,
+		positionSec: 750,
+		positionSavedAt: NOW,
+		updatedAt: NOW
+	};
+
+	it('opens the video at its saved position in a background tab', async () => {
+		local.set('nowPlaying', stored);
+		expect(await resumePlayback(NOW + 5000)).toBe('ok');
+		expect(tabsCreate).toHaveBeenCalledWith({
+			url: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ&t=750s',
+			active: false
+		});
+	});
+
+	it('records the new tab as the playback tab at once, paused, and not discardable', async () => {
+		local.set('nowPlaying', stored);
+		await resumePlayback(NOW + 5000);
+		expect(session.get('playbackTab')).toEqual({
+			tabId: 50,
+			windowId: 12,
+			state: 'paused',
+			stateAt: NOW + 5000
+		});
+		expect(session.get('resume')).toEqual({ tabId: 50, startedAt: NOW + 5000 });
+		expect(update).toHaveBeenCalledWith(50, { autoDiscardable: false });
+	});
+
+	it('has nothing to resume when nothing has played', async () => {
+		expect(await resumePlayback()).toBe('nothing-to-resume');
+		expect(tabsCreate).not.toHaveBeenCalled();
+	});
+
+	it('does not open a second tab when there is already a playback tab', async () => {
+		local.set('nowPlaying', stored);
+		session.set('playbackTab', { tabId: 7, windowId: 1, state: 'paused', stateAt: NOW });
+		expect(await resumePlayback()).toBe('ok');
+		expect(tabsCreate).not.toHaveBeenCalled();
+	});
+
+	it('is not undone by the new tab loading, but clears its waiting mark when it plays', async () => {
+		vi.useRealTimers();
+		watchPlaybackTabLoss();
+		local.set('nowPlaying', stored);
+		await resumePlayback(Date.now());
+		onUpdated(50, { status: 'loading' });
+		await new Promise((r) => setTimeout(r, 20));
+		expect(session.get('playbackTab')).toMatchObject({ tabId: 50 });
+
+		await handlePlayerReport(video(), { tabId: 50, windowId: 12 }, NOW);
+		await handlePlayerReport(state('playing', 751), { tabId: 50, windowId: 12 }, NOW + 1000);
+		expect(session.has('resume')).toBe(false);
+		expect(session.get('playbackTab')).toMatchObject({ tabId: 50, state: 'playing' });
+		expect(local.get('nowPlaying')).toMatchObject({ videoId: 'aqz-KE-bpKQ', positionSec: 751 });
+	});
+
+	it('keeps the saved position when the resumed page first reports a paused state at 0', async () => {
+		local.set('nowPlaying', stored);
+		await resumePlayback(NOW + 5000);
+		await handlePlayerReport(video(), { tabId: 50, windowId: 12 }, NOW + 6000);
+		await handlePlayerReport(state('paused', 0), { tabId: 50, windowId: 12 }, NOW + 6100);
+		expect(local.get('nowPlaying')).toMatchObject({ positionSec: 750 });
 	});
 });

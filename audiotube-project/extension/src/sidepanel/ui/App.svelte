@@ -47,6 +47,7 @@
 			view={playing}
 			onTogglePlayPause={nowPlaying.togglePlayPause}
 			onGoToVideo={nowPlaying.goToVideo}
+			onResume={nowPlaying.resume}
 		/>
 		{#if cover.coverFailed}
 			<p role="status" class="m-0 rounded-card bg-card px-3.5 py-2.5 text-xs text-muted">

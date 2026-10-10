@@ -16,7 +16,7 @@ export type SetAudioOnlyResponse =
 /** Side panel → background: do this with the playback tab. */
 export interface PlayerCommandRequest {
 	type: 'player/command';
-	command: 'play' | 'pause' | 'go-to-video' | 'resume';
+	command: 'play' | 'pause' | 'go-to-video' | 'resume' | 'check';
 }
 
 export type PlayerCommandError = 'no-playback-tab' | 'nothing-to-resume' | 'failed';
@@ -74,7 +74,11 @@ export function isBackgroundRequest(message: unknown): message is BackgroundRequ
 function isPlayerCommandRequest(message: unknown): message is PlayerCommandRequest {
 	const command = (message as { command?: unknown }).command;
 	return (
-		command === 'play' || command === 'pause' || command === 'go-to-video' || command === 'resume'
+		command === 'play' ||
+		command === 'pause' ||
+		command === 'go-to-video' ||
+		command === 'resume' ||
+		command === 'check'
 	);
 }
 

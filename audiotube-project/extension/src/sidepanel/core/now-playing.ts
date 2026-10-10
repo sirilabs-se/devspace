@@ -1,10 +1,13 @@
 import {
 	readNowPlaying,
+	readPendingResume,
 	readPlaybackTab,
 	requestPlayerCommand,
 	watchNowPlaying,
+	watchPendingResume,
 	watchPlaybackTab,
 	type NowPlaying,
+	type PendingResume,
 	type PlayerCommandRequest,
 	type PlayerCommandResponse,
 	type PlaybackTab
@@ -16,6 +19,8 @@ export interface NowPlayingVideo {
 	channel: string;
 	/** From YouTube's image server, derived from the video ID. */
 	thumbnailUrl: string;
+	/** Where it was left, such as 12:30. */
+	positionText: string;
 }
 
 export interface NowPlayingView {
@@ -26,6 +31,10 @@ export interface NowPlayingView {
 	playing: boolean;
 	/** There is a playback tab to send play, pause and Go to video to. */
 	canControl: boolean;
+	/** There is a video but no tab for it: it is shown paused, and Resume opens it again. */
+	canResume: boolean;
+	/** Resume opened a tab, and it has not started playing after a while. */
+	waitingToStart: boolean;
 }
 
 export interface NowPlayingController {
@@ -34,6 +43,7 @@ export interface NowPlayingController {
 	/** Pauses if playing, plays if not. */
 	togglePlayPause(): void;
 	goToVideo(): void;
+	resume(): void;
 	dispose(): void;
 }
 
@@ -42,7 +52,10 @@ export interface NowPlayingDeps {
 	watchNowPlaying: (listener: (value: NowPlaying | null) => void) => () => void;
 	readPlaybackTab: () => Promise<PlaybackTab | null>;
 	watchPlaybackTab: (listener: (value: PlaybackTab | null) => void) => () => void;
+	readPendingResume: () => Promise<PendingResume | null>;
+	watchPendingResume: (listener: (value: PendingResume | null) => void) => () => void;
 	command: (command: PlayerCommandRequest['command']) => Promise<PlayerCommandResponse>;
+	now: () => number;
 }
 
 const defaultDeps: NowPlayingDeps = {
@@ -50,11 +63,28 @@ const defaultDeps: NowPlayingDeps = {
 	watchNowPlaying,
 	readPlaybackTab,
 	watchPlaybackTab,
-	command: requestPlayerCommand
+	readPendingResume,
+	watchPendingResume,
+	command: requestPlayerCommand,
+	now: () => Date.now()
 };
+
+/** How long a resumed tab may take to start before the panel says it is waiting. */
+export const WAITING_AFTER_MS = 10_000;
+/** How often an open panel asks the background to check that the playback tab is still there. */
+export const CHECK_EVERY_MS = 15_000;
 
 export function thumbnailUrl(videoId: string): string {
 	return `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
+}
+
+export function formatPosition(totalSeconds: number): string {
+	const seconds = Math.max(0, Math.floor(totalSeconds));
+	const h = Math.floor(seconds / 3600);
+	const m = Math.floor((seconds % 3600) / 60);
+	const s = seconds % 60;
+	const two = (n: number) => String(n).padStart(2, '0');
+	return h > 0 ? `${h}:${two(m)}:${two(s)}` : `${m}:${two(s)}`;
 }
 
 export function createNowPlayingController(
@@ -62,21 +92,43 @@ export function createNowPlayingController(
 ): NowPlayingController {
 	let nowPlaying: NowPlaying | null = null;
 	let playbackTab: PlaybackTab | null = null;
+	let pendingResume: PendingResume | null = null;
 	let readsDone = 0;
-	let view: NowPlayingView = { ready: false, video: null, playing: false, canControl: false };
+	let view: NowPlayingView = {
+		ready: false,
+		video: null,
+		playing: false,
+		canControl: false,
+		canResume: false,
+		waitingToStart: false
+	};
+	let waitTimer: ReturnType<typeof setTimeout> | undefined;
 	const listeners = new Set<(view: NowPlayingView) => void>();
 
 	function publish() {
+		clearTimeout(waitTimer);
+		const waiting =
+			pendingResume !== null &&
+			playbackTab !== null &&
+			playbackTab.tabId === pendingResume.tabId &&
+			playbackTab.state !== 'playing';
+		const elapsed = pendingResume ? deps.now() - pendingResume.startedAt : 0;
+		if (waiting && elapsed < WAITING_AFTER_MS) {
+			waitTimer = setTimeout(publish, WAITING_AFTER_MS - elapsed);
+		}
 		const next: NowPlayingView = {
-			ready: readsDone >= 2,
+			ready: readsDone >= 3,
 			video: nowPlaying && {
 				videoId: nowPlaying.videoId,
 				title: nowPlaying.title,
 				channel: nowPlaying.channel,
-				thumbnailUrl: thumbnailUrl(nowPlaying.videoId)
+				thumbnailUrl: thumbnailUrl(nowPlaying.videoId),
+				positionText: formatPosition(nowPlaying.positionSec)
 			},
 			playing: playbackTab !== null && ['playing', 'buffering'].includes(playbackTab.state),
-			canControl: nowPlaying !== null && playbackTab !== null
+			canControl: nowPlaying !== null && playbackTab !== null,
+			canResume: nowPlaying !== null && playbackTab === null,
+			waitingToStart: waiting && elapsed >= WAITING_AFTER_MS
 		};
 		if (JSON.stringify(next) === JSON.stringify(view)) return;
 		view = next;
@@ -92,31 +144,24 @@ export function createNowPlayingController(
 		deps.watchPlaybackTab((value) => {
 			playbackTab = value;
 			publish();
+		}),
+		deps.watchPendingResume((value) => {
+			pendingResume = value;
+			publish();
 		})
 	];
 
-	deps.readNowPlaying().then(
-		(value) => {
-			nowPlaying = nowPlaying ?? value;
-			readsDone++;
-			publish();
-		},
-		() => {
-			readsDone++;
-			publish();
-		}
-	);
-	deps.readPlaybackTab().then(
-		(value) => {
-			playbackTab = playbackTab ?? value;
-			readsDone++;
-			publish();
-		},
-		() => {
-			readsDone++;
-			publish();
-		}
-	);
+	const done = () => {
+		readsDone++;
+		publish();
+	};
+	deps.readNowPlaying().then((v) => ((nowPlaying = nowPlaying ?? v), done()), done);
+	deps.readPlaybackTab().then((v) => ((playbackTab = playbackTab ?? v), done()), done);
+	deps.readPendingResume().then((v) => ((pendingResume = pendingResume ?? v), done()), done);
+
+	// A crashed tab raises no event, so an open panel asks the background to look now and then.
+	void deps.command('check');
+	const checker = setInterval(() => void deps.command('check'), CHECK_EVERY_MS);
 
 	return {
 		get: () => view,
@@ -133,8 +178,14 @@ export function createNowPlayingController(
 			if (!view.canControl) return;
 			void deps.command('go-to-video');
 		},
+		resume() {
+			if (!view.canResume) return;
+			void deps.command('resume');
+		},
 		dispose() {
 			for (const stop of stops) stop();
+			clearInterval(checker);
+			clearTimeout(waitTimer);
 			listeners.clear();
 		}
 	};

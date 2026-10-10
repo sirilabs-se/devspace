@@ -13,6 +13,7 @@ export {
 } from './cover-status';
 export {
 	createNowPlayingController,
+	formatPosition,
 	thumbnailUrl,
 	type NowPlayingController,
 	type NowPlayingDeps,

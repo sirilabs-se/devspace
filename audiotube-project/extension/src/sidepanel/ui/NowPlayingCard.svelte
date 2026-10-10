@@ -6,8 +6,14 @@
 	let {
 		view,
 		onTogglePlayPause,
-		onGoToVideo
-	}: { view: NowPlayingView; onTogglePlayPause: () => void; onGoToVideo: () => void } = $props();
+		onGoToVideo,
+		onResume
+	}: {
+		view: NowPlayingView;
+		onTogglePlayPause: () => void;
+		onGoToVideo: () => void;
+		onResume: () => void;
+	} = $props();
 </script>
 
 {#if view.video}
@@ -21,18 +27,32 @@
 			<div class="flex min-w-0 flex-col">
 				<h2 class="m-0 line-clamp-2 text-lg font-medium break-words">{view.video.title}</h2>
 				<span class="truncate text-xs text-muted">{view.video.channel}</span>
+				{#if view.canResume}
+					<span class="text-xs text-muted">Paused at {view.video.positionText}</span>
+				{/if}
 			</div>
 		</div>
 		<div class="flex items-center gap-3">
-			<button
-				type="button"
-				onclick={onTogglePlayPause}
-				disabled={!view.canControl}
-				aria-label={view.playing ? 'Pause' : 'Play'}
-				class="grid size-13 flex-none cursor-pointer place-items-center rounded-full border-0 bg-accent text-on-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-default disabled:opacity-45"
-			>
-				<Icon path={view.playing ? PAUSE : PLAY} size={28} />
-			</button>
+			{#if view.canResume}
+				<button
+					type="button"
+					onclick={onResume}
+					class="flex cursor-pointer items-center gap-2 rounded-full border-0 bg-accent px-5 py-3 text-md font-medium text-on-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+				>
+					<Icon path={PLAY} size={20} />
+					Resume
+				</button>
+			{:else}
+				<button
+					type="button"
+					onclick={onTogglePlayPause}
+					disabled={!view.canControl}
+					aria-label={view.playing ? 'Pause' : 'Play'}
+					class="grid size-13 flex-none cursor-pointer place-items-center rounded-full border-0 bg-accent text-on-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-default disabled:opacity-45"
+				>
+					<Icon path={view.playing ? PAUSE : PLAY} size={28} />
+				</button>
+			{/if}
 			<button
 				type="button"
 				onclick={onGoToVideo}
@@ -42,6 +62,11 @@
 				Go to video
 			</button>
 		</div>
+		{#if view.waitingToStart}
+			<p role="status" class="m-0 text-xs text-muted">
+				Waiting to start. Show the tab to begin playback.
+			</p>
+		{/if}
 	</section>
 {:else if view.ready}
 	<section
