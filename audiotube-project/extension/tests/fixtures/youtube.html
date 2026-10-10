@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Test YouTube</title>
+		<style>
+			body {
+				margin: 0;
+				font-family: sans-serif;
+			}
+			#movie_player {
+				position: relative;
+				width: 640px;
+				height: 360px;
+				background: #345;
+				overflow: hidden;
+			}
+			.ytp-chrome-bottom {
+				position: absolute;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				height: 40px;
+				background: #222;
+				z-index: 59;
+			}
+			.ytp-caption-window-container {
+				position: absolute;
+				left: 20px;
+				bottom: 60px;
+				z-index: 10;
+				color: #fff;
+			}
+			.ytp-play-button {
+				position: absolute;
+				left: 10px;
+				top: 5px;
+			}
+		</style>
+	</head>
+	<body>
+		<ytd-app>
+			<div id="slot"></div>
+		</ytd-app>
+		<script>
+			window.__playClicks = 0;
+			const PLAYER = `<ytd-watch-flexy><div id="player"><div id="movie_player" class="html5-video-player">
+				<div class="html5-video-container"><video></video></div>
+				<div class="ytp-chrome-bottom"><button class="ytp-play-button" id="play">Play</button></div>
+				<div class="ytp-caption-window-container">Caption text</div>
+			</div></div></ytd-watch-flexy>`;
+			function render() {
+				const onWatch = location.pathname === '/watch';
+				document.getElementById('slot').innerHTML = onWatch ? PLAYER : '<p>Home page</p>';
+				document.getElementById('play')?.addEventListener('click', () => window.__playClicks++);
+			}
+			// Mimics YouTube's in-page navigation: the URL changes and an event is fired, with no reload.
+			window.__navigate = (path) => {
+				history.pushState({}, '', path);
+				render();
+				document.dispatchEvent(new CustomEvent('yt-navigate-finish'));
+			};
+			render();
+		</script>
+	</body>
+</html>

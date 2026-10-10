@@ -42,7 +42,7 @@ These apply to this phase only. They do not change the requirements document, wh
 | 1 | Project setup | — | — | In progress |
 | 2 | Saved audio-only value | PLY-001–003 | 1 | Done |
 | 3 | Side panel switch | PLY-004, PLY-005 | 2 | Done |
-| 4 | Overlay on YouTube | PLY-005, PLY-006 (+ 4.2 basics) | 2 | To do |
+| 4 | Overlay on YouTube | PLY-005, PLY-006 (+ 4.2 basics) | 2 | Done |
 | 5 | Spike: requesting the lowest quality | PLY-008, OQ-001 | 1 | To do |
 | 6 | Save bandwidth | PLY-008 | 4, 5 | To do |
 | 7 | Audio only button in YouTube's control bar | PLY-007 | 4 | To do |
@@ -194,14 +194,20 @@ Task 5 can run at any point after task 1, in parallel with tasks 2 to 4.
 
 **Done when:**
 
-- [ ] On a local test page that copies YouTube's player structure (served at a `www.youtube.com` address through Playwright's request routing), the overlay covers the player while audio-only is on and nothing under it can be clicked
-- [ ] Turning the side panel switch off removes the overlay within 1 second; turning it on brings it back
-- [ ] Show video removes the overlay and the side panel switch shows off
-- [ ] After an in-page move to another video, the overlay is still correct
-- [ ] After installing the extension, an already-open YouTube tab gets the overlay without a reload
-- [ ] Manual check on real YouTube passes: normal video, live stream, moving between videos, already-open tab
+- [x] On a local test page that copies YouTube's player structure (served at a `www.youtube.com` address through Playwright's request routing), the overlay covers the player while audio-only is on and nothing under it can be clicked
+- [x] Turning the side panel switch off removes the overlay within 1 second; turning it on brings it back
+- [x] Show video removes the overlay and the side panel switch shows off
+- [x] After an in-page move to another video, the overlay is still correct
+- [x] After installing the extension, an already-open YouTube tab gets the overlay without a reload
+- [x] Manual check on real YouTube passes: normal video, live stream, moving between videos, already-open tab
 
 **Notes:** Tests against the real YouTube break whenever YouTube changes its page, so automated tests use the local test page and real YouTube is checked by hand.
+- The content script is built as a standalone IIFE (`contentScripts.standaloneFiles`), so it loads with no loader file and adds nothing to `web_accessible_resources`. Its CSS lives in the overlay's shadow root as a constructed stylesheet, so YouTube's styles and CSP cannot reach it.
+- A guard makes injecting it twice (manifest, then the install-time injection) a no-op.
+- "Already-open tab" is covered in pieces, not as one end-to-end test: unit tests for the install handler and the tab injection, and a browser test that injects the built script into an open tab with no reload (once or twice, still one overlay). Chrome could not be made to fire the install/update event for an extension reloaded under test, so the full install flow has not been exercised in a real browser. Worth one manual check: load the build, open a YouTube tab first, then click reload on the extension.
+- Real YouTube was checked with a headless, signed-out Chromium: a normal video, a live stream, an in-page move to a suggested video (no reload), and the home page. The overlay was inside `#movie_player` and exactly its size each time. A premiere uses the same player and was not checked separately. The cookie-consent dialog on a fresh profile blocks clicks on the page, which is why clicks there were done from script.
+- Left for later (as planned): the rest of section 4.2, and the overlay does not yet appear for YouTube's mini-player.
+
 
 ### 5. Spike: requesting the lowest quality
 

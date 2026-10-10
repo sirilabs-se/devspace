@@ -11,6 +11,13 @@ export const manifest = {
 	action: { default_title: 'Open AudioTube' },
 	side_panel: { default_path: 'src/sidepanel/index.html' },
 	background: { service_worker: 'src/background/index.ts', type: 'module' },
+	content_scripts: [
+		{
+			matches: ['https://www.youtube.com/*'],
+			js: ['src/content/index.ts'],
+			run_at: 'document_idle'
+		}
+	],
 	icons: {
 		'16': 'public/icons/icon16.png',
 		'48': 'public/icons/icon48.png',

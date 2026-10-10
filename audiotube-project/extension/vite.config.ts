@@ -5,7 +5,11 @@ import { defineConfig } from 'vite';
 import manifest from './manifest.config.ts';
 
 export default defineConfig({
-	plugins: [tailwindcss(), svelte(), crx({ manifest })],
+	plugins: [
+		tailwindcss(),
+		svelte(),
+		crx({ manifest, contentScripts: { standaloneFiles: ['src/content/index.ts'] } })
+	],
 	server: { cors: { origin: [/chrome-extension:\/\//] } },
 	build: { outDir: 'dist', emptyOutDir: true }
 });
