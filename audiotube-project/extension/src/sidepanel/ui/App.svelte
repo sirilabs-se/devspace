@@ -1,13 +1,19 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import type { AudioOnlyController } from '../core';
+	import type { AudioOnlyController, CoverStatusController } from '../core';
 	import AudioOnlyCard from './AudioOnlyCard.svelte';
 	import Logo from './Logo.svelte';
 
-	let { audioOnly }: { audioOnly: AudioOnlyController } = $props();
+	let {
+		audioOnly,
+		coverStatus
+	}: { audioOnly: AudioOnlyController; coverStatus: CoverStatusController } = $props();
 
 	let view = $state(untrack(() => audioOnly.get()));
 	$effect(() => audioOnly.subscribe((next) => (view = next)));
+
+	let cover = $state(untrack(() => coverStatus.get()));
+	$effect(() => coverStatus.subscribe((next) => (cover = next)));
 
 	const messages = {
 		'save-failed': "Couldn't save that change. Audio only is back to its saved setting.",
@@ -27,6 +33,11 @@
 				lowestQuality={view.saveBandwidth}
 				onToggle={audioOnly.toggle}
 			/>
+		{/if}
+		{#if cover.coverFailed}
+			<p role="status" class="m-0 rounded-card bg-card px-3.5 py-2.5 text-xs text-muted">
+				Couldn't cover YouTube's player on this page
+			</p>
 		{/if}
 		{#if view.error}
 			<p role="alert" class="m-0 rounded-card bg-card px-3.5 py-2.5 text-xs text-error">

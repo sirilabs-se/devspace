@@ -1,3 +1,5 @@
+import type { OverlayStatus } from './settings/overlay-status';
+
 export type SettingsError = 'invalid-value' | 'storage-failed' | 'background-unavailable';
 
 export interface SetAudioOnlyRequest {
@@ -8,15 +10,29 @@ export interface SetAudioOnlyRequest {
 export type SetAudioOnlyResponse =
 	{ ok: true; audioOnly: boolean } | { ok: false; error: SettingsError };
 
+export interface OverlayStatusReport {
+	type: 'overlay/status';
+	status: OverlayStatus;
+}
+
 /** Every request any context may send to the background. */
-export type BackgroundRequest = SetAudioOnlyRequest;
+export type BackgroundRequest = SetAudioOnlyRequest | OverlayStatusReport;
 
 export function isBackgroundRequest(message: unknown): message is BackgroundRequest {
-	return (
-		typeof message === 'object' &&
-		message !== null &&
-		(message as { type?: unknown }).type === 'settings/set-audio-only'
-	);
+	if (typeof message !== 'object' || message === null) return false;
+	const { type, status, value } = message as { type?: unknown; status?: unknown; value?: unknown };
+	if (type === 'settings/set-audio-only') return value !== undefined;
+	return type === 'overlay/status' && (status === 'failed' || status === 'ok');
+}
+
+/** Tells the background whether the overlay could be put on this tab's player. */
+export async function reportOverlayStatus(status: OverlayStatus): Promise<void> {
+	const report: OverlayStatusReport = { type: 'overlay/status', status };
+	try {
+		await chrome.runtime.sendMessage(report);
+	} catch {
+		// The extension is gone or restarting; the next report will be sent when it is back.
+	}
 }
 
 export async function requestSetAudioOnly(value: boolean): Promise<SetAudioOnlyResponse> {

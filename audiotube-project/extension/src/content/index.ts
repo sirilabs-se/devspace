@@ -1,16 +1,20 @@
 import {
 	onMessageToContent,
 	readSettings,
+	reportOverlayStatus,
 	requestSetAudioOnly,
 	sendToPage,
 	watchSettings
 } from '../shared';
 import { startControlButtonController } from './control-button-controller';
+import { startCoverStatusController } from './cover-status-controller';
 import { isExtensionAlive, removeLeftovers } from './lifecycle';
+import { onPageChange } from './page-changes';
 import { startOverlayController } from './overlay-controller';
 import { startPipController } from './pip-controller';
 import { startQualityController } from './quality-controller';
 import { startVisibilityFlag } from './visibility';
+import { findPlayerToCover, isWatchPath } from './watch-page';
 
 const GUARD = '__audiotubeContentStarted';
 const scope = globalThis as unknown as Record<string, boolean>;
@@ -48,6 +52,14 @@ if (!scope[GUARD]) {
 			togglePlayback: () => sendToPage({ type: 'player/toggle-playback' })
 		}),
 		startPipController({ read: readSettings, watch: watchSettings }),
+		startCoverStatusController({
+			read: readSettings,
+			watch: watchSettings,
+			onWatchPage: () => isWatchPath(location.pathname),
+			playerPresent: () => findPlayerToCover(document, location.pathname) !== null,
+			report: (status) => void reportOverlayStatus(status),
+			onPageChange
+		}),
 		startControlButtonController({
 			read: readSettings,
 			watch: watchSettings,

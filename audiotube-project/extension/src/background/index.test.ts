@@ -18,7 +18,11 @@ describe('background start-up', () => {
 				getManifest: () => ({ content_scripts: [{ js: ['src/content/index.js'] }] })
 			},
 			sidePanel: { setPanelBehavior: vi.fn().mockResolvedValue(undefined) },
-			tabs: { query },
+			tabs: {
+				query,
+				onRemoved: { addListener: vi.fn() },
+				onUpdated: { addListener: vi.fn() }
+			},
 			storage: {
 				local: { get: vi.fn().mockResolvedValue({}) },
 				onChanged: { addListener: vi.fn(), removeListener: vi.fn() }

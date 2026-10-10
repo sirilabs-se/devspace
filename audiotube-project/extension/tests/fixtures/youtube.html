@@ -106,6 +106,7 @@
 			document.addEventListener('keydown', (event) => window.__keys.push(event.key));
 			window.__failQuality ??= false;
 			window.__noApi ??= false;
+			window.__noPlayer ??= false;
 			window.__noControlBar ??= false;
 			function attachPlayerApi() {
 				const player = document.getElementById('movie_player');
@@ -144,7 +145,9 @@
 					: '<div class="ytp-chrome-controls"><div class="ytp-right-controls"><div class="ytp-right-controls-left"><button class="ytp-button" id="cc">CC</button></div></div></div>';
 				const onWatch = location.pathname === '/watch';
 				document.getElementById('slot').innerHTML = onWatch
-					? PLAYER.replace('CONTROLS', controls)
+					? window.__noPlayer
+						? '<ytd-watch-flexy></ytd-watch-flexy>'
+						: PLAYER.replace('CONTROLS', controls)
 					: '<p>Home page</p>';
 				attachPlayerApi();
 				document.getElementById('play')?.addEventListener('click', () => window.__playClicks++);
@@ -205,6 +208,11 @@
 			};
 			window.__hideMini = () => {
 				document.querySelector('ytd-miniplayer').style.display = 'none';
+			};
+			window.__addPlayer = () => {
+				window.__noPlayer = false;
+				render();
+				pageChanged();
 			};
 			window.__showError = () => {
 				const player = document.getElementById('movie_player');

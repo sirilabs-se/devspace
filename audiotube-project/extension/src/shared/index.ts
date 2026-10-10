@@ -9,9 +9,17 @@ export {
 } from './settings/schema';
 export { readSettings, watchSettings } from './settings/read';
 export {
+	overlayStatusKey,
+	readOverlayStatuses,
+	watchOverlayStatuses,
+	type OverlayStatus
+} from './settings/overlay-status';
+export {
 	isBackgroundRequest,
+	reportOverlayStatus,
 	requestSetAudioOnly,
 	type BackgroundRequest,
+	type OverlayStatusReport,
 	type SetAudioOnlyRequest,
 	type SetAudioOnlyResponse,
 	type SettingsError

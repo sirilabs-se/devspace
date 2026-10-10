@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft |
+| **Status** | Tasks 8 to 14 done |
 | **Last updated** | 2026-10-10 |
 | **Design** | [Requirements](audiotube_requirements.md), [Tech stack](tech-stack.md) |
 | **Phase 1** | [build-plan-01.md](build-plan-01.md): audio-only mode, tasks 1 to 7 |
@@ -40,7 +40,7 @@ These apply to this phase only and do not change the requirements document.
 | 11 | Picture-in-picture off while audio-only is on | PLY-016 | 8 | Done |
 | 12 | Click to pause, and YouTube's shortcuts keep working | PLY-018, PLY-019 | 8 | Done |
 | 13 | Overlay on YouTube's mini-player | PLY-014, PLY-022 | 9 | Done |
-| 14 | "Couldn't cover YouTube's player" message | PLY-021 | 8 | In progress |
+| 14 | "Couldn't cover YouTube's player" message | PLY-021 | 8 | Done |
 
 Statuses: **To do**, **In progress**, **Done**, **Blocked** (say why in the task's notes).
 
@@ -262,7 +262,18 @@ Task 8 comes first; tasks 9 to 12 and 14 can then be done in any order, and task
 
 **Done when:**
 
-- [ ] On a test page with no player element, the side panel shows the message within about 6 seconds and audio-only stays on
-- [ ] When the player appears later, the message goes
-- [ ] Closing the tab clears its status
-- [ ] Logic tests cover the status handling in the background and `sidepanel/core/`
+- [x] On a test page with no player element, the side panel shows the message within about 6 seconds and audio-only stays on
+- [x] When the player appears later, the message goes
+- [x] Closing the tab clears its status
+- [x] Logic tests cover the status handling in the background and `sidepanel/core/`
+
+**Notes:**
+
+- Decisions taken from the "Decide before the task that needs it" list: the message is about the **active tab in the side panel's own window** (suggested). The panel looks up that window with `chrome.windows.getCurrent()` and its active tab, and follows `tabs.onActivated`.
+- Content script (`content/cover-status-controller.ts`): with audio-only on and on a watch page, if the player cannot be found for 5 seconds it reports `failed`; it reports `ok` as soon as the player is there, on any other page, or with audio-only off. A new copy always sends `ok` once at start, so a status left by an older copy is cleared.
+- Background: the typed message `overlay/status` comes from a tab only; the latest status is kept per tab in `chrome.storage.session` under `overlayStatus:<tabId>` (one key per tab, so changes never overwrite each other). A failed status is stored, an ok status removes the key. The key is also removed when the tab closes or starts loading a new page.
+- Storage rule: the panel reads those entries through a helper in `shared/settings/` (`overlay-status.ts`), next to the settings read helper, because the ESLint rule that keeps `chrome.storage` out of other folders is path-based. The helper is not about settings; if you would rather it live in its own `shared/` folder the rule needs one more path.
+- Side panel: `sidepanel/core/cover-status.ts` combines the stored statuses with the active tab; the UI shows "Couldn't cover YouTube's player on this page" under the Audio only card. Nothing pauses, stops or changes audio-only because of it.
+- Test page: a mode with no player element on the watch page, and a way to add it later. Browser tests: the message appears within about 6 seconds with audio-only still on, goes when the player appears, and closing the tab clears the stored status and the message; a normal page never shows it.
+- Real YouTube: a normal watch page leaves no failed status; removing `#movie_player` from the page led to a stored `failed` status after the wait, with audio-only unchanged.
+

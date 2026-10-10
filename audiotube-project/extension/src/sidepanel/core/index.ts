@@ -5,3 +5,9 @@ export {
 	type AudioOnlyError,
 	type AudioOnlyView
 } from './audio-only';
+export {
+	createCoverStatusController,
+	type CoverStatusController,
+	type CoverStatusDeps,
+	type CoverStatusView
+} from './cover-status';
