@@ -52,8 +52,8 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 13 | Change email | Identity | 7 | Done |
 | 14 | Security activity page | Identity | 4 | Done |
 | 15 | Delete account | Identity | 7, 9 | Done |
-| 16 | Notification preferences | Identity | 8 | To do |
-| 17 | Passkeys | Identity | 4 | To do |
+| 16 | Notification preferences | Identity | 8 | Blocked |
+| 17 | Passkeys | Identity | 4 | In progress |
 | 18 | Authenticator app and backup codes | Identity | 4 | To do |
 | 19 | Email code and trusted devices | Identity | 18 | To do |
 | 20 | Active sessions | Identity | 4 | To do |
@@ -731,7 +731,9 @@ Tasks 2a and 2b were added after the UX prototype arrived; they come before task
 - [ ] A person turns a notification type on or off and the choice is kept
 - [ ] Tests cover the above, and a test proves one user can't change another user's preferences
 
-**Notes:** No notification types exist until another module defines one. Leave this task until then, or agree a first type before starting.
+**Notes:**
+
+Blocked: no notification types exist until another module defines one, so there is nothing for a person to switch on or off. The owner chose on 10 October 2026 to skip this task until the first module that sends notifications is built. Nothing was built: no table, page or function.
 
 ### 17. Passkeys
 

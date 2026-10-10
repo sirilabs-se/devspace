@@ -476,3 +476,9 @@ Without credentials, nothing new is visible: the buttons only appear for a provi
 **Left for later**
 
 - Scheduling the job once a day in production (task 27).
+
+## Task 16: Notification preferences
+
+**Status:** Blocked, not started. You chose to skip it for now.
+
+No notification types exist until another module defines one, so the page would have nothing to show. Nothing was built for this task: no table, page or function. It is ready to be picked up when the first module that sends notifications arrives; that module should say which types exist.
