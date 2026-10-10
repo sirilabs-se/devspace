@@ -1,0 +1,16 @@
+node_modules
+
+# Build output
+/dist
+
+# Test output
+/test-results
+/playwright-report
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*

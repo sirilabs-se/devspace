@@ -1,0 +1,20 @@
+@import 'tailwindcss';
+
+/* The only source of colours, fonts, sizes, radii and shadows. Tailwind's own
+   defaults are cleared, so a class that is not built from these tokens has no effect. */
+@theme {
+	--*: initial;
+
+	--spacing: 0.25rem;
+	--font-sans: system-ui, sans-serif;
+
+	--color-surface: #ffffff;
+	--color-text: #1a1a1a;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-surface: #121212;
+		--color-text: #f1f1f1;
+	}
+}

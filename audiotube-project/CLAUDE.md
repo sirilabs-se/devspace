@@ -10,8 +10,8 @@ The design docs are the source of truth. Read the ones that apply before changin
 |---|---|
 | `docs/audiotube_requirements.md` | Always: the functional requirements (`GLB-`/`PLY-`/`QUE-`/`PLS-`/`SET-`/`OQ-`/`NG-` IDs) every feature must satisfy |
 | `docs/tech-stack.md` | Always: the chosen stack and why |
-| `docs/architecture.md` | Before structuring code: module boundaries, state ownership, the messaging protocol between contexts (not yet written) |
-| `docs/build-plan.md` | Picking up or finishing a task (not yet written) |
+| `docs/architecture.md` | Before structuring code: module boundaries, state ownership, the messaging protocol between contexts |
+| `docs/build-plan.md` | Picking up or finishing a task |
 
 ## Tech stack
 

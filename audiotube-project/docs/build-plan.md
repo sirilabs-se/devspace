@@ -1,0 +1,256 @@
+# AudioTube — Build Plan
+
+| | |
+|---|---|
+| **Status** | Draft |
+| **Last updated** | 2026-10-10 |
+| **Design** | [Requirements](audiotube_requirements.md), [Tech stack](tech-stack.md) |
+
+Each task is a thin slice that works end to end, small enough for one coding session. Don't rewrite tasks that are done; add a new task for follow-up work.
+
+The side panel is built to match the prototype, `extension/_prototype/`: its look, layout, states and wording. The requirements decide scope and rules. The prototype is a reference only and is never shipped.
+
+**Current phase: Audio-only mode (requirements section 4.1, PLY-001 to PLY-008).** Sections 4.2 to 7 are not started, apart from the small parts of 4.2 that 4.1 cannot work without (see decision a).
+
+## Decide before the first task starts
+
+- [ ] Vite plugin for the extension build (suggested: `@crxjs/vite-plugin`)
+- [ ] Where the npm project lives (suggested: `audiotube-project/extension/`, with `_prototype/` left out of the build)
+- [ ] Test tools (suggested: Vitest for logic, Playwright with the extension loaded for browser tests)
+- [ ] Import-rule checker (suggested: `dependency-cruiser`, as in saas-project)
+
+## Decisions for this phase
+
+These apply to this phase only. They do not change the requirements document, which stays the target for v1. Revisit each one when the phase named in "Revisit" begins.
+
+| # | Decision | Revisit |
+|---|---|---|
+| a | The overlay comes from section 4.2, but PLY-006 cannot work without it. This phase builds only the basics: it covers the whole player (PLY-009), shows the plain cover and a Show video button (PLY-010, PLY-141), Show video turns audio-only off (PLY-011), it sits inside the player element (PLY-012), and it is present exactly when audio-only is on and a player is present (PLY-022). The rest of 4.2 comes later. | Section 4.2 |
+| b | The Settings option named in PLY-001 is not built. The value is changed from the side panel switch and the overlay's Show video button only. | Section 7 |
+| c | The overlay applies to every YouTube tab showing a watch page. There is no playback tab yet. | Section 4.4 |
+| d | `saveBandwidth` is stored with its default (on), but has no switch yet. | Section 7 |
+| e | "Previous quality" in PLY-008 means the quality in use just before audio-only turned on, falling back to YouTube's Auto. While audio-only is on, the lowest quality is requested again for each new video. | Task 5 findings |
+| f | The extension adds its scripts to YouTube tabs that are already open when it is installed or updated, so they work without a reload. | — |
+| g | Only `www.youtube.com` is supported. | Later phases |
+| h | The control-bar button (PLY-007) is built last. If it proves unreliable, it is left out of the first release. | Task 7 |
+| i | Only the background service worker writes saved values. The side panel and the YouTube page send it requests, and react to storage changes. | Architecture doc |
+
+## Tasks
+
+| # | Task | Requirements | Depends on | Status |
+|---|---|---|---|---|
+| 1 | Project setup | — | — | In progress |
+| 2 | Saved audio-only value | PLY-001–003 | 1 | To do |
+| 3 | Side panel switch | PLY-004, PLY-005 | 2 | To do |
+| 4 | Overlay on YouTube | PLY-005, PLY-006 (+ 4.2 basics) | 2 | To do |
+| 5 | Spike: requesting the lowest quality | PLY-008, OQ-001 | 1 | To do |
+| 6 | Save bandwidth | PLY-008 | 4, 5 | To do |
+| 7 | Audio only button in YouTube's control bar | PLY-007 | 4 | To do |
+
+Statuses: **To do**, **In progress**, **Done**, **Blocked** (say why in the task's notes).
+
+Task 5 can run at any point after task 1, in parallel with tasks 2 to 4.
+
+## Task details
+
+### 1. Project setup
+
+**Goal:** An empty extension builds, loads in Chrome and opens an empty side panel, with every automated check in place, so every later task is built and verified the same way.
+
+**Implements:** [Tech stack](tech-stack.md), the rules in `CLAUDE.md`
+
+**In scope:**
+
+- The npm project, with Vite, the chosen extension plugin, Svelte 5, TypeScript and Tailwind CSS
+- Folder structure from `CLAUDE.md`: `background/`, `content/`, `inject/`, `sidepanel/core/`, `sidepanel/ui/` (with `theme.css`), `shared/`
+- Manifest V3: name, description, version, minimum Chrome version 116, permissions `storage`, `sidePanel` and `scripting`, host access to `https://www.youtube.com/*`, the side panel opening when the toolbar icon is clicked
+- Icons at their real sizes (16, 48 and 128 px; the prototype's are all 50 × 50)
+- Tailwind's theme built only from the tokens in `theme.css`, so no default Tailwind colours or sizes can be used
+- ESLint, Prettier, `svelte-check`, Vitest and Playwright
+- Import rules: modules imported only through `index.ts`, no import loops, `sidepanel/core/` never importing `sidepanel/ui/` or `.svelte` files, UI libraries only inside `sidepanel/ui/`, logic tests never importing `.svelte` files or `sidepanel/ui/`
+- Style rule: no hard-coded colours, fonts or sizes outside `theme.css`
+- One command, `npm run verify`, that runs lint, type checks, the import rules and all tests
+- CI in `devspace/.github/workflows/audiotube-project.yml`, running `npm run verify` on every push that touches `audiotube-project/`
+- Git hooks: an npm `prepare` script that runs `git config core.hooksPath .githooks`
+- A `.gitignore` covering `node_modules` and build output
+
+**Out of scope:**
+
+- Any feature
+
+**Done when:**
+
+- [x] `npm run build` produces an extension that loads from `chrome://extensions` with no errors
+- [x] Clicking the toolbar icon opens an empty side panel
+- [ ] `npm run verify` passes locally and in CI
+- [x] `npm run verify` fails when a rule is broken on purpose, e.g. importing a module's internal file or hard-coding a colour (then undo the break)
+- [x] A commit message containing AI attribution is rejected by the hook
+- [x] The build output contains nothing from `_prototype/`
+
+**Notes:**
+
+- Not ticked: CI. The workflow is in `devspace/.github/workflows/audiotube-project.yml` but has not run yet (nothing is pushed); tick it after the first green run.
+- Loading in Chrome and the toolbar click are covered by Playwright against a headless Chromium: the extension loads with no console errors and the service worker sets `openPanelOnActionClick`. A real click on the toolbar icon is worth one manual check.
+- `.githooks/commit-msg` already existed at the repo root (shared with saas-project), so no new hook was added. The `prepare` script points `core.hooksPath` at it.
+- The manifest is `manifest.config.ts` (typed, via `defineManifest`) instead of `public/manifest.json` as CLAUDE.md's proposed tree shows.
+- `npm audit` reports 5 high findings, all through `stylelint`'s dev-only dependency chain (`braces`), the same as saas-project. Nothing from it is shipped. The suggested fix downgrades stylelint to v7, so it was not applied.
+- Icons were resized from the 2000 px `_prototype/AT.png`.
+- Work noticed, left for later: `extension/_prototype/AudioTube.png` is what README.md's logo should point to.
+### 2. Saved audio-only value
+
+**Goal:** The extension has one saved audio-only value, on by default, that survives browser restarts and can be changed by request.
+
+**Implements:** PLY-001, PLY-002, PLY-003, GLB-009, GLB-010; decisions d and i
+
+**In scope:**
+
+- Saved values `audioOnly` and `saveBandwidth` in `chrome.storage.local`. A missing or invalid value reads as its default (on).
+- A typed message to the background asking it to set audio-only on or off
+- The background writes the new value and replies with success or a typed error
+- A failed write leaves the saved value unchanged and reports the error
+- A small read helper the side panel and content script use, returning the value with defaults applied, and telling them when it changes
+
+**Out of scope:**
+
+- Any UI — tasks 3 and 4
+- A switch for `saveBandwidth` — decision d
+
+**Done when:**
+
+- [ ] On a fresh install, audio-only reads as on
+- [ ] After setting it off and restarting the browser, it still reads as off
+- [ ] An invalid saved value reads as on, and `saveBandwidth` is unaffected
+- [ ] When the write fails, the saved value is unchanged and the caller gets an error
+- [ ] Tests cover the above
+
+### 3. Side panel switch
+
+**Goal:** The side panel shows one labelled Audio only switch that always matches the saved value.
+
+**Implements:** PLY-004, PLY-005 (side panel), GLB-009, GLB-010
+
+**In scope:**
+
+- The side panel page, styled like the prototype's header and Audio only card (logo, name, switch, status line)
+- `sidepanel/core/`: reads the value, follows its changes, sends the set request
+- `sidepanel/ui/`: a switch component and the card, presentational only
+- Light and dark colours that follow the system's setting (the SET-029 default); no theme choice yet
+- If saving fails, the switch returns to its saved position and a short message says the change couldn't be saved
+
+**Out of scope:**
+
+- Tabs, Settings gear and every other part of the prototype's panel
+- The "lowest quality requested" part of the status line — task 6
+
+**Done when:**
+
+- [ ] The switch shows the saved value when the panel opens
+- [ ] Turning the switch saves the new value
+- [ ] With panels open in two windows, changing one updates the other within 1 second
+- [ ] When saving fails, the switch goes back and the message appears
+- [ ] The switch works by keyboard and is announced as a switch with its on or off state
+- [ ] The panel is usable from 320 to 600 px wide
+- [ ] Logic tests cover `sidepanel/core/` without importing any `.svelte` file
+
+### 4. Overlay on YouTube
+
+**Goal:** While audio-only is on, the player on YouTube watch pages is covered by the plain cover, and Show video turns audio-only off.
+
+**Implements:** PLY-005 (page), PLY-006, PLY-009, PLY-010, PLY-011, PLY-012, PLY-022, PLY-141; decisions a, c, f and g
+
+**In scope:**
+
+- A content script on `www.youtube.com` that finds the main player on watch pages, including live streams and premieres
+- Following YouTube's in-page navigation, so the overlay is right after moving to another video without a reload
+- The overlay placed inside the player element, covering the picture, controls and captions, with the AudioTube logo, the label "Audio only" and a Show video button
+- Show video sends the request to turn audio-only off; the overlay goes once the saved value changes
+- The overlay appears or goes when the value changes anywhere
+- Plain CSS scoped to the extension's own elements
+- Adding the content script to YouTube tabs already open when the extension is installed or updated
+
+**Out of scope:**
+
+- The rest of section 4.2: fullscreen and theater checks (PLY-013), YouTube's mini-player (PLY-014), ambient glow (PLY-015), picture-in-picture (PLY-016), no-flash loading (PLY-017), click to pause (PLY-018), keyboard pass-through checks (PLY-019), error screens (PLY-020), the "Couldn't cover" message (PLY-021)
+- Shorts, embedded players and other YouTube sites
+
+**Done when:**
+
+- [ ] On a local test page that copies YouTube's player structure (served at a `www.youtube.com` address through Playwright's request routing), the overlay covers the player while audio-only is on and nothing under it can be clicked
+- [ ] Turning the side panel switch off removes the overlay within 1 second; turning it on brings it back
+- [ ] Show video removes the overlay and the side panel switch shows off
+- [ ] After an in-page move to another video, the overlay is still correct
+- [ ] After installing the extension, an already-open YouTube tab gets the overlay without a reload
+- [ ] Manual check on real YouTube passes: normal video, live stream, moving between videos, already-open tab
+
+**Notes:** Tests against the real YouTube break whenever YouTube changes its page, so automated tests use the local test page and real YouTube is checked by hand.
+
+### 5. Spike: requesting the lowest quality
+
+**Goal:** Find out whether the extension can reliably ask YouTube's player for its lowest quality, and restore the previous quality afterwards.
+
+**Implements:** OQ-001 (Save bandwidth), groundwork for PLY-008; decision e
+
+**In scope:**
+
+- A throwaway script running in the page (not the content script, which cannot reach YouTube's player object)
+- Trying the player's own quality methods on: a normal video, a live stream, a premiere, signed in and signed out, after moving to another video, and during an ad
+- Checking how to read the quality in use before the change, and how to tell whether the request worked
+
+**Out of scope:**
+
+- Production code — task 6
+
+**Done when:**
+
+- [ ] Findings written in `docs/spikes/save-bandwidth.md`: what works, how reliable it is, how failure shows, and a recommendation (build PLY-008 as written, build it differently, or reword it)
+
+### 6. Save bandwidth
+
+**Goal:** While audio-only and Save bandwidth are both on, the extension asks YouTube for the lowest quality, and restores the previous quality when audio-only turns off.
+
+**Implements:** PLY-008; decisions d and e
+
+**In scope:**
+
+- The page script in `inject/`, using the approach the spike recommends
+- Typed messages between the content script and the page script
+- Remembering the quality in use before audio-only turned on (falling back to Auto), requesting the lowest quality for each new video while on, and restoring the remembered quality when turned off
+- The side panel's status line showing "lowest quality requested" while it applies
+
+**Out of scope:**
+
+- A switch for Save bandwidth — section 7
+
+**Done when:**
+
+- [ ] On the local test page, with a fake player object, turning audio-only on requests the lowest quality and turning it off restores the earlier quality
+- [ ] Moving to another video while on requests the lowest quality again
+- [ ] With `saveBandwidth` off, no quality is requested
+- [ ] If the request fails, audio keeps playing and nothing else breaks
+- [ ] Manual check on real YouTube passes
+
+**Notes:** If the spike finds the request can't be made reliably, this task is replaced by whatever the spike recommends.
+
+### 7. Audio only button in YouTube's control bar
+
+**Goal:** While the video is shown, YouTube's control bar has a small Audio only button that turns audio-only back on.
+
+**Implements:** PLY-007; decision h
+
+**In scope:**
+
+- A button added to the player's control bar while audio-only is off
+- Pressing it sends the request to turn audio-only on
+- If the control bar can't be found, no button appears and nothing else breaks
+
+**Out of scope:**
+
+- Other buttons on YouTube's pages (OQ-003)
+
+**Done when:**
+
+- [ ] On the local test page, the button appears while audio-only is off and turns it on when pressed
+- [ ] If the control bar is missing, there is no button and no error
+- [ ] Manual check on real YouTube passes
+
+**Notes:** This depends on YouTube's page structure, which changes without notice. If it proves unreliable, it is left out of the first release (decision h).

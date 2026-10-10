@@ -1,0 +1,9 @@
+# The prototype is a reference only
+/_prototype
+
+# Generated
+/dist
+/test-results
+/playwright-report
+package-lock.json
+node_modules

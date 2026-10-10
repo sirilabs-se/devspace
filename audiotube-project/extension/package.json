@@ -1,0 +1,48 @@
+{
+	"name": "audiotube-extension",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"engines": {
+		"node": ">=24"
+	},
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"prepare": "git config core.hooksPath .githooks || true",
+		"check": "svelte-check --tsconfig ./tsconfig.json",
+		"format": "prettier --write .",
+		"lint": "npm run lint:format && npm run lint:code && npm run lint:deps && npm run lint:styles",
+		"lint:format": "prettier --check .",
+		"lint:code": "eslint .",
+		"lint:deps": "depcruise src manifest.config.ts manifest.config.test.ts tests --config .dependency-cruiser.cjs",
+		"lint:styles": "stylelint \"src/sidepanel/**/*.{css,svelte}\"",
+		"test": "vitest run",
+		"test:e2e": "playwright test",
+		"verify": "npm run lint && npm run check && npm run test && npm run build && npm run test:e2e"
+	},
+	"devDependencies": {
+		"@crxjs/vite-plugin": "^3.0.0",
+		"@eslint/js": "^10.0.1",
+		"@playwright/test": "^1.64.0",
+		"@sveltejs/vite-plugin-svelte": "^7.3.1",
+		"@tailwindcss/vite": "^4.3.3",
+		"@types/chrome": "^0.3.5",
+		"@types/node": "^24.19.2",
+		"dependency-cruiser": "^18.5.0",
+		"eslint": "^10.12.0",
+		"eslint-plugin-svelte": "^3.23.1",
+		"globals": "^17.13.0",
+		"postcss-html": "^2.0.0",
+		"prettier": "^3.9.10",
+		"prettier-plugin-svelte": "^4.1.1",
+		"stylelint": "^17.16.0",
+		"svelte": "^5.57.2",
+		"svelte-check": "^4.7.6",
+		"tailwindcss": "^4.3.3",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.71.1",
+		"vite": "^8.3.4",
+		"vitest": "^5.0.3"
+	}
+}
