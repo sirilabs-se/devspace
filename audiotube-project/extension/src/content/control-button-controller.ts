@@ -6,7 +6,7 @@ import { findPlayer, isWatchPath } from './watch-page';
 export interface ControlButtonControllerDeps {
 	read: () => Promise<Settings>;
 	watch: (listener: (settings: Settings) => void) => () => void;
-	requestAudioOnly: () => void;
+	requestAudioOnly: () => Promise<boolean>;
 }
 
 /** Shows an Audio only button in YouTube's control bar while the video is shown. If the bar is not found, shows nothing. */

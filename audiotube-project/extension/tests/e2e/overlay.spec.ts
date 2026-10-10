@@ -2,7 +2,7 @@ import { chromium, type BrowserContext, type Page } from '@playwright/test';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { DIST, expect, test } from './fixtures';
+import { DIST, expect, getWorker, test } from './fixtures';
 
 const FIXTURE = readFileSync(path.resolve('tests/fixtures/youtube.html'), 'utf8');
 const overlay = (page: Page) => page.locator('audiotube-overlay');
@@ -110,7 +110,7 @@ test('is not added to pages that are not watch pages', async ({ context }) => {
 });
 
 test('does not appear when audio-only is saved as off', async ({ context }) => {
-	const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+	const worker = await getWorker(context);
 	await worker.evaluate(() => chrome.storage.local.set({ audioOnly: false }));
 	const page = await openYouTube(context);
 	await page.waitForTimeout(300);
@@ -133,7 +133,7 @@ test('the script added to an already-open YouTube tab works without a reload, an
 	});
 	try {
 		// Let the install-time injection run (and find no tab) before the YouTube tab is opened.
-		const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+		const worker = await getWorker(context);
 		await new Promise((resolve) => setTimeout(resolve, 1500));
 		const page = await openYouTube(context);
 		await page.waitForTimeout(500);

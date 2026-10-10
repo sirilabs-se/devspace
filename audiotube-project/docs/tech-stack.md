@@ -1,4 +1,4 @@
-ude# AudioTube — Tech Stack
+# AudioTube — Tech Stack
 
 Decided 2026-10-08. This covers the three runtime contexts a Chrome MV3 extension actually
 has — they don't share one stack, because they don't share one set of constraints.
@@ -10,7 +10,7 @@ has — they don't share one stack, because they don't share one set of constrai
 | Language | TypeScript |
 | Framework | Svelte |
 | Styling | Tailwind CSS |
-| Build | Vite, via a Chrome-extension plugin (`@crxjs/vite-plugin` or `vite-plugin-web-extension`) |
+| Build | Vite 8, via `@crxjs/vite-plugin` (chosen 2026-10-10 over `vite-plugin-web-extension`) |
 
 **Why a framework here, specifically Svelte:**
 - The requirements doc repeatedly requires one value to stay in sync across multiple controls
@@ -51,6 +51,14 @@ here renders, so a UI framework has nothing to do.
 
 `chrome.storage.local` only. `PLS-024` explicitly rules out requesting the `unlimitedStorage`
 permission, so the ~10 MB quota is a real constraint, not a default to revisit casually.
+
+## Tests
+
+| Part | Choice |
+|---|---|
+| Logic | Vitest, tests next to the code as `*.test.ts` |
+| Browser | Playwright with the built extension loaded in Chromium; a local test page stands in for YouTube's watch page, served at a `www.youtube.com` address through request routing |
+| Lint and rules | ESLint, Prettier, Stylelint (side panel), dependency-cruiser (import rules); `npm run verify` runs everything |
 
 ## Not yet decided
 

@@ -2,7 +2,7 @@ import { chromium, type BrowserContext, type Worker } from '@playwright/test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { DIST, expect, test } from './fixtures';
+import { DIST, expect, getWorker, test } from './fixtures';
 
 async function launch(userDataDir: string): Promise<BrowserContext> {
 	return chromium.launchPersistentContext(userDataDir, {
@@ -12,7 +12,7 @@ async function launch(userDataDir: string): Promise<BrowserContext> {
 }
 
 async function worker(context: BrowserContext): Promise<Worker> {
-	return context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+	return getWorker(context);
 }
 
 async function sendFromPage(context: BrowserContext, value: unknown) {

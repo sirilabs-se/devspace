@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
-import { DIST, expect, test } from './fixtures';
+import { DIST, expect, getWorker, test } from './fixtures';
 
 function filesUnder(dir: string): string[] {
 	return readdirSync(dir).flatMap((name) => {
@@ -10,18 +10,14 @@ function filesUnder(dir: string): string[] {
 }
 
 test('the extension loads and its service worker starts', async ({ context }) => {
-	const [worker] = context.serviceWorkers().length
-		? context.serviceWorkers()
-		: [await context.waitForEvent('serviceworker')];
+	const worker = await getWorker(context);
 	const manifest = await worker.evaluate(() => chrome.runtime.getManifest());
 	expect(manifest.name).toBe('AudioTube');
 	expect(manifest.minimum_chrome_version).toBe('116');
 });
 
 test('clicking the toolbar icon is set to open the side panel', async ({ context }) => {
-	const [worker] = context.serviceWorkers().length
-		? context.serviceWorkers()
-		: [await context.waitForEvent('serviceworker')];
+	const worker = await getWorker(context);
 	await expect
 		.poll(() => worker.evaluate(() => chrome.sidePanel.getPanelBehavior()))
 		.toEqual({ openPanelOnActionClick: true });

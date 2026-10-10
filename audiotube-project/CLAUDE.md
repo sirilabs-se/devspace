@@ -10,8 +10,8 @@ The design docs are the source of truth. Read the ones that apply before changin
 |---|---|
 | `docs/audiotube_requirements.md` | Always: the functional requirements (`GLB-`/`PLY-`/`QUE-`/`PLS-`/`SET-`/`OQ-`/`NG-` IDs) every feature must satisfy |
 | `docs/tech-stack.md` | Always: the chosen stack and why |
-| `docs/architecture.md` | Before structuring code: module boundaries, state ownership, the messaging protocol between contexts |
-| `docs/build-plan.md` | Picking up or finishing a task |
+| `docs/architecture.md` | Before structuring code: module boundaries, state ownership, the messaging protocol between contexts (not yet written) |
+| `docs/build-plan-01.md`, `docs/build-plan-02.md` | Picking up or finishing a task (one file per phase) |
 
 ## Tech stack
 
@@ -23,7 +23,7 @@ See `docs/tech-stack.md` for the full picture and reasoning. Summary:
 | Content script / inject script / background | TypeScript, no framework |
 | Build | Vite + a Chrome-extension plugin |
 | Storage | `chrome.storage.local` only (no server, no database) |
-| Tests | Not yet decided |
+| Tests | Vitest for logic, Playwright with the extension loaded for browser tests |
 
 ## Commands
 
@@ -58,8 +58,8 @@ extension/
 │   └── shared/               ← types and small utilities safe for every context,
 │                                 no business logic; also the settings schema and the
 │                                 settings read helper (the only code that reads storage)
+├── manifest.config.ts       ← the manifest, as a typed object (built by the plugin)
 └── public/
-    ├── manifest.json
     └── icons/
 ```
 
@@ -119,7 +119,7 @@ The app's look (colours, components, layout) must be replaceable with a new desi
 
 - `npm run verify` (lint, type check, architecture rules and tests) MUST pass before a task is done. [CI]
 - Tests live next to the code as `*.test.ts` (SHOULD).
-- Test framework is not yet decided — see `docs/tech-stack.md`.
+- Logic tests use Vitest; browser tests use Playwright with the built extension loaded (`tests/e2e/`). See `docs/tech-stack.md`.
 - Every module's public function and every cross-context message handler SHOULD have a test.
 
 ### Ask before you
@@ -141,8 +141,8 @@ These are MUST NOTs for every task:
 
 A task is done only when all of these are true:
 
-- [ ] Every "Done when" check for the task in `docs/build-plan.md` passes
+- [ ] Every "Done when" check for the task in the phase's build plan in `docs/` passes
 - [ ] `npm run verify` passes
 - [ ] Design docs are updated if anything about the design changed (with my approval)
 - [ ] Any SHOULD you deviated from is listed in your report, with the reason
-- [ ] The task's status is updated in `docs/build-plan.md`
+- [ ] The task's status is updated in the phase's build plan in `docs/`

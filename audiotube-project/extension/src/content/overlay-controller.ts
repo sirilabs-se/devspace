@@ -6,7 +6,7 @@ import { findPlayer, isWatchPath } from './watch-page';
 export interface OverlayControllerDeps {
 	read: () => Promise<Settings>;
 	watch: (listener: (settings: Settings) => void) => () => void;
-	requestShowVideo: () => void;
+	requestShowVideo: () => Promise<boolean>;
 }
 
 /** Keeps the overlay present exactly when audio-only is on and a watch-page player is present. */

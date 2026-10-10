@@ -1,7 +1,7 @@
 import type { BrowserContext, Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { expect, test } from './fixtures';
+import { expect, getWorker, test } from './fixtures';
 
 const FIXTURE = readFileSync(path.resolve('tests/fixtures/youtube.html'), 'utf8');
 const button = (page: Page) => page.locator('audiotube-control');
@@ -9,7 +9,7 @@ const overlay = (page: Page) => page.locator('audiotube-overlay');
 const panelSwitch = (page: Page) => page.getByRole('switch', { name: 'Audio only' });
 
 async function worker(context: BrowserContext) {
-	return context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+	return getWorker(context);
 }
 
 async function openYouTube(context: BrowserContext, init?: string) {

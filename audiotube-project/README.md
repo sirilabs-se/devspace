@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="AudioTube.png" alt="AudioTube logo" width="160" />
+  <img src="extension/_prototype/AudioTube.png" alt="AudioTube logo" width="160" />
 </p>
 
 # AudioTube

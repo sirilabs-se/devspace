@@ -1,4 +1,5 @@
 :host {
+	position: relative;
 	display: inline-flex;
 	align-items: center;
 	height: 100%;
@@ -25,4 +26,20 @@ button:focus-visible {
 button:focus-visible {
 	outline: 2px solid #ffffff;
 	outline-offset: -4px;
+}
+
+.message {
+	position: absolute;
+	right: 0;
+	bottom: 100%;
+	padding: 6px 10px;
+	border-radius: 6px;
+	background: #212121;
+	color: #ffffff;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+[hidden] {
+	display: none;
 }

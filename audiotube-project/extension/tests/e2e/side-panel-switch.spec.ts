@@ -1,5 +1,5 @@
 import type { BrowserContext, Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, getWorker, test } from './fixtures';
 
 const PANEL = (id: string) => `chrome-extension://${id}/src/sidepanel/index.html`;
 
@@ -12,7 +12,7 @@ async function openPanel(context: BrowserContext, extensionId: string): Promise<
 const toggle = (page: Page) => page.getByRole('switch', { name: 'Audio only' });
 
 async function worker(context: BrowserContext) {
-	return context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+	return getWorker(context);
 }
 
 test('shows on for a fresh install, and the saved value when the panel opens', async ({

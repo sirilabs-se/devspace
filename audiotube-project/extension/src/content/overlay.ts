@@ -9,7 +9,10 @@ export interface Overlay {
 }
 
 /** The plain cover, placed inside the player element so it resizes and moves with it. */
-export function createOverlay(player: HTMLElement, onShowVideo: () => void): Overlay {
+const MESSAGE_VISIBLE_MS = 6000;
+
+/** `onShowVideo` resolves to whether the change was saved. */
+export function createOverlay(player: HTMLElement, onShowVideo: () => Promise<boolean>): Overlay {
 	const host = document.createElement('audiotube-overlay');
 	const root = host.attachShadow({ mode: 'open' });
 
@@ -31,14 +34,31 @@ export function createOverlay(player: HTMLElement, onShowVideo: () => void): Ove
 	const button = document.createElement('button');
 	button.type = 'button';
 	button.textContent = 'Show video';
-	button.addEventListener('click', (event) => {
+	const message = document.createElement('span');
+	message.className = 'message';
+	message.setAttribute('role', 'alert');
+	message.hidden = true;
+	message.textContent = "Couldn't change the setting. Try again.";
+
+	let hideMessage: ReturnType<typeof setTimeout> | undefined;
+	button.addEventListener('click', async (event) => {
 		event.stopPropagation();
-		onShowVideo();
+		clearTimeout(hideMessage);
+		message.hidden = true;
+		if (await onShowVideo()) return;
+		message.hidden = false;
+		hideMessage = setTimeout(() => (message.hidden = true), MESSAGE_VISIBLE_MS);
 	});
 
-	cover.append(logo, label, button);
+	cover.append(logo, label, button, message);
 	root.append(cover);
 	player.append(host);
 
-	return { host, destroy: () => host.remove() };
+	return {
+		host,
+		destroy() {
+			clearTimeout(hideMessage);
+			host.remove();
+		}
+	};
 }

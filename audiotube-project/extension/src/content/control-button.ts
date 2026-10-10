@@ -16,7 +16,13 @@ export function findControlBar(player: HTMLElement): HTMLElement | null {
 	);
 }
 
-export function createControlButton(bar: HTMLElement, onPress: () => void): ControlButton {
+const MESSAGE_VISIBLE_MS = 6000;
+
+/** `onPress` resolves to whether the change was saved. */
+export function createControlButton(
+	bar: HTMLElement,
+	onPress: () => Promise<boolean>
+): ControlButton {
 	const host = document.createElement('audiotube-control');
 	const root = host.attachShadow({ mode: 'open' });
 
@@ -29,13 +35,31 @@ export function createControlButton(bar: HTMLElement, onPress: () => void): Cont
 	button.title = 'Audio only';
 	button.setAttribute('aria-label', 'Audio only');
 	button.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="${HEADPHONES}"/></svg>`;
-	button.addEventListener('click', (event) => {
+
+	const message = document.createElement('span');
+	message.className = 'message';
+	message.setAttribute('role', 'alert');
+	message.hidden = true;
+	message.textContent = "Couldn't change the setting. Try again.";
+
+	let hideMessage: ReturnType<typeof setTimeout> | undefined;
+	button.addEventListener('click', async (event) => {
 		event.stopPropagation();
-		onPress();
+		clearTimeout(hideMessage);
+		message.hidden = true;
+		if (await onPress()) return;
+		message.hidden = false;
+		hideMessage = setTimeout(() => (message.hidden = true), MESSAGE_VISIBLE_MS);
 	});
 
-	root.append(button);
+	root.append(button, message);
 	bar.prepend(host);
 
-	return { host, destroy: () => host.remove() };
+	return {
+		host,
+		destroy() {
+			clearTimeout(hideMessage);
+			host.remove();
+		}
+	};
 }

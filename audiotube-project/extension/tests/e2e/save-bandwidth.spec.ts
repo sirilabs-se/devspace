@@ -1,7 +1,7 @@
 import type { BrowserContext, Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { expect, test } from './fixtures';
+import { expect, getWorker, test } from './fixtures';
 
 const FIXTURE = readFileSync(path.resolve('tests/fixtures/youtube.html'), 'utf8');
 type Calls = [string, string | null][];
@@ -82,7 +82,7 @@ test('asks again for the next video after YouTube moves on without a reload', as
 });
 
 test('asks for nothing when Save bandwidth is off', async ({ context }) => {
-	const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+	const worker = await getWorker(context);
 	await worker.evaluate(() => chrome.storage.local.set({ saveBandwidth: false }));
 	const page = await openYouTube(context, { pref: 720 });
 	await expect(page.locator('audiotube-overlay')).toHaveCount(1);
