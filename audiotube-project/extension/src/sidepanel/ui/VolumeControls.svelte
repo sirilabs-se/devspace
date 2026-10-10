@@ -38,4 +38,12 @@
 		style:--p="{shownLevel}%"
 		oninput={(event) => onSetLevel(Number(event.currentTarget.value))}
 	/>
+	<!-- The slider announces its value itself, so this is for the eyes only. -->
+	<span
+		data-testid="volume-text"
+		aria-hidden="true"
+		class="w-11 flex-none text-right text-xs text-muted tabular-nums"
+	>
+		{view.muted ? 'Muted' : `${view.level}%`}
+	</span>
 </div>

@@ -65,6 +65,22 @@ test('the slider changes YouTube volume within a second, and the mute button mut
 	expect(await level(page)).toBe(30);
 });
 
+test('shows the volume as a number beside the slider, and Muted while muted', async ({
+	context,
+	extensionId
+}) => {
+	const panel = await openPanel(context, extensionId);
+	await play(context);
+	const text = panel.getByTestId('volume-text');
+	await expect(text).toHaveText('100%');
+	await slider(panel).fill('37');
+	await expect(text).toHaveText('37%');
+	await panel.getByRole('button', { name: 'Mute' }).click();
+	await expect(text).toHaveText('Muted');
+	await panel.getByRole('button', { name: 'Unmute' }).click();
+	await expect(text).toHaveText('37%');
+});
+
 test('a change on the page moves the side panel controls within a second', async ({
 	context,
 	extensionId
