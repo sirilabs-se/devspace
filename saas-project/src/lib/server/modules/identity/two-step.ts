@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { recordAuditEvent } from './audit';
 import { getAuth } from './auth';
+import { libraryHeaders } from './library-headers';
 import type { RequestContext } from './request-context';
 import { limitRequests } from './request-limits';
 import { twoFactors, users } from './schema';
@@ -215,15 +216,17 @@ export async function completeTwoStepLogin(
 
 	const cleaned = method === 'backup' ? text(code).trim() : text(code).replace(/\s/g, '');
 	const body = { code: cleaned, trustDevice };
+	// The session that starts here records the device and network address.
+	const forLibrary = libraryHeaders(headers, context);
 	let userId: UserId;
 	try {
 		const api = getAuth().api;
 		const result =
 			method === 'app'
-				? await api.verifyTOTP({ headers, body, returnHeaders: true })
+				? await api.verifyTOTP({ headers: forLibrary, body, returnHeaders: true })
 				: method === 'email'
-					? await api.verifyTwoFactorOTP({ headers, body, returnHeaders: true })
-					: await api.verifyBackupCode({ headers, body, returnHeaders: true });
+					? await api.verifyTwoFactorOTP({ headers: forLibrary, body, returnHeaders: true })
+					: await api.verifyBackupCode({ headers: forLibrary, body, returnHeaders: true });
 		// The session cookie, and the "trusted device" cookie if that was asked for.
 		applySessionCookies(result.headers, cookies);
 		userId = toUserId(result.response.user.id);

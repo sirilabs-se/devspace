@@ -53,12 +53,20 @@ const ALLOWED_AUTH_PATHS = [
 ];
 
 /** Handles a request to `/api/auth/*`. Anything not on the short allowed list is "not found". */
-export async function handleAuthRequest(request: Request): Promise<Response> {
+export async function handleAuthRequest(
+	request: Request,
+	ipAddress: string | null = null
+): Promise<Response> {
 	const { pathname } = new URL(request.url);
 	if (!ALLOWED_AUTH_PATHS.some((allowed) => allowed.test(pathname))) {
 		return new Response('Not found', { status: 404 });
 	}
-	return getAuth().handler(request);
+	// The network address is set from the server's own knowledge of the connection,
+	// replacing anything the visitor sent, so sessions record the real one.
+	const headers = new Headers(request.headers);
+	headers.delete('x-forwarded-for');
+	if (ipAddress) headers.set('x-forwarded-for', ipAddress);
+	return getAuth().handler(new Request(request, { headers }));
 }
 
 /**

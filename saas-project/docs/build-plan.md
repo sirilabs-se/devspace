@@ -56,7 +56,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 17 | Passkeys | Identity | 4 | Done |
 | 18 | Authenticator app and backup codes | Identity | 4 | Done |
 | 19 | Email code and trusted devices | Identity | 18 | Done |
-| 20 | Active sessions | Identity | 4 | To do |
+| 20 | Active sessions | Identity | 4 | Done |
 | 21 | New-device alerts | Identity | 20 | To do |
 | 22 | Admin user search | Identity | 4 | To do |
 | 23 | Suspend and reinstate | Identity | 22 | To do |
@@ -858,10 +858,18 @@ Blocked: no notification types exist until another module defines one, so there 
 
 **Done when:**
 
-- [ ] A person signed in on two browsers sees both, and ending one signs that browser out
-- [ ] Tests cover the above, and a test proves one user can't end another user's session
+- [x] A person signed in on two browsers sees both, and ending one signs that browser out
+- [x] Tests cover the above, and a test proves one user can't end another user's session
 
-**Notes:** —
+**Notes:**
+
+- Every session now records the device and network address it was started from. Before this task the login library was not being given them, so sessions started earlier show "Unknown device" with no address.
+- The network address always comes from the server's own knowledge of the connection. Anything a visitor sends in a forwarding header is thrown away first, so it can't be faked.
+- "Last active" is when the session was last renewed. Sessions renew about once a day while in use, so it is accurate to within a day, not to the minute. Tracking every page view would mean a database write on every request.
+- The session in use is marked "this device" and has no End button; logging out ends it. Ending it from the list is refused.
+- Ending a session is recorded in the audit log.
+- Only what is needed to recognise a session is returned to the page: device, address and times. The secret token that identifies a session to the server never leaves it.
+- Trusted devices (task 19) are not listed here; that remains a possible addition.
 
 ### 21. New-device alerts
 

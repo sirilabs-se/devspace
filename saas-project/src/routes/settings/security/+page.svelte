@@ -132,6 +132,7 @@
 			icon: 'alert'
 		},
 		backup_codes_regenerated: { title: 'New backup codes made', icon: 'check' },
+		session_ended: { title: 'Session ended from settings', icon: 'x' },
 		passkey_added: { title: 'Passkey added', icon: 'fingerprint' },
 		passkey_removed: { title: 'Passkey removed', icon: 'fingerprint' },
 		account_deletion_requested: { title: 'Account deletion requested', icon: 'alert' },
@@ -333,6 +334,46 @@
 					</Stack>
 				</form>
 			{/if}
+		</Stack>
+	</Card>
+
+	<Card>
+		<Stack gap="large">
+			<Stack gap="small">
+				<Heading level={2}>Where you’re signed in</Heading>
+				<Text variant="lead">End any session you don’t recognise. That browser is signed out.</Text>
+			</Stack>
+
+			{#if form?.sessionEnded}
+				<Alert variant="success" title="Session ended" />
+			{:else if form?.sessionError}
+				<Alert variant="danger" title="That didn’t work">
+					{form.sessionError === 'is_current'
+						? 'This is the session you’re using. Log out to end it.'
+						: 'That session no longer exists.'}
+				</Alert>
+			{/if}
+
+			<div>
+				{#each data.sessions as session (session.id)}
+					<ListRow
+						icon="user"
+						title="{session.device}{session.current ? ' · this device' : ''}"
+						text="Signed in {formatTime(session.signedInAt)} · last active {formatTime(
+							session.lastActiveAt
+						)}{session.ipAddress ? ` · ${session.ipAddress}` : ''}"
+					>
+						{#snippet action()}
+							{#if !session.current}
+								<form method="POST" action="?/endSession" use:enhance>
+									<input type="hidden" name="sessionId" value={session.id} />
+									<Button type="submit" variant="outline" size="small">End session</Button>
+								</form>
+							{/if}
+						{/snippet}
+					</ListRow>
+				{/each}
+			</div>
 		</Stack>
 	</Card>
 

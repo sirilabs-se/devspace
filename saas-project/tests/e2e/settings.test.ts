@@ -165,3 +165,35 @@ test('the daily job cannot be run without its secret', async ({ request }) => {
 		(await request.post('/api/jobs/daily', { headers: { authorization: 'Bearer nope' } })).status()
 	).toBe(401);
 });
+
+test('a person signed in on two browsers sees both and can end the other one', async ({
+	page,
+	browser
+}) => {
+	const email = `e2e-sessions-${Date.now().toString(36)}@example.com`;
+	await signUpAndVerify(page, email);
+
+	// A second, separate browser signs in to the same account.
+	const otherContext = await browser.newContext();
+	const other = await otherContext.newPage();
+	await other.goto('/login');
+	await other.getByLabel('Email').fill(email);
+	await other.getByRole('button', { name: 'Continue with email' }).click();
+	await other.getByLabel('Password', { exact: true }).fill(password);
+	await other.getByRole('button', { name: 'Log in' }).click();
+	await expect(other.getByRole('heading', { name: 'Welcome, Maya Okafor' })).toBeVisible();
+
+	await page.goto('/settings/security');
+	const card = page.locator('section', { hasText: 'Where you’re signed in' });
+	await expect(card.getByText(/this device/)).toHaveCount(1);
+	await expect(card.getByRole('button', { name: 'End session' })).toHaveCount(1);
+
+	await card.getByRole('button', { name: 'End session' }).click();
+	await expect(page.getByText('Session ended', { exact: true })).toBeVisible();
+	await expect(card.getByRole('button', { name: 'End session' })).toHaveCount(0);
+
+	// The other browser has been signed out.
+	await other.goto('/settings/security');
+	await expect(other).toHaveURL(/\/login/);
+	await otherContext.close();
+});

@@ -594,3 +594,34 @@ Passkeys need `localhost` or an HTTPS address; they won't work if you open the a
 **Left for later**
 
 - A way to see and revoke trusted devices individually.
+
+## Task 20: Active sessions
+
+**Status:** Done. `npm run verify` passes (334 logic tests, 27 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/sessions.ts`: `listActiveSessions`, `endSession`.
+- `identity/library-headers.ts`: hands the login library the device and the real network address.
+- `identity/log-in.ts`, `verify-email.ts`, `two-step.ts`, `social.ts`: use it, so sessions record where they started.
+- `src/routes/api/auth/[...path]/+server.ts`: passes the real network address.
+- `src/routes/settings/security/`: a "Where you're signed in" card.
+- Tests beside each, and a two-browser test in `tests/e2e/settings.test.ts`.
+
+**Try it**
+
+1. Log in in your usual browser, and again in a second browser or a private window.
+2. In the first, open Settings then "Security". Under "Where you're signed in" you see both, with the one you are using marked "this device".
+3. Press "End session" beside the other one.
+4. Reload the second browser: it has been signed out.
+
+**Decisions**
+
+- "Last active" is accurate to within a day.
+- The session in use can't be ended from the list.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- Listing and revoking trusted devices.

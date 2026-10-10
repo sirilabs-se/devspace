@@ -1,8 +1,10 @@
 import { fail, redirect } from '@sveltejs/kit';
 import {
 	confirmTwoStepSetup,
+	endSession,
 	getProfile,
 	isTwoStepOn,
+	listActiveSessions,
 	listConnections,
 	listPasskeys,
 	listSecurityActivity,
@@ -16,12 +18,17 @@ import {
 } from '$lib/server/modules/identity';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, request }) => {
 	const user = requireUser(locals);
 	const activity = await listSecurityActivity(user.id);
 
 	return {
 		timeZone: (await getProfile(user.id)).timeZone,
+		sessions: (await listActiveSessions(user, request.headers)).map((session) => ({
+			...session,
+			signedInAt: session.signedInAt.toISOString(),
+			lastActiveAt: session.lastActiveAt.toISOString()
+		})),
 		twoStepOn: await isTwoStepOn(user.id),
 		hasPassword: (await listConnections(user.id)).hasPassword,
 		passkeys: (await listPasskeys(user.id)).map((passkey) => ({
@@ -33,6 +40,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
+	endSession: async ({ request, locals, getClientAddress }) => {
+		const user = requireUser(locals);
+		const form = await request.formData();
+
+		const result = await endSession(user, request.headers, form.get('sessionId'), {
+			ipAddress: getClientAddress(),
+			userAgent: request.headers.get('user-agent')
+		});
+
+		if (result.status !== 'ended') return fail(400, { sessionError: result.status });
+		return { sessionEnded: true as const };
+	},
+
 	startTwoStep: async ({ request, locals, getClientAddress }) => {
 		const user = requireUser(locals);
 		const form = await request.formData();

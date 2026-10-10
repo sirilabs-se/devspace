@@ -93,6 +93,7 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `listPasskeys(userId)` / `renamePasskey(userId, id, name)` / `removePasskey(userId, id, context)` | Lists, names and removes the acting user's own passkeys. The last way to sign in can't be removed | `/settings/security` |
 | `isTwoStepOn(userId)`, `startTwoStepSetup(...)`, `confirmTwoStepSetup(...)`, `regenerateBackupCodes(...)`, `turnOffTwoStep(...)` | The acting user's second step: set up with a QR code, switch on with a code, replace backup codes, switch off. Each change needs the password or a code | `/settings/security` |
 | `hasTwoStepChallenge(headers)` / `sendTwoStepEmailCode(headers, context)` / `completeTwoStepLogin(method, code, headers, cookies, context, trustDevice)` | Finishes a login that is waiting for its code: from the app, by email or a backup code; optionally trusting the device | `/login/two-step` |
+| `listActiveSessions(user, headers)` / `endSession(user, headers, sessionId, context)` | Lists where the acting user is signed in, and ends one of their other sessions | `/settings/security` |
 | `listSecurityActivity(userId)` | Lists the acting user's own recent security events, newest first | `/settings/security` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |

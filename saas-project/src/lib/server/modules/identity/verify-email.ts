@@ -5,6 +5,7 @@ import { db } from '$lib/server/db';
 import { recordAuditEvent } from './audit';
 import { getAuth } from './auth';
 import { emailChanged } from './change-email';
+import { libraryHeaders } from './library-headers';
 import { linkTokenPayload } from './link-token';
 import { consumeRateLimit, rateLimitKey } from './rate-limit';
 import type { RequestContext } from './request-context';
@@ -33,7 +34,11 @@ export async function verifyEmail(
 
 	let responseHeaders: Headers;
 	try {
-		const result = await getAuth().api.verifyEmail({ query: { token }, returnHeaders: true });
+		const result = await getAuth().api.verifyEmail({
+			query: { token },
+			headers: libraryHeaders(undefined, context),
+			returnHeaders: true
+		});
 		responseHeaders = result.headers;
 	} catch (error) {
 		if (error instanceof APIError) {

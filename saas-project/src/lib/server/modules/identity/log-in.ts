@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { db } from '$lib/server/db';
 import { recordAuditEvent } from './audit';
 import { getAuth } from './auth';
+import { libraryHeaders } from './library-headers';
 import { clearLoginFailures, lockoutSecondsLeft, recordLoginFailure } from './lockout';
 import type { RequestContext } from './request-context';
 import { limitRequests } from './request-limits';
@@ -70,8 +71,8 @@ export async function logIn(
 	let needsSecondStep: boolean;
 	try {
 		const { headers, response } = await getAuth().api.signInEmail({
-			// Only the cookies are passed on: that is where the trusted-device mark is kept.
-			headers: new Headers({ cookie: requestHeaders?.get('cookie') ?? '' }),
+			// The cookies carry the trusted-device mark; the rest is recorded on the session.
+			headers: libraryHeaders(requestHeaders, context),
 			body: { email, password, rememberMe },
 			returnHeaders: true
 		});

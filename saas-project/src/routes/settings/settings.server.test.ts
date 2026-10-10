@@ -227,6 +227,42 @@ describe('two-step verification on the security page', () => {
 	});
 });
 
+describe('active sessions on the security page', () => {
+	it('lists this session, and ends another one when asked', async () => {
+		const { logIn } = await import('$lib/server/modules/identity');
+		const other = new TestCookieJar();
+		await logIn({ email, password: 'Correct-Horse-42' }, other, {
+			ipAddress: '198.51.100.20',
+			userAgent: 'Other Browser'
+		});
+
+		const data = (await securityLoad(event('/settings/security'))) as {
+			sessions: { id: string; current: boolean; signedInAt: string }[];
+		};
+		expect(data.sessions.map((session) => session.current)).toEqual([true, false]);
+		expect(data.sessions[0].signedInAt).toMatch(/^\d{4}-/);
+
+		const ended = await outcome(() =>
+			securityActions.endSession(event('/settings/security', { sessionId: data.sessions[1].id }))
+		);
+		expect(ended.result).toEqual({ sessionEnded: true });
+		expect(await getSessionUser(other.headers())).toBeNull();
+
+		const current = await outcome(() =>
+			securityActions.endSession(event('/settings/security', { sessionId: data.sessions[0].id }))
+		);
+		expect(current.result).toMatchObject({ status: 400, data: { sessionError: 'is_current' } });
+	});
+
+	it('refuses someone who is not signed in', async () => {
+		user = null;
+
+		expect(
+			(await outcome(() => securityActions.endSession(event('/settings/security')))).thrown?.status
+		).toBe(401);
+	});
+});
+
 describe('security settings', () => {
 	it('lists the signed-in person’s own security activity, and nobody else’s', async () => {
 		await createSignedInUser('bo@example.com', 'Bo Lind');

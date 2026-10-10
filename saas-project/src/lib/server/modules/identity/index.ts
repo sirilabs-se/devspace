@@ -68,6 +68,12 @@ export type { RequestContext } from './request-context';
 export { limitRequests, type RequestLimit } from './request-limits';
 export { getSessionUser, requireUser, type CookieJar, type SessionUser } from './session';
 export {
+	endSession,
+	listActiveSessions,
+	type ActiveSession,
+	type EndSessionResult
+} from './sessions';
+export {
 	completeWelcome,
 	handleAuthRequest,
 	socialProviders,
