@@ -27,15 +27,13 @@ test('clicking the toolbar icon is set to open the side panel', async ({ context
 		.toEqual({ openPanelOnActionClick: true });
 });
 
-test('the side panel page is empty and error-free', async ({ context, extensionId }) => {
+test('the side panel page opens without errors', async ({ context, extensionId }) => {
 	const errors: string[] = [];
 	const page = await context.newPage();
 	page.on('pageerror', (error) => errors.push(error.message));
 	page.on('console', (message) => message.type() === 'error' && errors.push(message.text()));
 	await page.goto(`chrome-extension://${extensionId}/src/sidepanel/index.html`);
-	const main = page.locator('#app > main');
-	await expect(main).toBeAttached();
-	await expect(main).toBeEmpty();
+	await expect(page.getByText('AudioTube', { exact: true })).toBeVisible();
 	expect(errors).toEqual([]);
 });
 

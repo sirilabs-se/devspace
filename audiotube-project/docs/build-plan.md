@@ -41,7 +41,7 @@ These apply to this phase only. They do not change the requirements document, wh
 |---|---|---|---|---|
 | 1 | Project setup | — | — | In progress |
 | 2 | Saved audio-only value | PLY-001–003 | 1 | Done |
-| 3 | Side panel switch | PLY-004, PLY-005 | 2 | To do |
+| 3 | Side panel switch | PLY-004, PLY-005 | 2 | Done |
 | 4 | Overlay on YouTube | PLY-005, PLY-006 (+ 4.2 basics) | 2 | To do |
 | 5 | Spike: requesting the lowest quality | PLY-008, OQ-001 | 1 | To do |
 | 6 | Save bandwidth | PLY-008 | 4, 5 | To do |
@@ -153,13 +153,23 @@ Task 5 can run at any point after task 1, in parallel with tasks 2 to 4.
 
 **Done when:**
 
-- [ ] The switch shows the saved value when the panel opens
-- [ ] Turning the switch saves the new value
-- [ ] With panels open in two windows, changing one updates the other within 1 second
-- [ ] When saving fails, the switch goes back and the message appears
-- [ ] The switch works by keyboard and is announced as a switch with its on or off state
-- [ ] The panel is usable from 320 to 600 px wide
-- [ ] Logic tests cover `sidepanel/core/` without importing any `.svelte` file
+- [x] The switch shows the saved value when the panel opens
+- [x] Turning the switch saves the new value
+- [x] With panels open in two windows, changing one updates the other within 1 second
+- [x] When saving fails, the switch goes back and the message appears
+- [x] The switch works by keyboard and is announced as a switch with its on or off state
+- [x] The panel is usable from 320 to 600 px wide
+- [x] Logic tests cover `sidepanel/core/` without importing any `.svelte` file
+
+**Notes:**
+
+- The whole Audio only card is the switch (one button, `role="switch"`, labelled "Audio only"), instead of the prototype's card plus an inner switch, so there is one tab stop and a larger target. Look and wording follow the prototype.
+- `theme.css` now holds the prototype's light and dark palette, type sizes, radii and the red accent as tokens. Dark follows the system setting; no theme choice yet.
+- `sidepanel/core/audio-only.ts` is a plain controller (`get`, `subscribe`, `toggle`, `set`): it shows the new position at once, goes back to the last saved value if saving fails, and shows the message for 6 seconds. Svelte components only render it.
+- Until the saved value is read the card is not shown, so the switch never flashes the wrong position. If reading fails, the panel shows the default and a "Couldn't read your saved setting" message (not in the plan; added so a read failure isn't silent).
+- A second change is ignored while the previous one is still being saved.
+- Window width was checked at 320, 420 and 600 px (no horizontal overflow, switch fully inside). The "lowest quality requested" status text is left for task 6.
+
 
 ### 4. Overlay on YouTube
 
