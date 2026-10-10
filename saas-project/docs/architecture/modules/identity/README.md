@@ -100,6 +100,7 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `suspendUser(admin, userId, reason, context)` / `reinstateUser(admin, userId, context)` | Suspends a user with a reason, signing them out everywhere, and lifts a suspension. Admins only | `/admin/users/[id]` |
 | `startImpersonation(admin, headers, cookies, userId, context)` / `stopImpersonation(user, headers, cookies, context)` | Switches an admin's browser to a session as a user for up to an hour, and back. Recorded, and the user is emailed | `/admin/users/[id]`, `/stop-impersonating` |
 | `listAuditEvents(admin, filters, page)` / `exportAuditEvents(admin, filters, context)` | Reads the audit log with filters, and exports it as CSV. Read-only. Admins only | `/admin/audit`, `/admin/audit/export` |
+| `listConsents(userId)` / `exportMyData(user, context)` | Lists what the acting user accepted, and gathers everything Identity holds about them, with no secrets | `/settings/privacy`, `/settings/privacy/export` |
 | `listSecurityActivity(userId)` | Lists the acting user's own recent security events, newest first | `/settings/security` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
@@ -129,7 +130,8 @@ Pages use form actions, following the shared conventions in the system doc.
 | `/settings/security` | Passkeys, second step, backup codes, active sessions, activity log, sign out everywhere | Signed-in users |
 | `/settings/connections` | Link and unlink Google and Facebook | Signed-in users |
 | `/settings/notifications` | Notification preferences | Signed-in users |
-| `/settings/privacy` | Download my data, see accepted terms | Signed-in users |
+| `/settings/privacy` | See accepted terms, and download my data | Signed-in users |
+| `GET /settings/privacy/export` | Downloads the signed-in person's own data as a JSON file; at most 5 times an hour | Signed-in users |
 | `/admin/users` | Finds users | Admin |
 | `/admin/users/[id]` | Suspends, reinstates and impersonates a user | Admin |
 | `/stop-impersonating` | Returns an admin from viewing the app as a user to their own account. Outside `/admin`, which is closed while viewing as a user. Added in task 24; not yet confirmed by the owner | The impersonating admin |

@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	// `resolve` adds the app's base path. With many pages its types can't take the whole
+	// `Pathname` union at once, so a checked page address is passed on as one member of it.
 	import { resolve } from '$app/paths';
 	import type { Pathname } from '$app/types';
 
@@ -23,7 +25,7 @@
 		<p class="heading">{heading}</p>
 		{#each items as item (item.href)}
 			<a
-				href={resolve(item.href)}
+				href={resolve(item.href as '/')}
 				class:current={item.href === current}
 				aria-current={item.href === current ? 'page' : undefined}
 			>

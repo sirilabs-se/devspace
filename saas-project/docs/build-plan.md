@@ -62,7 +62,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 23 | Suspend and reinstate | Identity | 22 | Done |
 | 24 | Impersonation | Identity | 22 | Done |
 | 25 | Admin audit log | Identity | 22 | Done |
-| 26 | Download my data | Identity | 14 | To do |
+| 26 | Download my data | Identity | 14 | Done |
 | 27 | First deploy to production | — | 1 | To do |
 
 Statuses: **To do**, **In progress**, **Done**, **Blocked** (say why in the task's notes).
@@ -1053,11 +1053,21 @@ Blocked: no notification types exist until another module defines one, so there 
 
 **Done when:**
 
-- [ ] A person downloads a file containing their profile, sign-in methods (without secrets), consents, preferences and security events
-- [ ] The file contains no password hashes, tokens or secrets
-- [ ] Tests cover the above, and a test proves one user can't download another user's data
+- [x] A person downloads a file containing their profile, sign-in methods (without secrets), consents, preferences and security events
+- [x] The file contains no password hashes, tokens or secrets
+- [x] Tests cover the above, and a test proves one user can't download another user's data
 
-**Notes:** —
+**Notes:**
+
+- The download is a JSON file with: profile, preferences (language and time zone), ways of signing in (whether there is a password, connected providers, passkeys by name, whether two-step is on), sessions, what was accepted, usernames on hold, and every security event about the account.
+- It is put together field by field, never by copying whole database rows, so a secret can't slip in. A test checks the file against the real password hash, session tokens, authenticator secret, backup codes, passkey keys and outstanding link tokens.
+- It downloads from `/settings/privacy/export`. Nothing in the address or the request names a person; it is always the signed-in person's own data. A test tries to ask for someone else's and gets its own.
+- Limited to 5 downloads an hour per person, and each download is recorded in the audit log.
+- Refused to an admin viewing the app as the person.
+- Notification preferences are not in the file, because task 16 is not built. When it is, they need adding.
+- Other modules' data is out of scope here. When the next module arrives, it will need a way to add its own data to this file, in the same way `onUserDeleted` lets it clean up.
+- The privacy page lists the three things accepted at sign-up, with version and time, and points to "Delete account" for deletion.
+- Link components needed a small change: once the app passed 25 pages, the type checker could no longer accept the full list of page addresses in one go. The components now pass a checked address on in a way it accepts. Behaviour is unchanged.
 
 ### 27. First deploy to production
 

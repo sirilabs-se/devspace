@@ -794,3 +794,33 @@ An account less than 15 minutes old gets no alert, so use one you made earlier, 
 **Left for later**
 
 - Friendlier wording for action names, if the recorded names prove hard to read.
+
+## Task 26: Download my data
+
+**Status:** Done. `npm run verify` passes (420 logic tests, 32 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/data-export.ts`: `listConsents`, `exportMyData`.
+- `src/routes/settings/privacy/`: the Privacy page and the download endpoint.
+- `src/routes/settings/+layout.svelte`: "Privacy" in the settings navigation.
+- `src/routes/settings/security/+page.svelte`: wording for the remaining kinds of event in the activity list.
+- `src/lib/ui/` link components: a type-checking fix needed now that the app has more than 25 pages.
+- Tests beside each, and a browser test of the download.
+
+**Try it**
+
+1. Log in, open Settings then "Privacy".
+2. "What you accepted" lists the terms, the privacy policy and the 18+ confirmation, with the version and time.
+3. Press "Download my data" and open the file in a text editor. It holds your profile, preferences, ways of signing in, sessions, consents and security history, and no password or other secret.
+
+**Decisions**
+
+- The file is JSON, built field by field.
+- 5 downloads an hour; each is recorded.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- Adding notification preferences (task 16) and other modules' data to the file when they exist.

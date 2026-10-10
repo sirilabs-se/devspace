@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	// `resolve` adds the app's base path. With many pages its types can't take the whole
+	// `Pathname` union at once, so a checked page address is passed on as one member of it.
 	import { resolve } from '$app/paths';
 	import type { Pathname } from '$app/types';
 
@@ -38,7 +40,7 @@
 </script>
 
 {#if href}
-	<a class="button {variant} {size}" class:full={fullWidth} href={resolve(href)}>
+	<a class="button {variant} {size}" class:full={fullWidth} href={resolve(href as '/')}>
 		<span>{@render children()}</span>
 	</a>
 {:else}

@@ -197,3 +197,25 @@ test('a person signed in on two browsers sees both and can end the other one', a
 	await expect(other).toHaveURL(/\/login/);
 	await otherContext.close();
 });
+
+test('a person can see what they accepted and download their data', async ({ page }) => {
+	const email = `e2e-privacy-${Date.now().toString(36)}@example.com`;
+	await signUpAndVerify(page, email);
+	await page.goto('/settings/profile');
+	await page.getByRole('link', { name: 'Privacy' }).click();
+
+	await expect(page.getByText('Terms of service')).toBeVisible();
+	await expect(page.getByText('Privacy policy')).toBeVisible();
+	await expect(page.getByText('Confirmation of being 18 or older')).toBeVisible();
+
+	const download = page.waitForEvent('download');
+	await page.getByRole('button', { name: 'Download my data' }).click();
+	const file = await download;
+	expect(file.suggestedFilename()).toMatch(/^my-data-\d{4}-\d{2}-\d{2}\.json$/);
+	let text = '';
+	for await (const chunk of await file.createReadStream()) text += chunk;
+	const data = JSON.parse(text);
+	expect(data.profile).toMatchObject({ name: 'Maya Okafor', email });
+	expect(data.signInMethods.hasPassword).toBe(true);
+	expect(text).not.toContain(password);
+});

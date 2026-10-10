@@ -1,4 +1,6 @@
 <script lang="ts">
+	// `resolve` adds the app's base path. With many pages its types can't take the whole
+	// `Pathname` union at once, so a checked page address is passed on as one member of it.
 	import { resolve } from '$app/paths';
 	import type { Pathname } from '$app/types';
 	import Icon from './Icon.svelte';
@@ -18,7 +20,7 @@
 
 <div class="chip">
 	<span class="who"><Icon name="user" size={18} /><b>{label}</b></span>
-	<a class="change" href={resolve(changeHref)}>{changeLabel}</a>
+	<a class="change" href={resolve(changeHref as '/')}>{changeLabel}</a>
 </div>
 
 <style>

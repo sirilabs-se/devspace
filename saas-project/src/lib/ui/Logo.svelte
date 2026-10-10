@@ -1,4 +1,6 @@
 <script lang="ts">
+	// `resolve` adds the app's base path. With many pages its types can't take the whole
+	// `Pathname` union at once, so a checked page address is passed on as one member of it.
 	import { resolve } from '$app/paths';
 	import type { Pathname } from '$app/types';
 
@@ -15,7 +17,7 @@
 	} = $props();
 </script>
 
-<a class="logo" class:inverse href={resolve(href)}>
+<a class="logo" class:inverse href={resolve(href as '/')}>
 	<span class="mark" aria-hidden="true"></span>
 	<span>{name}</span>
 </a>

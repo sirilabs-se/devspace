@@ -45,6 +45,7 @@ export {
 	type SetFirstPasswordResult,
 	type UnlinkProviderResult
 } from './connections';
+export { exportMyData, listConsents, type ConsentRecord } from './data-export';
 export { recogniseDevice, type DeviceRecognition } from './device-recognition';
 export {
 	DELETION_GRACE_DAYS,

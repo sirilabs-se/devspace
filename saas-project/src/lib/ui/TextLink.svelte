@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	// `resolve` adds the app's base path. With many pages its types can't take the whole
+	// `Pathname` union at once, so a checked page address is passed on as one member of it.
 	import { resolve } from '$app/paths';
 	import type { Pathname } from '$app/types';
 
@@ -7,7 +9,7 @@
 	let { href, children }: { href: Pathname; children: Snippet } = $props();
 </script>
 
-<a class="link" href={resolve(href)}>{@render children()}</a>
+<a class="link" href={resolve(href as '/')}>{@render children()}</a>
 
 <style>
 	.link {
