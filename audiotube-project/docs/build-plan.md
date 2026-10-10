@@ -39,7 +39,7 @@ These apply to this phase only. They do not change the requirements document, wh
 
 | # | Task | Requirements | Depends on | Status |
 |---|---|---|---|---|
-| 1 | Project setup | — | — | In progress |
+| 1 | Project setup | — | — | Done |
 | 2 | Saved audio-only value | PLY-001–003 | 1 | Done |
 | 3 | Side panel switch | PLY-004, PLY-005 | 2 | Done |
 | 4 | Overlay on YouTube | PLY-005, PLY-006 (+ 4.2 basics) | 2 | Done |
@@ -82,14 +82,14 @@ Task 5 can run at any point after task 1, in parallel with tasks 2 to 4.
 
 - [x] `npm run build` produces an extension that loads from `chrome://extensions` with no errors
 - [x] Clicking the toolbar icon opens an empty side panel
-- [ ] `npm run verify` passes locally and in CI
+- [x] `npm run verify` passes locally and in CI
 - [x] `npm run verify` fails when a rule is broken on purpose, e.g. importing a module's internal file or hard-coding a colour (then undo the break)
 - [x] A commit message containing AI attribution is rejected by the hook
 - [x] The build output contains nothing from `_prototype/`
 
 **Notes:**
 
-- Not ticked: CI. The workflow is in `devspace/.github/workflows/audiotube-project.yml` but has not run yet (nothing is pushed); tick it after the first green run.
+- CI: the workflow is in `devspace/.github/workflows/audiotube-project.yml`. First green run: push of `b36ca72` on 2026-10-10 (lint, types, unit and browser tests, build).
 - Loading in Chrome and the toolbar click are covered by Playwright against a headless Chromium: the extension loads with no console errors and the service worker sets `openPanelOnActionClick`. A real click on the toolbar icon is worth one manual check.
 - `.githooks/commit-msg` already existed at the repo root (shared with saas-project), so no new hook was added. The `prepare` script points `core.hooksPath` at it.
 - The manifest is `manifest.config.ts` (typed, via `defineManifest`) instead of `public/manifest.json` as CLAUDE.md's proposed tree shows.
