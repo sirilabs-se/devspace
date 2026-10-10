@@ -152,7 +152,7 @@ test('the bar is reachable by keyboard and announced as a slider with a time', a
 	const panel = await openPanel(context, extensionId);
 	await play(context);
 	await expect(slider(panel)).toBeEnabled();
-	await expect(slider(panel)).toHaveAttribute('aria-valuetext', /\d+:\d\d, \d+:\d\d left/);
+	await expect(slider(panel)).toHaveAttribute('aria-valuetext', /\d+:\d\d of \d+:\d\d/);
 	for (let i = 0; i < 12; i++) {
 		await panel.keyboard.press('Tab');
 		if (await slider(panel).evaluate((el) => el === document.activeElement)) break;

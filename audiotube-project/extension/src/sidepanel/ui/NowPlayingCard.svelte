@@ -60,9 +60,9 @@
 						step={1}
 						value={view.progress.elapsedSec}
 						disabled={!view.canSeek}
-						aria-valuetext={view.progress.remainingText === null
+						aria-valuetext={view.progress.durationText === null
 							? view.progress.elapsedText
-							: `${view.progress.elapsedText}, ${view.progress.remainingText} left`}
+							: `${view.progress.elapsedText} of ${view.progress.durationText}`}
 						style:--p="{(view.progress.fraction ?? 0) * 100}%"
 						oninput={(event) => onPreviewSeek(Number(event.currentTarget.value))}
 						onchange={(event) => onCommitSeek(Number(event.currentTarget.value))}
@@ -79,9 +79,7 @@
 					<div class="flex items-center justify-between text-xs text-muted">
 						<span>{view.progress.elapsedText}</span>
 						{#if view.progress.buffering}<span>Buffering</span>{/if}
-						<span
-							>{view.progress.remainingText === null ? '' : '-' + view.progress.remainingText}</span
-						>
+						<span>{view.progress.durationText ?? ''}</span>
 					</div>
 				{/if}
 			</div>

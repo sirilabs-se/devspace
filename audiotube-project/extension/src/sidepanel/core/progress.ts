@@ -6,11 +6,11 @@ export interface Progress {
 	buffering: boolean;
 	elapsedSec: number;
 	durationSec: number | null;
-	remainingSec: number | null;
 	/** 0 to 1, or null for a live stream. */
 	fraction: number | null;
 	elapsedText: string;
-	remainingText: string | null;
+	/** The length of the video, such as 1:23:15; null when it is not known or the stream is live. */
+	durationText: string | null;
 }
 
 export function formatClock(totalSeconds: number): string {
@@ -45,25 +45,22 @@ export function computeProgress(
 			buffering,
 			elapsedSec: 0,
 			durationSec: null,
-			remainingSec: null,
 			fraction: null,
 			elapsedText: '',
-			remainingText: null
+			durationText: null
 		};
 	}
 
 	const duration = video.durationSec;
 	const clamped = Math.max(0, duration === null ? position : Math.min(position, duration));
 	const elapsedSec = Math.floor(clamped);
-	const remainingSec = duration === null ? null : Math.max(0, duration - elapsedSec);
 	return {
 		live: false,
 		buffering,
 		elapsedSec,
 		durationSec: duration,
-		remainingSec,
 		fraction: duration !== null && duration > 0 ? Math.min(1, clamped / duration) : null,
 		elapsedText: formatClock(elapsedSec),
-		remainingText: remainingSec === null ? null : formatClock(remainingSec)
+		durationText: duration === null ? null : formatClock(duration)
 	};
 }

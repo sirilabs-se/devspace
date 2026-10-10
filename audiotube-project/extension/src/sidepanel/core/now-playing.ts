@@ -37,7 +37,7 @@ export interface NowPlayingView {
 	canResume: boolean;
 	/** Resume opened a tab, and it has not started playing after a while. */
 	waitingToStart: boolean;
-	/** Elapsed and remaining time, counted forward while playing; null with no video. */
+	/** Elapsed time and the length of the video, counted forward while playing; null with no video. */
 	progress: Progress | null;
 	/** There is a playback tab, and the video has a length to move around in (not a live stream). */
 	canSeek: boolean;

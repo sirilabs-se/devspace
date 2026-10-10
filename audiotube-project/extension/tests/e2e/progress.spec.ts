@@ -59,7 +59,9 @@ test('while playing, elapsed time goes up by one a second and the bar moves', as
 		await bar(panel).evaluate((el) => el.style.getPropertyValue('--p'))
 	);
 	expect(fractionLater).toBeGreaterThan(fractionAt);
-	await expect(panel.getByRole('region', { name: 'Now playing' })).toContainText('-3:');
+	// The right-hand time is the length of the video, 3:32 for the 212 seconds of the test page.
+	await expect(panel.getByRole('region', { name: 'Now playing' })).toContainText('3:32');
+	await expect(panel.getByRole('region', { name: 'Now playing' })).not.toContainText('-3:');
 });
 
 test('on pause, the time and the bar stop within a second', async ({ context, extensionId }) => {
@@ -107,7 +109,7 @@ test('at double speed, elapsed time goes up by two each second', async ({
 	expect(delta).toBeLessThanOrEqual(7);
 });
 
-test('the count never goes past the duration and the remaining time never below 0:00', async ({
+test('the count never goes past the duration, which stays the same', async ({
 	context,
 	extensionId
 }) => {
@@ -121,7 +123,7 @@ test('the count never goes past the duration and the remaining time never below 
 	});
 	await wait(6000);
 	expect(await elapsed(panel)).toBeLessThanOrEqual(20);
-	await expect(panel.getByRole('region', { name: 'Now playing' })).toContainText('-0:00');
+	await expect(panel.getByRole('region', { name: 'Now playing' })).toContainText('0:20');
 	expect(await bar(panel).inputValue()).toBe('20');
 });
 

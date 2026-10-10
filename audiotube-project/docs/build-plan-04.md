@@ -118,7 +118,7 @@ Task 22 comes first. Task 24 follows task 23; task 25 can be done before or afte
 - Panel: `sidepanel/core/progress.ts` is a pure function (`computeProgress`): position plus (now − time) × rate while playing, otherwise the snapshot; clamped between 0 and the duration; live has no times; with no playback tab it is the saved position and does not move. `now-playing.ts` looks at it four times a second while playing, and the view changes only when the whole second does. The card shows a bar with elapsed on the left and remaining (`-m:ss`) on the right, "Live" for a live stream and "Buffering" while buffering. The bar is a progress bar for now; task 24 makes it a slider.
 - A stream-backed `<video>` ignores `playbackRate`, so the test page keeps the rate itself and announces it; the browser tests use it for the speed case.
 - Real YouTube (headless, signed out): the panel's whole second stayed within about a second of YouTube's time while playing and after a seek; after `setPlaybackRate(2)` it counted at twice the speed (the report carried rate 2 four milliseconds after the change). Live streams still did not start in this environment, so "Live" is covered on the test page only.
-
+- **Follow-up (owner's decision):** the right-hand time is the **length of the video** (for example `1:49` on the left and `1:23:15` on the right), not the time left counting down. The core's `Progress` carries `durationText` instead of the remaining time; the slider's spoken value is "1:49 of 1:23:15". This differs from `PLY-059` and `PLY-115`, which say "remaining time"; a wording change is suggested in the task's report and not made in the requirements document.
 
 ### 24. Seeking from the side panel
 
