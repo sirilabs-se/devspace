@@ -62,6 +62,19 @@ describe('recogniseDevice', () => {
 		expect(event).toMatchObject({ subjectUserId: anna.id, ipAddress: '198.51.100.20' });
 	});
 
+	it('still lets the person in when the alert can’t be sent', async () => {
+		await ageAccounts();
+		const browser = new TestCookieJar();
+		const noise = vi.spyOn(console, 'error').mockImplementation(() => {});
+		vi.mocked(sendEmail).mockRejectedValueOnce(new Error('The email server is down'));
+
+		expect(await recogniseDevice(anna, browser, context)).toBe('new_device');
+
+		expect(await newDeviceEvents()).toHaveLength(1);
+		expect(await recogniseDevice(anna, browser, context)).toBe('known');
+		noise.mockRestore();
+	});
+
 	it('sends no further alerts for later visits from that browser', async () => {
 		await ageAccounts();
 		const browser = new TestCookieJar();

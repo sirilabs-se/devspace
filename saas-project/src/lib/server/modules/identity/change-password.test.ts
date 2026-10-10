@@ -121,6 +121,33 @@ describe('changePassword', () => {
 		});
 	});
 
+	it('refuses even the right password during the pause, so guessing can’t carry on', async () => {
+		for (let guess = 0; guess < 5; guess++) {
+			await change({ ...valid, currentPassword: 'Wrong-Horse-42' });
+		}
+
+		expect(await change(valid)).toMatchObject({ status: 'rate_limited' });
+
+		expect(await logIn({ email, password: oldPassword }, new TestCookieJar(), from(1))).toEqual({
+			status: 'signed_in'
+		});
+	});
+
+	it('still changes the password when the confirmation email can’t be sent', async () => {
+		const noise = vi.spyOn(console, 'error').mockImplementation(() => {});
+		vi.mocked(sendEmail).mockRejectedValueOnce(new Error('The email server is down'));
+
+		expect(await change(valid)).toEqual({ status: 'done' });
+
+		expect(await logIn({ email, password: newPassword }, new TestCookieJar(), from(1))).toEqual({
+			status: 'signed_in'
+		});
+		// The failure is noted, without the address or the text of the email.
+		expect(noise).toHaveBeenCalledOnce();
+		expect(JSON.stringify(noise.mock.calls[0][0])).not.toContain(email);
+		noise.mockRestore();
+	});
+
 	it('cannot be used to change another person’s password', async () => {
 		const boJar = await createSignedInUser('bo@example.com', 'Bo Lind');
 		const bo = (await getSessionUser(boJar.headers()))!;

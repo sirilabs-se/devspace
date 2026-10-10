@@ -19,10 +19,10 @@ import { startImpersonation, stopImpersonation } from './impersonation';
 import { logIn } from './log-in';
 import { removePasskey } from './passkeys';
 import { getProfile, updateProfile } from './profile';
-import { auditEvents, sessions, users } from './schema';
+import { auditEvents, consents, sessions, users } from './schema';
 import { getSessionUser, type SessionUser } from './session';
 import { endSession } from './sessions';
-import { handleAuthRequest } from './social';
+import { completeWelcome, handleAuthRequest } from './social';
 import { regenerateBackupCodes, startTwoStepSetup, turnOffTwoStep } from './two-step';
 
 vi.mock('$lib/server/email', () => ({ sendEmail: vi.fn() }));
@@ -223,6 +223,18 @@ describe('while impersonating', () => {
 		);
 
 		expect(response.status).toBe(403);
+	});
+
+	it('refuses accepting the terms on the person’s behalf', async () => {
+		await db.delete(consents).where(eq(consents.userId, anna.id));
+		const asAnna = await impersonate();
+		expect(asAnna.welcomePending).toBe(true);
+
+		await expect(
+			completeWelcome(asAnna, { acceptTerms: true, username: '' }, testContext)
+		).rejects.toMatchObject({ status: 403 });
+
+		expect(await db.select().from(consents).where(eq(consents.userId, anna.id))).toHaveLength(0);
 	});
 
 	it('still allows ordinary things, such as editing the profile', async () => {

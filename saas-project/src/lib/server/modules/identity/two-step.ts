@@ -5,6 +5,7 @@ import { db } from '$lib/server/db';
 import { recordAuditEvent } from './audit';
 import { getAuth } from './auth';
 import { libraryHeaders } from './library-headers';
+import { passwordGuessWaitSeconds, recordWrongPasswordGuess } from './password-guess';
 import type { RequestContext } from './request-context';
 import { limitRequests } from './request-limits';
 import { twoFactors, users } from './schema';
@@ -29,10 +30,21 @@ export async function isTwoStepOn(userId: UserId): Promise<boolean> {
 }
 
 const text = (value: unknown) => (typeof value === 'string' ? value : '');
-const wrongPassword = (error: unknown) => {
-	if (error instanceof APIError) return true;
-	throw error;
-};
+
+/** The answer while an account's password can't be tried, after too many wrong guesses. */
+type Paused = { status: 'rate_limited'; retryAfterSeconds: number };
+
+async function pausedFor(userId: UserId): Promise<Paused | null> {
+	const wait = await passwordGuessWaitSeconds(userId);
+	return wait > 0 ? { status: 'rate_limited', retryAfterSeconds: wait } : null;
+}
+
+/** Counts and records a wrong password. Anything else that went wrong is passed on. */
+async function wrongPassword(error: unknown, user: SessionUser, context: RequestContext) {
+	if (!(error instanceof APIError)) throw error;
+	await recordWrongPasswordGuess(user.id);
+	await recordAuditEvent(user.id, 'two_step_change_refused', user.id, context);
+}
 
 export type StartTwoStepSetupResult =
 	| {
@@ -44,7 +56,8 @@ export type StartTwoStepSetupResult =
 			/** Shown once. Each works once in place of a code. */
 			backupCodes: string[];
 	  }
-	| { status: 'current_password_wrong' | 'already_on' };
+	| { status: 'current_password_wrong' | 'already_on' }
+	| Paused;
 
 /**
  * Starts setting up the second step. It is not switched on until the person
@@ -59,6 +72,8 @@ export async function startTwoStepSetup(
 	await assertSessionBelongsTo(user, headers);
 	assertNotImpersonating(user);
 	if (await isTwoStepOn(user.id)) return { status: 'already_on' };
+	const paused = await pausedFor(user.id);
+	if (paused) return paused;
 
 	try {
 		const result = await getAuth().api.enableTwoFactor({
@@ -73,8 +88,7 @@ export async function startTwoStepSetup(
 			backupCodes: result.backupCodes
 		};
 	} catch (error) {
-		wrongPassword(error);
-		await recordAuditEvent(user.id, 'two_step_change_refused', user.id, context);
+		await wrongPassword(error, user, context);
 		return { status: 'current_password_wrong' };
 	}
 }
@@ -113,11 +127,15 @@ export async function regenerateBackupCodes(
 	password: unknown,
 	context: RequestContext
 ): Promise<
-	{ status: 'done'; backupCodes: string[] } | { status: 'current_password_wrong' | 'not_on' }
+	| { status: 'done'; backupCodes: string[] }
+	| { status: 'current_password_wrong' | 'not_on' }
+	| Paused
 > {
 	await assertSessionBelongsTo(user, headers);
 	assertNotImpersonating(user);
 	if (!(await isTwoStepOn(user.id))) return { status: 'not_on' };
+	const paused = await pausedFor(user.id);
+	if (paused) return paused;
 
 	try {
 		const { backupCodes } = await getAuth().api.generateBackupCodes({
@@ -127,8 +145,7 @@ export async function regenerateBackupCodes(
 		await recordAuditEvent(user.id, 'backup_codes_regenerated', user.id, context);
 		return { status: 'done', backupCodes };
 	} catch (error) {
-		wrongPassword(error);
-		await recordAuditEvent(user.id, 'two_step_change_refused', user.id, context);
+		await wrongPassword(error, user, context);
 		return { status: 'current_password_wrong' };
 	}
 }
@@ -140,10 +157,12 @@ export async function turnOffTwoStep(
 	cookies: CookieJar,
 	password: unknown,
 	context: RequestContext
-): Promise<{ status: 'off' | 'current_password_wrong' | 'not_on' }> {
+): Promise<{ status: 'off' | 'current_password_wrong' | 'not_on' } | Paused> {
 	await assertSessionBelongsTo(user, headers);
 	assertNotImpersonating(user);
 	if (!(await isTwoStepOn(user.id))) return { status: 'not_on' };
+	const paused = await pausedFor(user.id);
+	if (paused) return paused;
 
 	try {
 		const result = await getAuth().api.disableTwoFactor({
@@ -153,8 +172,7 @@ export async function turnOffTwoStep(
 		});
 		applySessionCookies(result.headers, cookies);
 	} catch (error) {
-		wrongPassword(error);
-		await recordAuditEvent(user.id, 'two_step_change_refused', user.id, context);
+		await wrongPassword(error, user, context);
 		return { status: 'current_password_wrong' };
 	}
 

@@ -37,14 +37,15 @@ test('a person can turn on two-step verification and is asked for a code at the 
 		await page.getByRole('list', { name: 'Backup codes' }).locator('li').first().innerText()
 	).trim();
 
-	// Next login: password, then the code.
+	// Next login, on the way to a page that needs one: password, then the code.
 	await page.getByRole('button', { name: 'Log out' }).click();
-	await page.goto('/login');
+	await page.goto('/settings/profile');
+	await expect(page).toHaveURL('/login?next=%2Fsettings%2Fprofile');
 	await page.getByLabel('Email').fill(email);
 	await page.getByRole('button', { name: 'Continue with email' }).click();
 	await page.getByLabel('Password', { exact: true }).fill(password);
 	await page.getByRole('button', { name: 'Log in' }).click();
-	await expect(page).toHaveURL('/login/two-step');
+	await expect(page).toHaveURL('/login/two-step?next=%2Fsettings%2Fprofile');
 	await expect(page.getByRole('heading', { name: 'Enter your code' })).toBeVisible();
 
 	await page.getByLabel('6-digit code').fill('000000');
@@ -56,7 +57,9 @@ test('a person can turn on two-step verification and is asked for a code at the 
 	await page.getByLabel('Backup code').fill(backupCode);
 	await page.getByLabel('Trust this device for 30 days').check();
 	await page.getByRole('button', { name: 'Verify' }).click();
-	await expect(page.getByRole('heading', { name: 'Welcome, Maya Okafor' })).toBeVisible();
+	// Signed in, and on the page that was asked for.
+	await expect(page).toHaveURL('/settings/profile');
+	await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
 
 	// This browser is now trusted: the next password login goes straight in.
 	await page.getByRole('button', { name: 'Log out' }).click();

@@ -236,6 +236,13 @@
 					</Text>
 				</Stack>
 
+				{#if form?.deleteError === 'rate_limited'}
+					<Alert variant="danger" title="Too many attempts">
+						For your security we’ve paused this action. You can try again in
+						<Countdown seconds={form.retryAfterSeconds ?? 0} />. Nothing was changed.
+					</Alert>
+				{/if}
+
 				<Alert variant="warning" title="You have 30 days to change your mind">
 					Every device is signed out straight away. If you log in again within 30 days, the deletion
 					is cancelled. After that it can’t be undone, and your username can never be used again.

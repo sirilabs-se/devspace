@@ -16,6 +16,8 @@ const isAdminPath = (pathname: string) => pathname === '/admin' || pathname.star
 const welcomeExempt = (pathname: string) =>
 	pathname === '/welcome' ||
 	pathname === '/logout' ||
+	// An admin viewing the app as someone who hasn't accepted the terms can still leave.
+	pathname === '/stop-impersonating' ||
 	pathname.startsWith('/api/auth/') ||
 	pathname.startsWith('/files/');
 

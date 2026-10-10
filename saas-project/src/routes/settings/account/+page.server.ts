@@ -30,6 +30,12 @@ export const actions: Actions = {
 			{ ipAddress: getClientAddress(), userAgent: request.headers.get('user-agent') }
 		);
 
+		if (result.status === 'rate_limited') {
+			return fail(429, {
+				deleteError: 'rate_limited' as const,
+				retryAfterSeconds: result.retryAfterSeconds
+			});
+		}
 		if (result.status !== 'scheduled') return fail(400, { deleteError: result.status });
 		redirect(303, `/login?notice=deletion-scheduled`);
 	},

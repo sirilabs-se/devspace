@@ -78,8 +78,10 @@ async function signInWith(
 
 	const response = await handleAuthRequest(
 		new Request(`http://localhost:5173/api/auth/callback/${provider}?code=a-code&state=${state}`, {
-			headers: jar.headers()
-		})
+			// The second address is one the visitor made up; only the first, the real one, is used.
+			headers: { ...Object.fromEntries(jar.headers()), 'x-forwarded-for': '10.9.9.9' }
+		}),
+		'198.51.100.77'
 	);
 	applySessionCookies(response.headers, jar);
 	return { jar, location: response.headers.get('location'), status: response.status };
@@ -146,7 +148,11 @@ describe('signing in with Google or Facebook', () => {
 			expect(await db.select().from(consents)).toHaveLength(0);
 
 			const [event] = await db.select().from(auditEvents).where(eq(auditEvents.action, 'login'));
-			expect(event).toMatchObject({ subjectUserId: user!.id, details: { method: provider } });
+			expect(event).toMatchObject({
+				subjectUserId: user!.id,
+				ipAddress: '198.51.100.77',
+				details: { method: provider }
+			});
 		});
 	}
 

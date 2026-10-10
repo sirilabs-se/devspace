@@ -132,6 +132,8 @@ function createAuth() {
 			// Records sign-ins that come back from Google or Facebook.
 			after: createAuthMiddleware(async (ctx) => {
 				const userAgent = ctx.request?.headers.get('user-agent') ?? null;
+				// Set by `handleAuthRequest` from the connection itself, never taken from the visitor.
+				const ipAddress = ctx.request?.headers.get('x-forwarded-for') ?? null;
 
 				// Sign-ins that the library completes itself: a provider's return, or a passkey.
 				const created = ctx.context.newSession;
@@ -142,13 +144,19 @@ function createAuth() {
 						: null;
 				if (created && method) {
 					const userId = toUserId(created.user.id);
-					await recordAuditEvent(userId, 'login', userId, { userAgent, details: { method } });
+					await recordAuditEvent(userId, 'login', userId, {
+						userAgent,
+						ipAddress,
+						details: { method }
+					});
 				}
 
 				if (ctx.path === '/passkey/verify-registration' && ctx.context.session) {
 					const failed = ctx.context.returned instanceof Error;
 					const userId = toUserId(ctx.context.session.user.id);
-					if (!failed) await recordAuditEvent(userId, 'passkey_added', userId, { userAgent });
+					if (!failed) {
+						await recordAuditEvent(userId, 'passkey_added', userId, { userAgent, ipAddress });
+					}
 				}
 			})
 		},

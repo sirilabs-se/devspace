@@ -16,7 +16,8 @@ export const load: PageServerLoad = ({ request, locals, url }) => {
 	if (locals.user) redirect(303, safeNextPath(url.searchParams.get('next')));
 	// Only reachable straight after a correct password.
 	if (!hasTwoStepChallenge(request.headers)) redirect(303, '/login');
-	return {};
+	// Where to go once the code is accepted.
+	return { next: safeNextPath(url.searchParams.get('next')) };
 };
 
 export const actions: Actions = {

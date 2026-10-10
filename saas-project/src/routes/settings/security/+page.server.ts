@@ -62,6 +62,7 @@ export const actions: Actions = {
 			userAgent: request.headers.get('user-agent')
 		});
 
+		if (result.status === 'rate_limited') return fail(429, { twoStepError: result.status });
 		if (result.status !== 'started') return fail(400, { twoStepError: result.status });
 		// Shown once, while the person sets up their app and saves the codes.
 		return {
@@ -95,6 +96,7 @@ export const actions: Actions = {
 			userAgent: request.headers.get('user-agent')
 		});
 
+		if (result.status === 'rate_limited') return fail(429, { twoStepError: result.status });
 		if (result.status !== 'done') return fail(400, { twoStepError: result.status });
 		return { newBackupCodes: result.backupCodes };
 	},
@@ -108,6 +110,7 @@ export const actions: Actions = {
 			userAgent: request.headers.get('user-agent')
 		});
 
+		if (result.status === 'rate_limited') return fail(429, { twoStepError: result.status });
 		if (result.status !== 'off') return fail(400, { twoStepError: result.status });
 		return { twoStepTurnedOff: true as const };
 	},

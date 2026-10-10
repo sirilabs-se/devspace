@@ -5,7 +5,7 @@ import { recordAuditEvent } from './audit';
 import { appOrigin, getAuth } from './auth';
 import { sendPasswordChangedEmail } from './emails';
 import { passwordProblem } from './password';
-import { consumeRateLimit } from './rate-limit';
+import { passwordGuessWaitSeconds, recordWrongPasswordGuess } from './password-guess';
 import type { RequestContext } from './request-context';
 import {
 	applySessionCookies,
@@ -13,10 +13,6 @@ import {
 	type CookieJar,
 	type SessionUser
 } from './session';
-
-// Wrong guesses at the current password, per account.
-const WRONG_GUESSES_ALLOWED = 5;
-const WRONG_GUESS_WINDOW_SECONDS = 15 * 60;
 
 export type ChangePasswordResult =
 	| { status: 'done' }
@@ -55,6 +51,10 @@ export async function changePassword(
 	if (problem) return { status: `password_${problem}` };
 	if (password !== confirmPassword) return { status: 'passwords_differ' };
 
+	// After too many wrong guesses even the right password is refused for a while.
+	const wait = await passwordGuessWaitSeconds(user.id);
+	if (wait > 0) return { status: 'rate_limited', retryAfterSeconds: wait };
+
 	try {
 		const result = await getAuth().api.changePassword({
 			headers,
@@ -66,15 +66,8 @@ export async function changePassword(
 	} catch (error) {
 		if (!(error instanceof APIError)) throw error;
 
-		const guesses = await consumeRateLimit(
-			`change-password:${user.id}`,
-			WRONG_GUESSES_ALLOWED,
-			WRONG_GUESS_WINDOW_SECONDS
-		);
+		await recordWrongPasswordGuess(user.id);
 		await recordAuditEvent(user.id, 'password_change_failed', user.id, context);
-		if (!guesses.allowed) {
-			return { status: 'rate_limited', retryAfterSeconds: guesses.retryAfterSeconds };
-		}
 		return { status: 'current_password_wrong' };
 	}
 

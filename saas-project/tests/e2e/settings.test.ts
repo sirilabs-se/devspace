@@ -18,9 +18,24 @@ async function signUpAndVerify(page: Page, email: string) {
 test('settings need a login, and login returns to the page that was asked for', async ({
 	page
 }) => {
-	await page.goto('/settings/security');
+	const email = `e2e-return-${Date.now().toString(36)}@example.com`;
+	await signUpAndVerify(page, email);
+	await page.getByRole('link', { name: 'Continue' }).click();
+	await page.getByRole('button', { name: 'Log out' }).click();
 
+	await page.goto('/settings/security');
 	await expect(page).toHaveURL('/login?next=%2Fsettings%2Fsecurity');
+
+	// A wrong password first: the page asked for is still remembered after it.
+	await page.getByLabel('Email').fill(email);
+	await page.getByRole('button', { name: 'Continue with email' }).click();
+	await page.getByLabel('Password', { exact: true }).fill('Wrong-Horse-42');
+	await page.getByRole('button', { name: 'Log in' }).click();
+	await expect(page.getByText('That email and password didn’t work')).toBeVisible();
+	await page.getByLabel('Password', { exact: true }).fill(password);
+	await page.getByRole('button', { name: 'Log in' }).click();
+
+	await expect(page).toHaveURL('/settings/security');
 });
 
 test('a person can change their password and then sign out everywhere', async ({ page }) => {

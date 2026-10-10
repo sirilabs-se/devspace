@@ -72,6 +72,8 @@ describe('until the welcome step is completed', () => {
 	it('the welcome page itself and logging out stay reachable', async () => {
 		expect((await visit('/welcome')).reached).toBe(true);
 		expect((await visit('/logout')).reached).toBe(true);
+		// So an admin viewing the app as this person can return to their own account.
+		expect((await visit('/stop-impersonating')).reached).toBe(true);
 		expect(await load({ locals: { user: pending } } as never)).toEqual({
 			name: 'Maya Okafor',
 			email: 'maya@example.com'

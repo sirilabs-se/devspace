@@ -14,7 +14,10 @@
 		TextLink
 	} from '$lib/ui';
 
-	let { form } = $props();
+	let { data, form } = $props();
+
+	// Carries the page the person was heading for through this step.
+	const nextQuery = $derived(data.next === '/' ? '' : `&next=${encodeURIComponent(data.next)}`);
 
 	type Method = 'app' | 'email' | 'backup';
 
@@ -70,7 +73,7 @@
 
 <CenteredCard>
 	<StatusIcon icon={method === 'email' ? 'mail' : method === 'app' ? 'check' : 'link'} />
-	<form method="POST" action="?/verify" novalidate use:enhance={afterSubmit}>
+	<form method="POST" action="?/verify{nextQuery}" novalidate use:enhance={afterSubmit}>
 		<input type="hidden" name="method" value={method} />
 		<Stack gap="large">
 			<Stack gap="small">
@@ -110,7 +113,7 @@
 		<span></span>
 		<Stack gap="small">
 			<Text variant="muted">Other ways to verify</Text>
-			<form method="POST" action="?/sendEmailCode" use:enhance={afterSubmit}>
+			<form method="POST" action="?/sendEmailCode{nextQuery}" use:enhance={afterSubmit}>
 				<Button type="submit" variant="ghost" fullWidth disabled={paused}>
 					{method === 'email' ? 'Email me a new code' : 'Email me a code'}
 				</Button>

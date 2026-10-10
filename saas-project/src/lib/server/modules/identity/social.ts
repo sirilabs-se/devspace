@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db } from '$lib/server/db';
 import { recordAuditEvent } from './audit';
 import { configuredSocialProviders, getAuth, SOCIAL_PROVIDERS, type SocialProvider } from './auth';
+import { assertNotImpersonating } from './impersonation';
 import type { RequestContext } from './request-context';
 import { consents } from './schema';
 import { applySessionCookies, type CookieJar, type SessionUser } from './session';
@@ -113,6 +114,9 @@ export async function completeWelcome(
 	input: unknown,
 	context: RequestContext
 ): Promise<CompleteWelcomeResult> {
+	// Accepting the terms is the person's own act; an admin can't do it for them.
+	assertNotImpersonating(user);
+
 	const parsed = welcomeSchema.safeParse(input);
 	if (!parsed.success || !parsed.data.acceptTerms) {
 		return { ok: false, errors: { acceptTerms: 'terms_required' } };

@@ -132,7 +132,7 @@ describe('logging in with the second step on', () => {
 	it('shows the code page to someone who has just entered the right password', async () => {
 		const { jar } = await afterPassword();
 
-		expect((await outcome(() => load(event(jar)))).result).toEqual({});
+		expect((await outcome(() => load(event(jar)))).result).toEqual({ next: '/' });
 	});
 });
 

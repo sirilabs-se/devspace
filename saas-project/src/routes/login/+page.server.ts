@@ -88,7 +88,11 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const email = text(form.get('email'));
 
-		rememberPendingEmail(cookies, email);
+		// Only a real address is remembered for the next page to show.
+		const parsed = emailSchema.safeParse(email);
+		if (!parsed.success) return fail(400, { step: 'email' as const, email, emailError: true });
+
+		rememberPendingEmail(cookies, parsed.data);
 		await resendVerificationEmail(email, {
 			ipAddress: getClientAddress(),
 			userAgent: request.headers.get('user-agent')

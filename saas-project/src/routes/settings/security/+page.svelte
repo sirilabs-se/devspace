@@ -36,6 +36,8 @@
 	});
 	const twoStepErrors: Record<string, string> = {
 		current_password_wrong: 'That’s not your password.',
+		rate_limited:
+			'Too many wrong passwords. For your security we’ve paused this for 15 minutes. Nothing was changed.',
 		code_wrong:
 			'That code didn’t match. Codes refresh every 30 seconds — check your device’s clock.',
 		already_on: 'Two-step verification is already on.',

@@ -35,6 +35,8 @@ One section per build-plan task, added when the task is finished. Each says what
 
 At the end of the run `npm run verify` passes with 420 logic tests and 32 browser tests. Everything is committed on the branch `tasks-3-to-26`, one commit per task; nothing is pushed, so CI has not run on it.
 
+A self-review after the run found and fixed six problems; see [Self-review of tasks 3 to 26](#self-review-of-tasks-3-to-26) below.
+
 ### Waiting for you
 
 **To unblock**
@@ -64,6 +66,75 @@ At the end of the run `npm run verify` passes with 420 logic tests and 32 browse
 - Things an admin does while viewing the app as a user are recorded as done by that user, bracketed by "impersonation started" and "stopped" entries (task 24).
 - Behind a proxy in production, the app must be told which header carries the visitor's real address, and the upload size limit must be raised (task 27).
 - `npm audit` still reports known issues in development tools only.
+
+## Self-review of tasks 3 to 26
+
+**Status:** Done. `npm run verify` passes (430 logic tests, 32 browser tests).
+
+I read the server code and pages of every task again, looking for bugs and for rules the tests did not really prove. Six problems were found and fixed. No database change was needed.
+
+**What was wrong, and what changed**
+
+1. **Login never sent people back to the page they were heading for.** The address of the page was remembered, but each login form dropped it when submitted, so everyone landed on the home page. (A passkey sign-in did return correctly.)
+   - `src/routes/login/+page.svelte`, `src/routes/login/two-step/+page.svelte`, `src/routes/login/two-step/+page.server.ts`: the forms now carry the address through the password step and the second step.
+   - `tests/e2e/settings.test.ts`, `tests/e2e/two-step.test.ts`: the browser tests now log in and check where they land. The settings test already claimed this in its name but only checked the first redirect.
+2. **The limit on wrong guesses at the current password did not stop guessing.** On the change-password form, the "too many attempts" message appeared after 5 wrong guesses, but each further attempt was still checked, so the right password would still have worked. The other forms that ask for the password (change email, delete account, the three second-step forms) had no limit at all. Someone with a stolen session could have tried passwords without end.
+   - `src/lib/server/modules/identity/password-guess.ts` (new): one count of wrong guesses per account, shared by all six forms. After 5 in 15 minutes, all are paused and even the right password is refused.
+   - `change-password.ts`, `change-email.ts`, `deletion.ts`, `two-step.ts`: use it.
+   - `src/routes/settings/account/*`, `src/routes/settings/security/*`: show the pause message.
+3. **An admin viewing the app as a user who had not yet accepted the terms was stuck, and could accept the terms for them.** Every page led to `/welcome`, including the "Return to your own account" button, and submitting the welcome form would have recorded the person's consent without them.
+   - `src/hooks.server.ts`: `/stop-impersonating` stays reachable.
+   - `social.ts`: accepting the terms is refused while impersonating.
+4. **A problem with the email service could lock people out or hide that something had worked.** If the "new device" alert could not be sent, every page failed for that person until email was working again. Likewise a password change would show an error although the password had changed, and the daily job would stop part-way through its deletions.
+   - `emails.ts`: emails that only tell someone about something already done are now best-effort. A failure is logged (the subject only, never the address or text) and the action stands. Emails a person is waiting for, such as verification and reset links, still fail loudly.
+5. **The "password changed" email said every device had been signed out**, which is only true after a reset. After a change, this device stays signed in; after setting a first password, nothing is signed out. The sentence is removed.
+6. **Smaller fixes**
+   - Sign-ins with a passkey, Google or Facebook, and adding a passkey, were recorded without the network address. They now record it (`auth.ts`).
+   - "Resend" on the login page's "verify your email" screen stored whatever text it was sent in a cookie before checking it was an email address. It now checks first (`src/routes/login/+page.server.ts`).
+
+**Try it**
+
+1. Log out, then open http://localhost:5173/settings/security. Log in: you land on the security page, not the home page.
+2. In Account settings, type a wrong current password 5 times in "Change password". The sixth try shows "Too many attempts" with a countdown. Now try "Delete account" with the right password: it is paused too.
+3. Stop the local inbox (`docker compose stop mail`), then change your password. It succeeds, and the terminal running `npm run dev` shows "Could not send the email". Start the inbox again with `npm run db:up`.
+
+**Decisions I made**
+
+- **5 wrong guesses per 15 minutes, per account, shared across the forms.** The same numbers the change-password form already used. Simpler alternative: leave each form with its own count, which would give an attacker six times as many guesses.
+- **Notice emails are best-effort; awaited emails are not.** Alternative: retry failed emails later from a queue, which is better but needs a background worker the app does not have yet.
+- **The design doc is updated** (`docs/architecture/modules/identity/README.md`, "Security and Access") with the shared guess limit, the impersonation and welcome rule, and the best-effort emails. The first two are marked as not yet confirmed by you.
+
+**Looked at and left alone**
+
+- A sign-in with Google or Facebook always lands on the home page, not the page the person was heading for. Fixing it means passing the address through the provider; it can be done with tasks 11 and 12.
+- A verification link opened first by an email scanner is used up, so the person then sees "this link can't be used" although their email is verified and they can log in. Common practice is the same; a "confirm" button on the page would avoid it.
+- Removing two different sign-in methods at the very same moment from two browsers could leave an account with none. It needs the person to do it to themselves on purpose.
+- A person's list of active sessions, and their data download, include the admin's session while an admin is viewing the app as them.
+- The second step is guarded twice already: 10 code attempts per 15 minutes per network address, and the login library's own pause after 10 wrong codes per account.
+
+**SHOULD rules not followed:** none.
+
+**Commit message**
+
+```text
+Fix problems found in a self-review of tasks 3 to 26
+
+Login now returns people to the page they were heading for; the
+forms were dropping the address.
+
+Wrong guesses at the current password are counted per account
+across every form that asks for it, and pause them all for 15
+minutes after 5. Before, the change-password limit did not stop
+further guesses and the other forms had none.
+
+An admin viewing the app as a user who has not accepted the terms
+can return to their own account, and cannot accept for them.
+
+Emails that only report something already done no longer fail the
+request when the email service is down. The "password changed"
+email no longer says every device was signed out. Passkey and
+provider sign-ins record the network address.
+```
 
 ## Task 3: Verify email and start a session
 

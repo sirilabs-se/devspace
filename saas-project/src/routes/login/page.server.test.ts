@@ -172,6 +172,19 @@ describe('resend from the "verify your email" screen', () => {
 	});
 });
 
+describe('resend with something that is not an email address', () => {
+	it('sends nothing and remembers nothing', async () => {
+		vi.mocked(sendEmail).mockClear();
+		const jar = new TestCookieJar();
+
+		const outcome = await post('resend', { email: 'not an address' }, jar);
+
+		expect(outcome.result).toMatchObject({ status: 400 });
+		expect(jar.get('pending_email')).toBeUndefined();
+		expect(sendEmail).not.toHaveBeenCalled();
+	});
+});
+
 describe('the login page for someone already signed in', () => {
 	it('sends them to the home page', async () => {
 		const jar = new TestCookieJar();

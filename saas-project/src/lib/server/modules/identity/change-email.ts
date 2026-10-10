@@ -9,6 +9,7 @@ import { appOrigin, getAuth } from './auth';
 import { listConnections } from './connections';
 import { sendEmailChangedNotice, sendEmailChangeUndoneEmail } from './emails';
 import type { RequestContext } from './request-context';
+import { passwordGuessWaitSeconds, recordWrongPasswordGuess } from './password-guess';
 import { limitRequests } from './request-limits';
 import { sessions, users, verifications } from './schema';
 import { assertSessionBelongsTo, type SessionUser } from './session';
@@ -53,10 +54,13 @@ export async function requestEmailChange(
 	if (!limit.allowed) return { status: 'rate_limited', retryAfterSeconds: limit.retryAfterSeconds };
 
 	if ((await listConnections(user.id)).hasPassword) {
+		const wait = await passwordGuessWaitSeconds(user.id);
+		if (wait > 0) return { status: 'rate_limited', retryAfterSeconds: wait };
 		try {
 			await getAuth().api.verifyPassword({ headers, body: { password: currentPassword ?? '' } });
 		} catch (error) {
 			if (!(error instanceof APIError)) throw error;
+			await recordWrongPasswordGuess(user.id);
 			await recordAuditEvent(user.id, 'email_change_refused', user.id, context);
 			return { status: 'current_password_wrong' };
 		}

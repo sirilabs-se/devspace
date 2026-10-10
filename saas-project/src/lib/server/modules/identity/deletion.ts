@@ -7,6 +7,7 @@ import { recordAuditEvent } from './audit';
 import { appOrigin, getAuth } from './auth';
 import { listConnections } from './connections';
 import { sendAccountDeletedEmail, sendDeletionScheduledEmail } from './emails';
+import { passwordGuessWaitSeconds, recordWrongPasswordGuess } from './password-guess';
 import type { RequestContext } from './request-context';
 import { auditEvents, rateLimits, sessions, usernameHolds, users, verifications } from './schema';
 import {
@@ -24,7 +25,9 @@ export const AUDIT_RETENTION_MONTHS = 12;
 const DAY = 24 * 60 * 60 * 1000;
 
 export type RequestDeletionResult =
-	{ status: 'scheduled'; deleteAt: Date } | { status: 'current_password_wrong' | 'not_confirmed' };
+	| { status: 'scheduled'; deleteAt: Date }
+	| { status: 'current_password_wrong' | 'not_confirmed' }
+	| { status: 'rate_limited'; retryAfterSeconds: number };
 
 /**
  * Starts deleting the acting user's account: every device is signed out, and
@@ -44,10 +47,13 @@ export async function requestAccountDeletion(
 
 	if ((await listConnections(user.id)).hasPassword) {
 		const password = typeof input.currentPassword === 'string' ? input.currentPassword : '';
+		const wait = await passwordGuessWaitSeconds(user.id);
+		if (wait > 0) return { status: 'rate_limited', retryAfterSeconds: wait };
 		try {
 			await getAuth().api.verifyPassword({ headers, body: { password } });
 		} catch (error) {
 			if (!(error instanceof APIError)) throw error;
+			await recordWrongPasswordGuess(user.id);
 			await recordAuditEvent(user.id, 'account_deletion_refused', user.id, context);
 			return { status: 'current_password_wrong' };
 		}

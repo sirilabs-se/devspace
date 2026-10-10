@@ -1,6 +1,24 @@
-import { sendEmail } from '$lib/server/email';
+import { sendEmail, type Email } from '$lib/server/email';
 
 const APP_NAME = 'SaaS';
+
+/**
+ * Sends an email that only tells someone about something already done: a
+ * changed password, a new device, a suspension. If it can't be sent, the
+ * failure is noted for whoever runs the app and the request carries on, so a
+ * problem with the email service can't undo the action or lock people out.
+ *
+ * Emails that someone is waiting for (a verification link, a reset link, a
+ * code) are sent with `sendEmail` instead, so a failure is seen straight away.
+ */
+async function sendNotice(email: Email): Promise<void> {
+	try {
+		await sendEmail(email);
+	} catch (error) {
+		// Only the subject: the address and the text may hold personal details or links.
+		console.error(`Could not send the email "${email.subject}"`, error);
+	}
+}
 
 export async function sendVerificationEmail(to: string, verifyUrl: string): Promise<void> {
 	await sendEmail({
@@ -49,13 +67,13 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
 }
 
 export async function sendPasswordChangedEmail(to: string, origin: string): Promise<void> {
-	await sendEmail({
+	await sendNotice({
 		to,
 		subject: `Your ${APP_NAME} password was changed`,
 		text: [
-			`The password for your ${APP_NAME} account was just changed, and every device was signed out.`,
+			`The password for your ${APP_NAME} account was just changed.`,
 			'',
-			`If that was you, there is nothing more to do. Log in here: ${origin}/login`,
+			'If that was you, there is nothing more to do.',
 			`If it wasn't you, reset your password straight away: ${origin}/forgot-password`
 		].join('\n')
 	});
@@ -85,7 +103,7 @@ export async function sendEmailChangedNotice(
 	undoUrl: string,
 	days: number
 ): Promise<void> {
-	await sendEmail({
+	await sendNotice({
 		to,
 		subject: `Your ${APP_NAME} email address was changed`,
 		text: [
@@ -99,7 +117,7 @@ export async function sendEmailChangedNotice(
 }
 
 export async function sendEmailChangeUndoneEmail(to: string, origin: string): Promise<void> {
-	await sendEmail({
+	await sendNotice({
 		to,
 		subject: `Your ${APP_NAME} email address was restored`,
 		text: [
@@ -123,7 +141,7 @@ export async function sendDeletionScheduledEmail(
 	deleteAt: Date,
 	origin: string
 ): Promise<void> {
-	await sendEmail({
+	await sendNotice({
 		to,
 		subject: `Your ${APP_NAME} account is scheduled for deletion`,
 		text: [
@@ -138,7 +156,7 @@ export async function sendDeletionScheduledEmail(
 }
 
 export async function sendDeletionCancelledEmail(to: string): Promise<void> {
-	await sendEmail({
+	await sendNotice({
 		to,
 		subject: `Your ${APP_NAME} account will not be deleted`,
 		text: [
@@ -150,7 +168,7 @@ export async function sendDeletionCancelledEmail(to: string): Promise<void> {
 }
 
 export async function sendAccountDeletedEmail(to: string): Promise<void> {
-	await sendEmail({
+	await sendNotice({
 		to,
 		subject: `Your ${APP_NAME} account has been deleted`,
 		text: [
@@ -192,7 +210,7 @@ export async function sendNewDeviceEmail(
 		hour12: false,
 		timeZone: 'UTC'
 	});
-	await sendEmail({
+	await sendNotice({
 		to,
 		subject: `New sign-in to your ${APP_NAME} account`,
 		text: [
@@ -209,7 +227,7 @@ export async function sendNewDeviceEmail(
 }
 
 export async function sendAccountSuspendedEmail(to: string, reason: string): Promise<void> {
-	await sendEmail({
+	await sendNotice({
 		to,
 		subject: `Your ${APP_NAME} account has been suspended`,
 		text: [
@@ -223,7 +241,7 @@ export async function sendAccountSuspendedEmail(to: string, reason: string): Pro
 }
 
 export async function sendAccountReinstatedEmail(to: string, origin: string): Promise<void> {
-	await sendEmail({
+	await sendNotice({
 		to,
 		subject: `Your ${APP_NAME} account has been reinstated`,
 		text: [
@@ -235,7 +253,7 @@ export async function sendAccountReinstatedEmail(to: string, origin: string): Pr
 }
 
 export async function sendImpersonationNoticeEmail(to: string): Promise<void> {
-	await sendEmail({
+	await sendNotice({
 		to,
 		subject: `A ${APP_NAME} admin viewed your account`,
 		text: [

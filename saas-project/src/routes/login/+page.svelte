@@ -42,6 +42,9 @@
 
 	const step = $derived(form?.step ?? 'email');
 
+	// Carries the page the person was heading for through each step, so login can send them back.
+	const nextQuery = $derived(data.next === '/' ? '' : `&next=${encodeURIComponent(data.next)}`);
+
 	let usingPasskey = $state(false);
 	let passkeyProblem = $state<string>();
 	const passkeyProblems: Record<string, string> = {
@@ -134,7 +137,7 @@
 			</Stack>
 		</form>
 	{:else if step === 'password'}
-		<form method="POST" action="?/password" novalidate use:enhance={submit}>
+		<form method="POST" action="?/password{nextQuery}" novalidate use:enhance={submit}>
 			<input type="hidden" name="email" value={form?.email} />
 			<Stack gap="large">
 				<Stack gap="small">
@@ -191,7 +194,7 @@
 
 		<Divider label="or use your email" />
 
-		<form method="POST" action="?/email" novalidate use:enhance={submit}>
+		<form method="POST" action="?/email{nextQuery}" novalidate use:enhance={submit}>
 			<Stack gap="large">
 				{#if data.notice === 'deletion-scheduled'}
 					<Alert variant="info" title="Your account is scheduled for deletion">

@@ -297,6 +297,7 @@ sequenceDiagram
 - Forgot password always shows the same success message. It is limited to 3 requests an hour per email and 10 per network address.
 - A password reset ends every session of the account, clears any login lockout and sends a confirmation email.
 - Changing a password requires the current one and ends the user's other sessions.
+- Every form that asks a signed-in person for their password again (change password, change email, delete account, and setting up, replacing the codes of, or switching off the second step) shares one count of wrong guesses per account. After 5 wrong guesses in 15 minutes all of them are paused until the 15 minutes are up, and during the pause even the right password is refused. Added in the self-review; the numbers are not yet confirmed by the owner.
 - An email change takes effect only after the link sent to the new address is opened. Someone with a password must give it to start a change. Asking for an address another account has gets the same answer and sends nothing.
 - Once a change takes effect, the old address is told and gets a link that undoes it for 7 days. Undoing restores the old address and ends every session. The link works once, and only a scrambled form of it is stored.
 - Signing in with Google or Facebook using an email that already has an account does not merge them automatically. The person signs in to the existing account first and links the provider from settings.
@@ -315,6 +316,9 @@ sequenceDiagram
 - Sign-up has one checkbox covering the terms, the privacy policy and being 18 or older. Each is still saved as its own consent record.
 - The admin area is checked three times: in `hooks.server.ts` before any page code runs, in each admin page, and inside each admin function. The first admin is made from the command line with `npm run admin:grant -- <email>`, since only an admin could do it from inside the app. An admin looking at a user's details is recorded in the audit log.
 - A suspended user can't sign in and their sessions are ended. Suspending needs a reason, which is kept on the account and emailed to the person; the audit log records who suspended whom, not the reason's text. An admin can't suspend themselves or another admin. At login, "This account is suspended" is shown only after a correct password; a wrong password gets the ordinary answer.
+- An admin viewing the app as a user can't accept the terms for them. If that user hasn't accepted yet, the admin sees only `/welcome` and can return to their own account. Added in the self-review; not yet confirmed by the owner.
+- Emails that only tell someone about something already done (password changed, email changed or restored, deletion scheduled, cancelled or completed, new device, suspended, reinstated, impersonation) are sent on a best-effort basis: if the email service fails, the failure is logged by subject only and the action stands. Emails a person is waiting for (verification link, reset link, sign-in code, "you already have an account") still fail loudly.
+- Login returns the person to the page they were heading for, through the password step and the second step. Only paths inside the app are accepted.
 - Audit log entries are kept for 12 months.
 
 ## Decisions
