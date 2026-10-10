@@ -140,6 +140,12 @@
 					};
 				};
 				player.getDuration = () => window.__duration ?? 212;
+				window.__seekCalls = [];
+				player.seekTo = (seconds) => {
+					window.__seekCalls.push(seconds);
+					window.__position = seconds;
+					player.querySelector('video').dispatchEvent(new Event('seeked'));
+				};
 				player.getCurrentTime = () => window.__position ?? 0;
 				player.getAvailableQualityLevels = () => window.__levels;
 				// YouTube's own state can trail the video element by a moment; window.__stateLagMs imitates that.

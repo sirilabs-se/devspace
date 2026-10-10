@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { handlePanelCommand } from './commands';
+import { handlePanelCommand, handleSeek } from './commands';
 
 const sendMessage = vi.fn();
 const tabsUpdate = vi.fn();
@@ -56,5 +56,30 @@ describe('handlePanelCommand', () => {
 		withTab();
 		sendMessage.mockRejectedValue(new Error('Receiving end does not exist'));
 		expect(await handlePanelCommand('pause')).toEqual({ ok: false, error: 'failed' });
+	});
+});
+
+describe('handleSeek', () => {
+	it('passes the position to the playback tab', async () => {
+		withTab();
+		expect(await handleSeek(321)).toEqual({ ok: true });
+		expect(sendMessage).toHaveBeenCalledWith(5, { type: 'player/seek', positionSec: 321 });
+	});
+
+	it('says so when there is no playback tab', async () => {
+		expect(await handleSeek(10)).toEqual({ ok: false, error: 'no-playback-tab' });
+		expect(sendMessage).not.toHaveBeenCalled();
+	});
+
+	it('reports a failure when the tab cannot be reached', async () => {
+		withTab();
+		sendMessage.mockRejectedValue(new Error('Receiving end does not exist'));
+		expect(await handleSeek(10)).toEqual({ ok: false, error: 'failed' });
+	});
+
+	it('does not change what is Now Playing', async () => {
+		withTab();
+		await handleSeek(10);
+		expect(sendMessage).toHaveBeenCalledTimes(1);
 	});
 });

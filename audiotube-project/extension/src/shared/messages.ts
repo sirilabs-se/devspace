@@ -13,6 +13,12 @@ export interface SetAudioOnlyRequest {
 export type SetAudioOnlyResponse =
 	{ ok: true; audioOnly: boolean } | { ok: false; error: SettingsError };
 
+/** Side panel → background: move the playback tab's player to this position. */
+export interface PlayerSeekRequest {
+	type: 'player/seek';
+	positionSec: number;
+}
+
 /** Side panel → background: do this with the playback tab. */
 export interface PlayerCommandRequest {
 	type: 'player/command';
@@ -30,7 +36,11 @@ export interface OverlayStatusReport {
 
 /** Every request any context may send to the background. */
 export type BackgroundRequest =
-	SetAudioOnlyRequest | OverlayStatusReport | PlayerCommandRequest | PlayerReport;
+	| SetAudioOnlyRequest
+	| OverlayStatusReport
+	| PlayerCommandRequest
+	| PlayerSeekRequest
+	| PlayerReport;
 
 const MAX_RAW_TEXT = 2000;
 const MAX_SECONDS = 10_000_000;
@@ -72,6 +82,7 @@ export function isBackgroundRequest(message: unknown): message is BackgroundRequ
 	if (type === 'settings/set-audio-only') return value !== undefined;
 	if (type === 'overlay/status') return status === 'failed' || status === 'ok';
 	if (type === 'player/command') return isPlayerCommandRequest(message);
+	if (type === 'player/seek') return isSeconds((message as { positionSec?: unknown }).positionSec);
 	return isPlayerReport(message);
 }
 
@@ -84,6 +95,16 @@ function isPlayerCommandRequest(message: unknown): message is PlayerCommandReque
 		command === 'resume' ||
 		command === 'check'
 	);
+}
+
+/** Asks the background to seek the playback tab's player. */
+export async function requestSeek(positionSec: number): Promise<PlayerCommandResponse> {
+	const request: PlayerSeekRequest = { type: 'player/seek', positionSec };
+	try {
+		return (await chrome.runtime.sendMessage(request)) as PlayerCommandResponse;
+	} catch {
+		return { ok: false, error: 'failed' };
+	}
 }
 
 /** Asks the background to act on the playback tab. */
@@ -127,13 +148,16 @@ export async function requestSetAudioOnly(value: boolean): Promise<SetAudioOnlyR
 }
 
 /** Background → one tab's content script: do this to the tab's player. */
-export interface TabCommand {
-	type: 'player/command';
-	command: PlayCommand;
-}
+export type TabCommand =
+	{ type: 'player/command'; command: PlayCommand } | { type: 'player/seek'; positionSec: number };
 
 export function isTabCommand(message: unknown): message is TabCommand {
 	if (typeof message !== 'object' || message === null) return false;
-	const { type, command } = message as { type?: unknown; command?: unknown };
+	const { type, command, positionSec } = message as {
+		type?: unknown;
+		command?: unknown;
+		positionSec?: unknown;
+	};
+	if (type === 'player/seek') return isSeconds(positionSec);
 	return type === 'player/command' && (command === 'play' || command === 'pause');
 }

@@ -59,6 +59,20 @@ describe('isBackgroundRequest', () => {
 	});
 });
 
+describe('seek messages', () => {
+	it('accepts a seek request with a position, from the panel and to a tab', () => {
+		expect(isBackgroundRequest({ type: 'player/seek', positionSec: 90 })).toBe(true);
+		expect(isTabCommand({ type: 'player/seek', positionSec: 90 })).toBe(true);
+	});
+
+	it('rejects a seek without a usable position', () => {
+		for (const positionSec of [undefined, -1, 'soon', Infinity, NaN]) {
+			expect(isBackgroundRequest({ type: 'player/seek', positionSec })).toBe(false);
+			expect(isTabCommand({ type: 'player/seek', positionSec })).toBe(false);
+		}
+	});
+});
+
 describe('isTabCommand', () => {
 	it('accepts play and pause only', () => {
 		expect(isTabCommand({ type: 'player/command', command: 'pause' })).toBe(true);

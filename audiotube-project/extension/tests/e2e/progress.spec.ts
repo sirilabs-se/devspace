@@ -36,8 +36,8 @@ async function play(context: BrowserContext, init?: () => void) {
 	return page;
 }
 
-const bar = (panel: Page) => panel.getByRole('progressbar', { name: 'Progress' });
-const elapsed = async (panel: Page) => Number(await bar(panel).getAttribute('aria-valuenow'));
+const bar = (panel: Page) => panel.getByRole('slider', { name: 'Seek' });
+const elapsed = async (panel: Page) => Number(await bar(panel).inputValue());
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 test('while playing, elapsed time goes up by one a second and the bar moves', async ({
@@ -48,16 +48,16 @@ test('while playing, elapsed time goes up by one a second and the bar moves', as
 	await play(context);
 	await expect(bar(panel)).toBeVisible();
 	const first = await elapsed(panel);
-	const fractionAt = await bar(panel)
-		.locator('div')
-		.evaluate((d) => d.getBoundingClientRect().width);
+	const fractionAt = parseFloat(
+		await bar(panel).evaluate((el) => el.style.getPropertyValue('--p'))
+	);
 	await wait(3100);
 	const later = await elapsed(panel);
 	expect(later - first).toBeGreaterThanOrEqual(2);
 	expect(later - first).toBeLessThanOrEqual(4);
-	const fractionLater = await bar(panel)
-		.locator('div')
-		.evaluate((d) => d.getBoundingClientRect().width);
+	const fractionLater = parseFloat(
+		await bar(panel).evaluate((el) => el.style.getPropertyValue('--p'))
+	);
 	expect(fractionLater).toBeGreaterThan(fractionAt);
 	await expect(panel.getByRole('region', { name: 'Now playing' })).toContainText('-3:');
 });
@@ -122,7 +122,7 @@ test('the count never goes past the duration and the remaining time never below 
 	await wait(6000);
 	expect(await elapsed(panel)).toBeLessThanOrEqual(20);
 	await expect(panel.getByRole('region', { name: 'Now playing' })).toContainText('-0:00');
-	expect(await bar(panel).getAttribute('aria-valuenow')).toBe('20');
+	expect(await bar(panel).inputValue()).toBe('20');
 });
 
 test('a live stream shows Live and no times', async ({ context, extensionId }) => {
@@ -132,7 +132,7 @@ test('a live stream shows Live and no times', async ({ context, extensionId }) =
 	});
 	const card = panel.getByRole('region', { name: 'Now playing' });
 	await expect(card.getByText('Live', { exact: true })).toBeVisible();
-	await expect(card.getByRole('progressbar')).toHaveCount(0);
+	await expect(card.getByRole('slider')).toHaveCount(0);
 	await expect(card).not.toContainText(/\d:\d\d/);
 });
 

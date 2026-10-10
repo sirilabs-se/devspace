@@ -37,8 +37,8 @@ These apply to this phase only and do not change the requirements document.
 |---|---|---|---|---|
 | 22 | Fixes from the phase 3 review | GLB-012, PLY-053 | 21 | Done |
 | 23 | Progress, elapsed and remaining time | PLY-059, PLY-064, PLY-067; ADR 0007 | 22 | Done |
-| 24 | Seeking from the side panel | PLY-060, PLY-065, GLB-005 | 23 | In progress |
-| 25 | Volume and mute | PLY-061, PLY-062, PLY-063, PLY-131 (volume) | 22 | To do |
+| 24 | Seeking from the side panel | PLY-060, PLY-065, GLB-005 | 23 | Done |
+| 25 | Volume and mute | PLY-061, PLY-062, PLY-063, PLY-131 (volume) | 22 | In progress |
 
 Statuses: **To do**, **In progress**, **Done**, **Blocked** (say why in the task's notes).
 
@@ -141,12 +141,21 @@ Task 22 comes first. Task 24 follows task 23; task 25 can be done before or afte
 
 **Done when:**
 
-- [ ] On the test page, clicking the bar at its middle moves the player to about half the duration, and the panel shows it within 1 second
-- [ ] Dragging and releasing seeks once, to where the drag ended
-- [ ] With the bar focused, the right arrow moves 5 seconds forward, the left arrow 5 seconds back
-- [ ] On the test page with the `ad-showing` class on the player, a seek from the panel changes nothing
-- [ ] The bar can't be used for a live stream or without a playback tab
-- [ ] The bar is reachable by keyboard and announced as a slider with its value as a time
+- [x] On the test page, clicking the bar at its middle moves the player to about half the duration, and the panel shows it within 1 second
+- [x] Dragging and releasing seeks once, to where the drag ended
+- [x] With the bar focused, the right arrow moves 5 seconds forward, the left arrow 5 seconds back
+- [x] On the test page with the `ad-showing` class on the player, a seek from the panel changes nothing
+- [x] The bar can't be used for a live stream or without a playback tab
+- [x] The bar is reachable by keyboard and announced as a slider with its value as a time
+
+**Notes:**
+
+- New typed messages: `player/seek` from the side panel to the background (accepted only from an extension page, with a finite position), and `player/seek` on to the tab's content script and its page script. The background only passes it on: it never touches Now Playing, so the saved position changes by the report that follows the player's `seeked` event.
+- The page script's `seekTo` does nothing while `#movie_player` has the class `ad-showing` (`GLB-005`), and nothing on a live stream; it clamps to the duration and uses `seekTo(position, true)`, or the video element's `currentTime` if the method is missing. It never skips an ad, and shows no "Ad playing" (decision s).
+- Panel: the progress bar is a slider (`<input type="range">`, named "Seek", with `aria-valuetext` such as "5:17, 5:17 left"). While it is dragged the core shows the dragged position and stops counting, and nothing is sent; the seek goes out once on release. A click moves and seeks at once. The left and right arrow keys move five seconds (not the browser's one) and send the seek. After a seek the position stays on show until the player's real report arrives (or 2 seconds, or at once if the command fails). The slider is disabled with no playback tab, and a live stream has no bar.
+- The slider's look (thin track filled to the position, round thumb) is in `theme.css`, with the other tokens.
+- Real YouTube (headless, signed out): clicking the middle of the bar took the player from 5 s to 317 s of 635 and the panel followed; right arrow went to 322, two left arrows to 312; Now Playing stayed the same video. Seeking during a real ad could not be tried (no ad showed); it is covered on the test page with the `ad-showing` class.
+
 
 ### 25. Volume and mute
 

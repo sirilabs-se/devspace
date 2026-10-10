@@ -124,7 +124,33 @@ function readSnapshot(): PlayerSnapshot | null {
 
 const reporter = createReporter({ read: readSnapshot, send: sendToContent, now: () => Date.now() });
 
+/**
+ * Moves the player to a position. Never while an ad is showing: a seek must not be a way past one (`GLB-005`).
+ * Never on a live stream either, which has no place to go.
+ */
+function seekTo(positionSec: number) {
+	const player = document.querySelector(PLAYER_SELECTOR) as unknown as
+		(YouTubePlayer & { seekTo?: (seconds: number, allowSeekAhead?: boolean) => void }) | null;
+	if (!player) return;
+	try {
+		if ((player as unknown as HTMLElement).classList?.contains('ad-showing')) return;
+		if (player.getVideoData?.()?.isLive === true) return;
+		const duration = Number(player.getDuration?.());
+		const target =
+			Number.isFinite(duration) && duration > 0 ? Math.min(positionSec, duration) : positionSec;
+		if (player.seekTo) {
+			player.seekTo(Math.max(0, target), true);
+			return;
+		}
+		const video = document.querySelector<HTMLVideoElement>(`${PLAYER_SELECTOR} video`);
+		if (video) video.currentTime = Math.max(0, target);
+	} catch {
+		// The player is YouTube's to control; if it refuses, nothing else should break.
+	}
+}
+
 const stopListening = onMessageToPage((message) => {
+	if (message.type === 'player/seek') return seekTo(message.positionSec);
 	if (message.type === 'player/toggle-playback') return setPlayback();
 	if (message.type === 'player/command') return setPlayback(message.command === 'play');
 	if (message.type !== 'quality/set') return;

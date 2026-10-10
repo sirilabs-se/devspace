@@ -7,12 +7,16 @@
 		view,
 		onTogglePlayPause,
 		onGoToVideo,
-		onResume
+		onResume,
+		onPreviewSeek,
+		onCommitSeek
 	}: {
 		view: NowPlayingView;
 		onTogglePlayPause: () => void;
 		onGoToVideo: () => void;
 		onResume: () => void;
+		onPreviewSeek: (positionSec: number) => void;
+		onCommitSeek: (positionSec: number) => void;
 	} = $props();
 </script>
 
@@ -40,22 +44,31 @@
 						{#if view.progress.buffering}<span class="text-muted">Buffering</span>{/if}
 					</div>
 				{:else}
-					<div
-						role="progressbar"
-						aria-label="Progress"
-						aria-valuemin={0}
-						aria-valuemax={view.progress.durationSec ?? 0}
-						aria-valuenow={view.progress.elapsedSec}
+					<input
+						type="range"
+						class="seek"
+						aria-label="Seek"
+						min={0}
+						max={view.progress.durationSec ?? 0}
+						step={1}
+						value={view.progress.elapsedSec}
+						disabled={!view.canSeek}
 						aria-valuetext={view.progress.remainingText === null
 							? view.progress.elapsedText
 							: `${view.progress.elapsedText}, ${view.progress.remainingText} left`}
-						class="h-1 w-full overflow-hidden rounded-full bg-track"
-					>
-						<div
-							class="h-full bg-accent"
-							style:width="{(view.progress.fraction ?? 0) * 100}%"
-						></div>
-					</div>
+						style:--p="{(view.progress.fraction ?? 0) * 100}%"
+						oninput={(event) => onPreviewSeek(Number(event.currentTarget.value))}
+						onchange={(event) => onCommitSeek(Number(event.currentTarget.value))}
+						onkeydown={(event) => {
+							// Left and right move five seconds (PLY-060), not one.
+							if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+							event.preventDefault();
+							const step = event.key === 'ArrowRight' ? 5 : -5;
+							const max = view.progress?.durationSec ?? 0;
+							const next = Math.min(max, Math.max(0, (view.progress?.elapsedSec ?? 0) + step));
+							onCommitSeek(next);
+						}}
+					/>
 					<div class="flex items-center justify-between text-xs text-muted">
 						<span>{view.progress.elapsedText}</span>
 						{#if view.progress.buffering}<span>Buffering</span>{/if}

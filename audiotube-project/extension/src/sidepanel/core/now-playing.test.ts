@@ -34,6 +34,7 @@ function setup(
 	let watchResume!: (v: PendingResume | null) => void;
 	let nowMs = 1_000_000;
 	const command = vi.fn<NowPlayingDeps['command']>().mockResolvedValue({ ok: true });
+	const seek = vi.fn<NowPlayingDeps['seek']>().mockResolvedValue({ ok: true });
 	const stop = vi.fn();
 	const controller = createNowPlayingController({
 		readNowPlaying: async () => initial.now ?? null,
@@ -52,6 +53,7 @@ function setup(
 			return stop;
 		},
 		command,
+		seek,
 		now: () => nowMs
 	});
 	return {
@@ -60,6 +62,7 @@ function setup(
 		now: () => nowMs,
 		controller,
 		command,
+		seek,
 		stop,
 		setNow: (v: NowPlaying | null) => watchNow(v),
 		setTab: (v: PlaybackTab | null) => watchTab(v)
@@ -80,7 +83,8 @@ describe('createNowPlayingController', () => {
 			canControl: false,
 			canResume: false,
 			waitingToStart: false,
-			progress: null
+			progress: null,
+			canSeek: false
 		});
 	});
 
@@ -267,6 +271,59 @@ describe('createNowPlayingController', () => {
 		const { controller } = setup();
 		await settle();
 		expect(controller.get().progress).toBeNull();
+	});
+
+	it('can seek only with a playback tab and a video that has a length', async () => {
+		const withTab = setup({ now: nowPlaying, tab: tab('playing') });
+		await settle();
+		expect(withTab.controller.get().canSeek).toBe(true);
+
+		const noTab = setup({ now: nowPlaying });
+		await settle();
+		expect(noTab.controller.get().canSeek).toBe(false);
+
+		const live = setup({
+			now: { ...nowPlaying, isLive: true, durationSec: null },
+			tab: tab('playing')
+		});
+		await settle();
+		expect(live.controller.get().canSeek).toBe(false);
+		live.controller.commitSeek(30);
+		expect(live.seek).not.toHaveBeenCalled();
+	});
+
+	it('shows the dragged position and holds still while dragging, without sending anything', async () => {
+		const { controller, seek } = setup({ now: nowPlaying, tab: tab('playing') });
+		await settle();
+		controller.previewSeek(300);
+		expect(controller.get().progress?.elapsedSec).toBe(300);
+		controller.previewSeek(320);
+		expect(controller.get().progress?.elapsedSec).toBe(320);
+		expect(seek).not.toHaveBeenCalled();
+		controller.cancelSeek();
+		expect(controller.get().progress?.elapsedSec).not.toBe(320);
+	});
+
+	it('sends one seek on release and keeps the position on show until the real one arrives', async () => {
+		const { controller, seek, setTab, now } = setup({ now: nowPlaying, tab: tab('playing') });
+		await settle();
+		controller.previewSeek(300);
+		controller.previewSeek(320);
+		controller.commitSeek(320);
+		expect(seek).toHaveBeenCalledTimes(1);
+		expect(seek).toHaveBeenCalledWith(320);
+		expect(controller.get().progress?.elapsedSec).toBe(320);
+		setTab({ ...tab('playing'), positionSec: 320.4, stateAt: now() });
+		expect(controller.get().progress?.elapsedSec).toBe(320);
+	});
+
+	it('goes back to the real position if the seek fails', async () => {
+		const { controller, seek } = setup({ now: nowPlaying, tab: tab('paused') });
+		seek.mockResolvedValue({ ok: false, error: 'failed' });
+		await settle();
+		controller.commitSeek(400);
+		await settle();
+		expect(controller.get().progress?.elapsedSec).toBe(12);
 	});
 
 	it('stops listening when disposed', () => {

@@ -49,7 +49,10 @@ if (!scope[GUARD]) {
 	// A command from the background is for this tab's player; only the extension itself may send one.
 	const onCommand = (message: unknown, sender: chrome.runtime.MessageSender) => {
 		if (sender.id !== chrome.runtime.id || sender.tab !== undefined) return;
-		if (isTabCommand(message)) sendToPage({ type: 'player/command', command: message.command });
+		if (!isTabCommand(message)) return;
+		if (message.type === 'player/seek')
+			sendToPage({ type: 'player/seek', positionSec: message.positionSec });
+		else sendToPage({ type: 'player/command', command: message.command });
 	};
 	chrome.runtime.onMessage.addListener(onCommand);
 	stops.push(() => chrome.runtime.onMessage.removeListener(onCommand));

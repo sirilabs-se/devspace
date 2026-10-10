@@ -11,7 +11,8 @@ export type PlayCommand = 'play' | 'pause';
 export type ContentToPage =
 	| { type: 'quality/set'; mode: QualityMode }
 	| { type: 'player/toggle-playback' }
-	| { type: 'player/command'; command: PlayCommand };
+	| { type: 'player/command'; command: PlayCommand }
+	| { type: 'player/seek'; positionSec: number };
 
 /** The details of the video in a player. */
 export interface PlayerVideoDetails {
