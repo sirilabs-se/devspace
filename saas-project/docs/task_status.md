@@ -694,3 +694,35 @@ An account less than 15 minutes old gets no alert, so use one you made earlier, 
 **Left for later**
 
 - Suspend, reinstate, impersonate and the audit log view are tasks 23 to 25.
+
+## Task 23: Suspend and reinstate
+
+**Status:** Done. `npm run verify` passes (378 logic tests, 29 browser tests).
+
+**What changed**
+
+- `src/lib/server/modules/identity/admin.ts`: `suspendUser`, `reinstateUser`.
+- `identity/log-in.ts`: a "suspended" answer after a correct password.
+- `identity/emails.ts`: the suspended and reinstated emails.
+- `src/routes/admin/users/[id]/`: a Suspend or Reinstate card and its actions.
+- `src/routes/login/`: the "This account is suspended" screen.
+- Tests beside each, and a two-browser test in `tests/e2e/admin.test.ts`.
+
+**Try it**
+
+1. As an admin, open a user's page, type a reason and press "Suspend this account".
+2. In another browser where that user was logged in, reload: they have been signed out.
+3. Log in as them with the right password: "This account is suspended". They also have an email with the reason.
+4. Back on the admin page, press "Reinstate this account". They can log in again.
+
+**Decisions**
+
+- A reason is required and is shown to the person.
+- An admin can't suspend themselves or another admin.
+- Suspensions don't expire by themselves.
+
+**SHOULD rules deviated from:** none.
+
+**Left for later**
+
+- An appeal process, and timed suspensions, if wanted.

@@ -8,7 +8,7 @@ import { handle } from '../../hooks.server';
 import { load as layoutLoad } from './+layout.server';
 import { load as indexLoad } from './+page.server';
 import { load as usersLoad } from './users/+page.server';
-import { load as userLoad } from './users/[id]/+page.server';
+import { actions as userActions, load as userLoad } from './users/[id]/+page.server';
 
 vi.mock('$lib/server/email', () => ({ sendEmail: vi.fn() }));
 
@@ -129,6 +129,54 @@ describe('the admin user pages', () => {
 			status: 303,
 			location: '/admin/users'
 		});
+	});
+});
+
+describe('suspending from the user page', () => {
+	function post(user: SessionUser | null, fields: Record<string, string> = {}) {
+		const body = new FormData();
+		for (const [name, value] of Object.entries(fields)) body.set(name, value);
+		const url = new URL(`http://localhost:5173/admin/users/${anna.id}`);
+		return {
+			url,
+			params: { id: anna.id },
+			locals: { user },
+			request: new Request(url, { method: 'POST', body }),
+			getClientAddress: () => '203.0.113.5'
+		} as never;
+	}
+
+	it('suspends with a reason, signs the person out, and reinstates', async () => {
+		expect(await userActions.suspend(post(admin, { reason: 'Spamming event pages' }))).toEqual({
+			suspended: true
+		});
+		expect(await getSessionUser(annaJar.headers())).toBeNull();
+
+		const data = (await userLoad(event(admin, `/admin/users/${anna.id}`, { id: anna.id }))) as {
+			user: { suspended: boolean; suspensionReason: string };
+		};
+		expect(data.user).toMatchObject({ suspended: true, suspensionReason: 'Spamming event pages' });
+
+		expect(await userActions.reinstate(post(admin))).toEqual({ reinstated: true });
+	});
+
+	it('asks for a reason', async () => {
+		expect(await userActions.suspend(post(admin, { reason: '' }))).toMatchObject({
+			status: 400,
+			data: { adminError: 'reason_required' }
+		});
+	});
+
+	it('is refused to a non-admin and to a signed-out visitor', async () => {
+		for (const action of [userActions.suspend, userActions.reinstate]) {
+			expect((await outcome(() => action(post(anna, { reason: 'x' })))).thrown).toMatchObject({
+				status: 403
+			});
+			expect((await outcome(() => action(post(null, { reason: 'x' })))).thrown).toMatchObject({
+				status: 401
+			});
+		}
+		expect(await getSessionUser(annaJar.headers())).not.toBeNull();
 	});
 });
 

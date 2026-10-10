@@ -72,6 +72,7 @@ export const actions: Actions = {
 			redirect(303, next ? `/login/two-step?next=${encodeURIComponent(next)}` : '/login/two-step');
 		}
 		if (result.status === 'unverified') return { step: 'unverified' as const, email };
+		if (result.status === 'suspended') return { step: 'suspended' as const, email };
 		if (result.status === 'rate_limited') {
 			return fail(429, {
 				step: 'paused' as const,

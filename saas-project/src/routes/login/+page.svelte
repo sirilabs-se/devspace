@@ -22,6 +22,10 @@
 
 	const providerNames: Record<string, string> = { google: 'Google', facebook: 'Facebook' };
 	const socialErrors: Record<string, { title: string; text: string }> = {
+		banned: {
+			title: 'This account is suspended',
+			text: 'Access has been paused, and you can’t sign in until it is lifted.'
+		},
 		account_not_linked: {
 			title: 'That email already has an account',
 			text: 'Log in with your password, then connect Google or Facebook from your settings.'
@@ -97,6 +101,18 @@
 				<Button href="/forgot-password" variant="outline" fullWidth>Reset password instead</Button>
 				<Button href="/login" variant="ghost" fullWidth>Back to log in</Button>
 			</Stack>
+		</Stack>
+	{:else if step === 'suspended'}
+		<StatusIcon icon="alert" variant="danger" />
+		<Stack gap="large">
+			<Stack gap="small">
+				<Heading>This account is suspended</Heading>
+				<Text variant="lead">
+					Access has been paused, and you can’t sign in until it is lifted. We’ve emailed you the
+					reason. If you think this is a mistake, reply to that email.
+				</Text>
+			</Stack>
+			<Button href="/login" variant="outline" fullWidth>Back to log in</Button>
 		</Stack>
 	{:else if step === 'unverified'}
 		<StatusIcon icon="mail" variant="pending" />

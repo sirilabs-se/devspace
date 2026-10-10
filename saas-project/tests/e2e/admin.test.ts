@@ -53,3 +53,50 @@ test('an admin can find a user by email and open their details; others are refus
 	await expect(page.getByText(memberEmail)).toBeVisible();
 	await expect(page.getByText('email verified', { exact: true })).toBeVisible();
 });
+
+test('an admin can suspend a user, who is then signed out and can’t log in until reinstated', async ({
+	page,
+	browser
+}) => {
+	const unique = Date.now().toString(36);
+	const memberEmail = `e2e-suspend-${unique}@example.com`;
+	const adminEmail = `e2e-suspender-${unique}@example.com`;
+
+	const memberContext = await browser.newContext();
+	const member = await memberContext.newPage();
+	await signUpAndVerify(member, memberEmail, 'Sam Member');
+
+	await signUpAndVerify(page, adminEmail, 'Ada Admin');
+	execFileSync('node', ['scripts/grant-admin.js', adminEmail], {
+		env: { ...process.env, DATABASE_URL: testDatabaseUrl(process.env) }
+	});
+	await page.goto(`/admin/users?q=${encodeURIComponent(memberEmail)}`);
+	await page.getByRole('link', { name: 'Open Sam Member' }).click();
+
+	await page.getByRole('button', { name: 'Suspend this account' }).click();
+	await expect(page.getByText(/Give a reason/)).toBeVisible();
+	await page.getByLabel('Reason').fill('Spamming event pages');
+	await page.getByRole('button', { name: 'Suspend this account' }).click();
+	await expect(page.getByText('Account suspended', { exact: true })).toBeVisible();
+	await expect(page.getByText('This account is suspended')).toBeVisible();
+
+	// The member has been signed out, and the right password no longer gets them in.
+	await member.goto('/settings/profile');
+	await expect(member).toHaveURL(/\/login/);
+	await member.getByLabel('Email').fill(memberEmail);
+	await member.getByRole('button', { name: 'Continue with email' }).click();
+	await member.getByLabel('Password', { exact: true }).fill(password);
+	await member.getByRole('button', { name: 'Log in' }).click();
+	await expect(member.getByRole('heading', { name: 'This account is suspended' })).toBeVisible();
+
+	await page.getByRole('button', { name: 'Reinstate this account' }).click();
+	await expect(page.getByText('Account reinstated', { exact: true })).toBeVisible();
+
+	await member.goto('/login');
+	await member.getByLabel('Email').fill(memberEmail);
+	await member.getByRole('button', { name: 'Continue with email' }).click();
+	await member.getByLabel('Password', { exact: true }).fill(password);
+	await member.getByRole('button', { name: 'Log in' }).click();
+	await expect(member.getByRole('heading', { name: 'Welcome, Sam Member' })).toBeVisible();
+	await memberContext.close();
+});

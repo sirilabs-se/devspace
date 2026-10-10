@@ -2,9 +2,13 @@
 export {
 	ADMIN_PAGE_SIZE,
 	getUserForAdmin,
+	reinstateUser,
 	searchUsers,
+	suspendUser,
 	type AdminUserDetails,
 	type AdminUserSummary,
+	type ReinstateUserResult,
+	type SuspendUserResult,
 	type UserSearchResult
 } from './admin';
 export { listSecurityActivity, type SecurityActivity } from './activity';

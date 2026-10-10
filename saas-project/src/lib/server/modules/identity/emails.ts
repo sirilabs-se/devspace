@@ -207,3 +207,29 @@ export async function sendNewDeviceEmail(
 		].join('\n')
 	});
 }
+
+export async function sendAccountSuspendedEmail(to: string, reason: string): Promise<void> {
+	await sendEmail({
+		to,
+		subject: `Your ${APP_NAME} account has been suspended`,
+		text: [
+			`Your ${APP_NAME} account has been suspended, and every device has been signed out.`,
+			'',
+			`Reason given: ${reason}`,
+			'',
+			"You can't sign in while the suspension is in place. If you think this is a mistake, reply to this email."
+		].join('\n')
+	});
+}
+
+export async function sendAccountReinstatedEmail(to: string, origin: string): Promise<void> {
+	await sendEmail({
+		to,
+		subject: `Your ${APP_NAME} account has been reinstated`,
+		text: [
+			`The suspension on your ${APP_NAME} account has been lifted.`,
+			'',
+			`You can log in again here: ${origin}/login`
+		].join('\n')
+	});
+}

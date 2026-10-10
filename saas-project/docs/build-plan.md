@@ -59,7 +59,7 @@ Short links used below: [system doc](architecture/README.md), [Identity doc](arc
 | 20 | Active sessions | Identity | 4 | Done |
 | 21 | New-device alerts | Identity | 20 | Done |
 | 22 | Admin user search | Identity | 4 | Done |
-| 23 | Suspend and reinstate | Identity | 22 | To do |
+| 23 | Suspend and reinstate | Identity | 22 | Done |
 | 24 | Impersonation | Identity | 22 | To do |
 | 25 | Admin audit log | Identity | 22 | To do |
 | 26 | Download my data | Identity | 14 | To do |
@@ -954,11 +954,19 @@ Blocked: no notification types exist until another module defines one, so there 
 
 **Done when:**
 
-- [ ] A suspended user is signed out and can't sign in
-- [ ] A reinstated user can sign in again
-- [ ] Tests cover the above, including that a non-admin can't suspend anyone
+- [x] A suspended user is signed out and can't sign in
+- [x] A reinstated user can sign in again
+- [x] Tests cover the above, including that a non-admin can't suspend anyone
 
-**Notes:** —
+**Notes:**
+
+- Suspending needs a reason of up to 500 characters. It is kept on the account, shown on the admin's user page, and emailed to the person. The audit log records who suspended whom and when, but not the reason's text, because the log holds no free text.
+- An admin can't suspend their own account or another admin's. With moderators coming later, who may suspend whom will need deciding again.
+- A suspended person who enters the right password sees "This account is suspended", as in the prototype. A wrong password gets the ordinary "didn't work" answer, so a stranger learns nothing.
+- The suspension holds through a password reset, a passkey sign-in and a Google or Facebook sign-in: the login library refuses to start any session for a suspended account.
+- The person is emailed when suspended and when reinstated.
+- Suspensions don't expire by themselves; an admin lifts them. The login library supports timed suspensions, which this doesn't use.
+- The prototype's suspended screen shows a reference number and an "Appeal" button. Those aren't in the requirements; the screen tells the person to reply to the email.
 
 ### 24. Impersonation
 

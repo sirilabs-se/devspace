@@ -97,6 +97,7 @@ These are exported for this app's own pages and endpoints. Other modules don't c
 | `recogniseDevice(user, cookies, context)` | Marks the browser as known for this account; on a new browser, records it and emails the owner | `hooks.server.ts` |
 | `searchUsers(admin, query, page)` | Finds users by email, name or username, 25 to a page. Admins only | `/admin/users` |
 | `getUserForAdmin(admin, userId, context)` | One user's account details and recent security events; looking is recorded. Admins only | `/admin/users/[id]` |
+| `suspendUser(admin, userId, reason, context)` / `reinstateUser(admin, userId, context)` | Suspends a user with a reason, signing them out everywhere, and lifts a suspension. Admins only | `/admin/users/[id]` |
 | `listSecurityActivity(userId)` | Lists the acting user's own recent security events, newest first | `/settings/security` |
 | `logIn(input, cookies, context)` | Signs in with email and password; same answer for a wrong password and an unknown email | `/login` |
 | `logOut(headers, cookies, context)` | Ends the current session | `/logout` |
@@ -307,7 +308,7 @@ sequenceDiagram
 - A username is optional. When set: 3 to 30 characters (letters, numbers, dots, hyphens, underscores), starting and ending with a letter or number, compared without regard to case, checked against a reserved list kept in code. Setting a first username is always allowed; replacing or removing one is allowed once every 30 days. The old name is held for 30 days, during which only its previous owner can take it back. Changing only the capital letters is not a change. A deleted account's name is held permanently.
 - Sign-up has one checkbox covering the terms, the privacy policy and being 18 or older. Each is still saved as its own consent record.
 - The admin area is checked three times: in `hooks.server.ts` before any page code runs, in each admin page, and inside each admin function. The first admin is made from the command line with `npm run admin:grant -- <email>`, since only an admin could do it from inside the app. An admin looking at a user's details is recorded in the audit log.
-- A suspended user can't sign in and their sessions are ended.
+- A suspended user can't sign in and their sessions are ended. Suspending needs a reason, which is kept on the account and emailed to the person; the audit log records who suspended whom, not the reason's text. An admin can't suspend themselves or another admin. At login, "This account is suspended" is shown only after a correct password; a wrong password gets the ordinary answer.
 - Audit log entries are kept for 12 months.
 
 ## Decisions

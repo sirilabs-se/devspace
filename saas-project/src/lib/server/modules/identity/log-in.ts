@@ -21,6 +21,7 @@ import { toUserId } from './user-id';
  * - "second_step": the password was right and the person has the second step
  *   switched on. They are not signed in until they enter a code.
  * - "unverified": the password was right, but the email isn't verified yet.
+ * - "suspended": the password was right, but an admin has suspended the account.
  * - "rate_limited": too many login attempts from this network address.
  */
 export type LogInResult =
@@ -28,6 +29,7 @@ export type LogInResult =
 	| { status: 'second_step' }
 	| { status: 'invalid' }
 	| { status: 'unverified' }
+	| { status: 'suspended' }
 	| { status: 'rate_limited'; retryAfterSeconds: number };
 
 const logInSchema = z.object({
@@ -87,6 +89,12 @@ export async function logIn(
 			await clearLoginFailures(email);
 			await recordAuditEvent(subject, 'login_unverified', subject, context);
 			return { status: 'unverified' };
+		}
+		// Reported only once the password has been checked, so it reveals nothing to someone guessing.
+		if (error.body?.code === 'BANNED_USER') {
+			await clearLoginFailures(email);
+			await recordAuditEvent(null, 'login_while_suspended', subject, context);
+			return { status: 'suspended' };
 		}
 		// Counted for unknown emails too, so a lockout never reveals who is registered.
 		await recordLoginFailure(email, now);

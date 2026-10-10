@@ -1,7 +1,28 @@
 <script lang="ts">
-	import { Alert, Button, Card, Heading, ListRow, PageHeader, Stack, Text } from '$lib/ui';
+	import { enhance } from '$app/forms';
+	import {
+		Alert,
+		Button,
+		Card,
+		Heading,
+		ListRow,
+		PageHeader,
+		Stack,
+		Text,
+		TextField
+	} from '$lib/ui';
 
-	let { data } = $props();
+	let { data, form } = $props();
+
+	let reason = $state('');
+	const adminErrors: Record<string, string> = {
+		reason_required: 'Give a reason of up to 500 characters. The person is shown it.',
+		is_self: 'You can’t suspend your own account.',
+		is_admin: 'An admin’s account can’t be suspended.',
+		already_suspended: 'This account is already suspended.',
+		not_suspended: 'This account is not suspended.',
+		not_found: 'That account no longer exists.'
+	};
 
 	const user = $derived(data.user);
 
@@ -62,6 +83,56 @@
 				<ListRow title="Ways to sign in" text={signInMethods || 'None'} />
 				<ListRow title="Two-step verification" text={user.twoStepOn ? 'On' : 'Off'} />
 			</div>
+		</Stack>
+	</Card>
+
+	<Card>
+		<Stack gap="large">
+			<Stack gap="small">
+				<Heading level={2}>{user.suspended ? 'Reinstate' : 'Suspend'}</Heading>
+				<Text variant="lead">
+					{user.suspended
+						? 'Lifts the suspension, so this person can sign in again. They are told by email.'
+						: 'Signs this person out everywhere and stops them signing in. They are told by email, with the reason.'}
+				</Text>
+			</Stack>
+
+			{#if form?.suspended}
+				<Alert variant="success" title="Account suspended" />
+			{:else if form?.reinstated}
+				<Alert variant="success" title="Account reinstated" />
+			{:else if form?.adminError}
+				<Alert variant="danger" title="That didn’t work">{adminErrors[form.adminError]}</Alert>
+			{/if}
+
+			{#if user.suspended}
+				<form method="POST" action="?/reinstate" use:enhance>
+					<Button type="submit">Reinstate this account</Button>
+				</form>
+			{:else}
+				<form
+					method="POST"
+					action="?/suspend"
+					novalidate
+					use:enhance={() => {
+						return async ({ result, update }) => {
+							await update({ reset: false });
+							if (result.type === 'success') reason = '';
+						};
+					}}
+				>
+					<Stack gap="medium">
+						<TextField
+							label="Reason"
+							name="reason"
+							hint="Shown to the person in the email they receive."
+							required
+							bind:value={reason}
+						/>
+						<div><Button type="submit" variant="danger">Suspend this account</Button></div>
+					</Stack>
+				</form>
+			{/if}
 		</Stack>
 	</Card>
 

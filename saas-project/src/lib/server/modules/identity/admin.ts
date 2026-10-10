@@ -1,10 +1,13 @@
 import { count, desc, eq, ilike, or } from 'drizzle-orm';
+import { z } from 'zod';
 import { db } from '$lib/server/db';
 import { listSecurityActivity, type SecurityActivity } from './activity';
 import { recordAuditEvent } from './audit';
 import { listConnections } from './connections';
 import type { RequestContext } from './request-context';
-import { passkeys, users } from './schema';
+import { appOrigin } from './auth';
+import { sendAccountReinstatedEmail, sendAccountSuspendedEmail } from './emails';
+import { passkeys, sessions, users } from './schema';
 import { requireRole, type Role, type SessionUser } from './session';
 import { toUserId, type UserId } from './user-id';
 
@@ -153,4 +156,83 @@ export async function getUserForAdmin(
 		passkeyCount,
 		recentActivity
 	};
+}
+
+export type SuspendUserResult = {
+	status:
+		'suspended' | 'not_found' | 'is_self' | 'is_admin' | 'reason_required' | 'already_suspended';
+};
+
+const reasonSchema = z.string().trim().min(1).max(500);
+
+/**
+ * Suspends a user: they are signed out everywhere and can't sign in until
+ * reinstated. A reason is required, and is shown to the person.
+ * An admin can't suspend themselves or another admin.
+ */
+export async function suspendUser(
+	admin: SessionUser,
+	userId: unknown,
+	reason: unknown,
+	context: RequestContext
+): Promise<SuspendUserResult> {
+	requireRole(admin, 'admin');
+
+	const parsedReason = reasonSchema.safeParse(reason);
+	if (!parsedReason.success) return { status: 'reason_required' };
+	if (typeof userId !== 'string') return { status: 'not_found' };
+	if (userId === admin.id) return { status: 'is_self' };
+
+	const [target] = await db
+		.select({ id: users.id, email: users.email, role: users.role, banned: users.banned })
+		.from(users)
+		.where(eq(users.id, userId));
+	if (!target) return { status: 'not_found' };
+	if (toRole(target.role) === 'admin') return { status: 'is_admin' };
+	if (target.banned) return { status: 'already_suspended' };
+
+	const subject = toUserId(target.id);
+	await db.transaction(async (tx) => {
+		await tx
+			.update(users)
+			.set({ banned: true, banReason: parsedReason.data, banExpires: null })
+			.where(eq(users.id, subject));
+		await tx.delete(sessions).where(eq(sessions.userId, subject));
+		// The reason is kept on the account, not in the log, which holds no free text.
+		await recordAuditEvent(admin.id, 'user_suspended', subject, { ...context, database: tx });
+	});
+
+	await sendAccountSuspendedEmail(target.email, parsedReason.data);
+	return { status: 'suspended' };
+}
+
+export type ReinstateUserResult = { status: 'reinstated' | 'not_found' | 'not_suspended' };
+
+/** Lifts a suspension, so the person can sign in again. */
+export async function reinstateUser(
+	admin: SessionUser,
+	userId: unknown,
+	context: RequestContext
+): Promise<ReinstateUserResult> {
+	requireRole(admin, 'admin');
+	if (typeof userId !== 'string') return { status: 'not_found' };
+
+	const [target] = await db
+		.select({ id: users.id, email: users.email, banned: users.banned })
+		.from(users)
+		.where(eq(users.id, userId));
+	if (!target) return { status: 'not_found' };
+	if (!target.banned) return { status: 'not_suspended' };
+
+	const subject = toUserId(target.id);
+	await db.transaction(async (tx) => {
+		await tx
+			.update(users)
+			.set({ banned: false, banReason: null, banExpires: null })
+			.where(eq(users.id, subject));
+		await recordAuditEvent(admin.id, 'user_reinstated', subject, { ...context, database: tx });
+	});
+
+	await sendAccountReinstatedEmail(target.email, appOrigin());
+	return { status: 'reinstated' };
 }
